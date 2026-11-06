@@ -1,0 +1,35 @@
+name: Keep DB Alive
+
+# Hits /api/health every night at 1:55 AM IST (20:25 UTC)
+# so the Supabase free-tier DB never pauses due to inactivity.
+on:
+  schedule:
+    - cron: "25 20 * * *"   # 20:25 UTC = 1:55 AM IST
+  workflow_dispatch:         # allow a manual trigger from the GitHub UI
+
+jobs:
+  ping:
+    name: Ping DB via health endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Hit /api/health
+        run: |
+          echo "Pinging https://placeprep.me/api/health …"
+          RESPONSE=$(curl --silent --show-error --max-time 30 \
+            --write-out "\nHTTP_STATUS:%{http_code}" \
+            https://placeprep.me/api/health)
+
+          BODY=$(echo "$RESPONSE" | sed '/HTTP_STATUS:/d')
+          STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+
+          echo "Status : $STATUS"
+          echo "Body   : $BODY"
+
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Health check failed with HTTP $STATUS"
+            exit 1
+          fi
+
+          echo "✅ DB is alive"
