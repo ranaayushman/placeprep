@@ -15,6 +15,8 @@ export interface QuestionView {
   options: string[];
   /** Essay only. */
   minWords?: number;
+  /** Set on community-contributed questions (shown as a badge; `author` is "First L."). */
+  community?: { id: string; author: string };
 }
 
 /** Full question including the answer. Server-side only. */

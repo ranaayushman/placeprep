@@ -23,6 +23,9 @@ const sweep = setInterval(() => {
 }, 10 * 60 * 1000);
 sweep.unref?.();
 
+// TODO: these buckets live in each server instance's memory. On Vercel every instance has its own,
+// so login/register/exam limits are per instance, not global. Move them to Postgres or Redis
+// (community upload limits already count in the database: lib/community/service.ts).
 export const LIMITS = {
   login: { limit: 10, windowMs: 15 * 60 * 1000 },
   register: { limit: 5, windowMs: 60 * 60 * 1000 },

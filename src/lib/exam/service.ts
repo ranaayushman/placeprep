@@ -6,6 +6,7 @@ import { generate, SECTION_LABELS, TOPIC_BY_ID, TOPICS, toView, topicsFor, type 
 import { RC_GROUP, RC_PASSAGES } from "@/lib/questions/verbal";
 import { EXAM_BY_ID, MAX_VIOLATIONS, SUBMIT_GRACE_MS, type ExamId } from "./pattern";
 import { logEvent } from "@/lib/events";
+import { COMMUNITY_PREFIX, freshCommunityIds, isCommunityRef, loadPublished } from "@/lib/community/serve";
 
 const POOL_TOPICS = TOPICS.filter((t) => t.poolSize).map((t) => t.id);
 
@@ -29,6 +30,7 @@ async function seenIndices(userId: string): Promise<Map<string, Set<number>>> {
     .where(and(eq(attempts.userId, userId), inArray(attemptQuestions.topic, POOL_TOPICS)));
   const out = new Map<string, Set<number>>();
   for (const { topic, ref } of rows) {
+    if (isCommunityRef(ref)) continue; // "community:<uuid>", not a bank index
     const t = TOPIC_BY_ID.get(topic);
     if (!t?.poolSize) continue;
     const set = out.get(topic) ?? new Set<number>();
@@ -76,10 +78,15 @@ async function insertAttempt(
   sections: { section: SectionId; durationSec: number; refs: string[] }[],
 ) {
   const attemptId = crypto.randomUUID();
+  // Community refs come from the DB (generate() is synchronous); unpublished ones are dropped.
+  const community = await loadPublished(sections.flatMap((s) => s.refs.filter(isCommunityRef).map((r) => r.slice(COMMUNITY_PREFIX.length))));
+  sections = sections.map((s) => ({ ...s, refs: s.refs.filter((r) => !isCommunityRef(r) || community.has(r.slice(COMMUNITY_PREFIX.length))) }));
+  if (sections.some((s) => !s.refs.length)) throw new ExamError("Those questions are no longer available");
   const qRows = sections.flatMap((s, sectionOrder) =>
     s.refs.map((ref, order) => {
-      const q = generate(ref);
-      const topic = ref.split(":")[0];
+      const c = isCommunityRef(ref) ? community.get(ref.slice(COMMUNITY_PREFIX.length))! : null;
+      const q = c ? c.question : generate(ref);
+      const topic = c ? c.topic : ref.split(":")[0];
       return {
         attemptId,
         sectionOrder,
@@ -153,13 +160,19 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
 
 export async function createPractice(
   userId: string,
-  opts: { topicIds: string[]; count: number; timed: boolean; title?: string; refs?: string[] },
+  opts: { topicIds: string[]; count: number; timed: boolean; title?: string; refs?: string[]; communityTopics?: string[] },
 ) {
   const seen = await seenIndices(userId);
   const taken = new Set<string>();
   let planned: Planned[];
   if (opts.refs?.length) {
-    planned = opts.refs.map((ref) => ({ section: TOPIC_BY_ID.get(ref.split(":")[0])!.section, ref }));
+    // Retrying mistakes can include community refs; their topic lives in the DB.
+    const community = await loadPublished(opts.refs.filter(isCommunityRef).map((r) => r.slice(COMMUNITY_PREFIX.length)));
+    planned = opts.refs.flatMap((ref) => {
+      const topic = isCommunityRef(ref) ? community.get(ref.slice(COMMUNITY_PREFIX.length))?.topic : ref.split(":")[0];
+      return topic ? [{ section: TOPIC_BY_ID.get(topic)!.section, ref }] : [];
+    });
+    if (!planned.length) throw new ExamError("Those questions are no longer available");
   } else {
     const topics = opts.topicIds.map((id) => TOPIC_BY_ID.get(id)).filter((t): t is Topic => !!t && t.section !== "writing");
     if (!topics.length) throw new ExamError("Choose at least one topic");
@@ -167,6 +180,12 @@ export async function createPractice(
       const t = topics[i % topics.length];
       return { section: t.section, ref: `${t.id}:${pickSeed(t, seen, taken)}` };
     });
+    // Opted-in topics: up to half of their slots become unseen published community questions.
+    for (const t of topics.filter((tp) => opts.communityTopics?.includes(tp.id))) {
+      const slots = planned.map((p, i) => (p.ref.startsWith(`${t.id}:`) ? i : -1)).filter((i) => i >= 0);
+      const ids = await freshCommunityIds(userId, t.id, Math.ceil(slots.length / 2));
+      ids.forEach((id, k) => (planned[slots[k]] = { section: t.section, ref: `${COMMUNITY_PREFIX}${id}` }));
+    }
   }
   const targetSec = planned.reduce((s, p) => s + (TOPIC_BY_ID.get(p.ref.split(":")[0])?.targetSec ?? 90), 0);
   const title =

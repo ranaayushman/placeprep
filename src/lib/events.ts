@@ -12,7 +12,12 @@ export type EventType =
   | "mock_submitted"
   | "practice_started"
   | "violation"
-  | "rate_limited";
+  | "rate_limited"
+  | "question_submitted"
+  | "question_flagged"
+  | "question_approved"
+  | "question_rejected"
+  | "question_reported";
 
 /** Best-effort: logging must never break the user's request. */
 export async function logEvent(
