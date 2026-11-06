@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, customType, index, integer, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, customType, index, integer, jsonb, pgTable, primaryKey, real, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 /**
  * Timestamps are epoch milliseconds in a bigint column, read as Date. Raw SQL in lib/admin.ts and
@@ -156,7 +156,91 @@ export const attemptQuestions = pgTable(
   ],
 );
 
+// ---------------------------------------------------------------------------------------------
+// Community questions (see README "Community questions" and src/lib/community).
+
+export const COMMUNITY_STATUSES = ["PENDING_REVIEW", "FLAGGED_DUPLICATE", "PUBLISHED", "REJECTED", "NEEDS_REVIEW"] as const;
+
+export const communityQuestions = pgTable(
+  "community_questions",
+  {
+    id: id(),
+    authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    section: text("section").notNull(),
+    topic: text("topic").notNull(),
+    company: text("company").notNull(),
+    year: integer("year"),
+    stem: text("stem").notNull(),
+    code: text("code"),
+    options: jsonb("options").$type<string[]>().notNull(),
+    answerIndex: integer("answer_index").notNull(),
+    explanation: text("explanation").notNull(),
+    sourceType: text("source_type", { enum: ["ORIGINAL", "MEMORY_BASED_PYQ", "OTHER"] }).notNull(),
+    status: text("status", { enum: COMMUNITY_STATUSES }).notNull(),
+    bestMatchScore: real("best_match_score").notNull().default(0),
+    /** Set when an admin marks it a duplicate: a fingerprint ref ("v-fill:3" or "community:<id>"). */
+    duplicateOfRef: text("duplicate_of_ref"),
+    /** Shown to the uploader. */
+    rejectionReason: text("rejection_reason"),
+    reviewedBy: text("reviewed_by").references(() => users.id, { onDelete: "set null" }),
+    reviewedAt: ms("reviewed_at"),
+    normStem: text("norm_stem").notNull(),
+    normOptions: text("norm_options").notNull(),
+    createdAt: now("created_at"),
+    updatedAt: now("updated_at"),
+  },
+  (t) => [
+    index("community_status_idx").on(t.status, t.createdAt),
+    index("community_topic_idx").on(t.section, t.topic, t.status),
+    index("community_author_idx").on(t.authorId),
+  ],
+);
+
+/**
+ * Normalised text of every comparable question: static bank items ("<topicId>:<index>") and live
+ * community submissions ("community:<id>"). Trigram indexes on both text columns (migration 0005).
+ */
+export const questionFingerprints = pgTable(
+  "question_fingerprints",
+  {
+    ref: text("ref").primaryKey(),
+    section: text("section").notNull(),
+    topic: text("topic").notNull(),
+    normStem: text("norm_stem").notNull(),
+    normOptions: text("norm_options").notNull(),
+    source: text("source", { enum: ["BANK", "COMMUNITY"] }).notNull(),
+  },
+  (t) => [index("fingerprints_section_idx").on(t.section)],
+);
+
+export const submissionMatches = pgTable(
+  "submission_matches",
+  {
+    submissionId: text("submission_id").notNull().references(() => communityQuestions.id, { onDelete: "cascade" }),
+    matchedRef: text("matched_ref").notNull(),
+    score: real("score").notNull(),
+    stemScore: real("stem_score").notNull(),
+    optionsScore: real("options_score").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.submissionId, t.matchedRef] })],
+);
+
+export const questionReports = pgTable(
+  "question_reports",
+  {
+    id: id(),
+    questionId: text("question_id").notNull().references(() => communityQuestions.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    reason: text("reason", { enum: ["WRONG_ANSWER", "UNCLEAR", "COPIED", "OTHER"] }).notNull(),
+    details: text("details"),
+    status: text("status", { enum: ["OPEN", "RESOLVED"] }).notNull().default("OPEN"),
+    createdAt: now("created_at"),
+  },
+  (t) => [uniqueIndex("question_reports_once_uq").on(t.questionId, t.userId), index("question_reports_open_idx").on(t.questionId, t.status)],
+);
+
 export type User = typeof users.$inferSelect;
+export type CommunityQuestion = typeof communityQuestions.$inferSelect;
 export type Attempt = typeof attempts.$inferSelect;
 export type AttemptSection = typeof attemptSections.$inferSelect;
 export type AttemptQuestion = typeof attemptQuestions.$inferSelect;
