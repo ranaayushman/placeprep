@@ -137,6 +137,10 @@ export default async function Home() {
               questions in {mcq[0].minutes} minutes, in full-screen, with the clock running and no going back. So practise
               in exactly that environment, until drive day feels like a repeat.
             </p>
+            <p className="mt-5 max-w-xl rounded-lg border border-sun/40 bg-sun/10 px-4 py-3 text-sm leading-relaxed text-sun">
+              <span className="font-semibold">Platform scope:</span> PlacePrep is for aptitude and MCQ practice only.
+              It does not provide coding-question practice.
+            </p>
             <div className="mt-9 flex flex-wrap items-center gap-5">
               <Link
                 href="/register"

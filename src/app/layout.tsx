@@ -9,7 +9,7 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbmono" });
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL ?? "https://placeprep.me"),
   title: { default: "PlacePrep — Infosys SE mock tests & practice", template: "%s · PlacePrep" },
-  description: "Proctored mock tests, unlimited practice and analytics for the Infosys Systems Engineer online assessment.",
+  description: "Aptitude and MCQ practice for the Infosys Systems Engineer online assessment. Coding-question practice is not provided.",
   openGraph: { siteName: "PlacePrep", type: "website", images: ["/placeprep-logo.png"] },
 };
 
