@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { getTopicStats } from "@/lib/analytics";
 import { SECTION_LABELS, type SectionId } from "@/lib/questions";
 import { pct } from "@/components/charts";
+import { publishedCountsByTopic } from "@/lib/community/service";
 import { startPractice } from "../start-actions";
 
 const SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "technical"];
@@ -9,7 +10,7 @@ const SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puz
 export default async function PracticePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await requireUser();
   const { error } = await searchParams;
-  const stats = await getTopicStats(user.id);
+  const [stats, community] = await Promise.all([getTopicStats(user.id), publishedCountsByTopic()]);
 
   return (
     <form action={startPractice} className="space-y-6">
@@ -57,6 +58,12 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
                         {t.attempted === 0 ? "new" : `${pct(t.accuracy)} · ${t.attempted} done`}
                       </span>
                     </label>
+                    {(community.get(t.id) ?? 0) > 0 && (
+                      <label className="ml-8 flex cursor-pointer items-center gap-2 pb-1 text-xs text-slate-500">
+                        <input type="checkbox" name="community" value={t.id} className="h-3.5 w-3.5" />
+                        Include community questions ({community.get(t.id)})
+                      </label>
+                    )}
                   </li>
                 ))}
             </ul>

@@ -201,6 +201,12 @@ export async function suspiciousAnswerKeys() {
 export const mySubmissions = (userId: string) =>
   db.select().from(communityQuestions).where(eq(communityQuestions.authorId, userId)).orderBy(desc(communityQuestions.createdAt)).limit(100);
 
+/** Published community questions per topic (for the practice page's opt-in toggles). */
+export async function publishedCountsByTopic() {
+  const rows = await db.select({ topic: communityQuestions.topic, n: count() }).from(communityQuestions).where(eq(communityQuestions.status, "PUBLISHED")).groupBy(communityQuestions.topic);
+  return new Map(rows.map((r) => [r.topic, r.n]));
+}
+
 export async function statusCounts() {
   const rows = await db.select({ status: communityQuestions.status, n: count() }).from(communityQuestions).groupBy(communityQuestions.status);
   return Object.fromEntries(rows.map((r) => [r.status, r.n])) as Partial<Record<(typeof communityQuestions.$inferSelect)["status"], number>>;

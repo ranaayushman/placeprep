@@ -25,13 +25,15 @@ async function matchedQuestions(refs: string[]): Promise<Map<string, Shown>> {
   return out;
 }
 
-/** Highlights words that also occur in the submission, so the overlap is visible at a glance. */
+const FILLER = new Set("the a an of to in on at for by and or is are was were be it this that with as from".split(" "));
+
+/** Highlights content words that also occur in the submission, so the overlap is visible at a glance. */
 function Highlight({ text, words }: { text: string; words: Set<string> }) {
   return (
     <>
       {text.split(/(\s+)/).map((part, i) => {
         const w = normalize(part);
-        return w && w.split(" ").every((x) => words.has(x)) ? <mark key={i} className="rounded bg-amber-200 px-0.5">{part}</mark> : <span key={i}>{part}</span>;
+        return w && !FILLER.has(w) && w.split(" ").every((x) => words.has(x)) ? <mark key={i} className="rounded bg-amber-200 px-0.5">{part}</mark> : <span key={i}>{part}</span>;
       })}
     </>
   );

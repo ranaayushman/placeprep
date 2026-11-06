@@ -4,6 +4,11 @@ import type { QuestionView } from "@/lib/questions/types";
 export function QuestionBody({ q, showPassage = true }: { q: QuestionView; showPassage?: boolean }) {
   return (
     <div className="space-y-4">
+      {q.community && (
+        <p className="inline-flex rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-semibold text-brand-dark">
+          Community · Contributed by {q.community.author}
+        </p>
+      )}
       {showPassage && q.passage && (
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-[15px] leading-relaxed text-slate-700">
           {q.passage}

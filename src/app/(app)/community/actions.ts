@@ -34,15 +34,18 @@ export async function submitAction(_: SubmitState, form: FormData): Promise<Subm
   redirect(`/community?submitted=${status}`);
 }
 
+export type ReportState = { ok?: boolean; error?: string } | undefined;
+
 /** "Report a problem" on a community question (practice feedback and results). */
-export async function reportAction(form: FormData) {
+export async function reportAction(_: ReportState, form: FormData): Promise<ReportState> {
   const user = await requireUser();
   const id = String(form.get("questionId") ?? "");
   const reason = String(form.get("reason") ?? "") as (typeof REPORT_REASONS)[number];
   try {
     await report(user.id, id, reason, String(form.get("details") ?? ""));
   } catch (e) {
-    if (!(e instanceof CommunityError)) throw e;
+    if (e instanceof CommunityError) return { error: e.message };
+    throw e;
   }
   return { ok: true };
 }

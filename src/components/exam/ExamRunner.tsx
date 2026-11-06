@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ExamState } from "@/lib/exam/service";
 import { OPTION_LETTERS, QuestionBody } from "@/components/QuestionBody";
+import { ReportProblem } from "@/components/ReportProblem";
 import { useProctoring } from "./useProctoring";
 import { CameraPreview } from "./CameraPreview";
 
@@ -341,6 +342,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
                         : `Incorrect — the answer is ${OPTION_LETTERS[current.feedback.answerIndex]}`}
                     </p>
                     <p className="mt-1 text-slate-700">{current.feedback.explanation}</p>
+                    {current.view.community && <ReportProblem questionId={current.view.community.id} />}
                   </div>
                 )}
               </div>

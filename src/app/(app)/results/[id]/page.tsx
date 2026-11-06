@@ -5,6 +5,7 @@ import { ExamError, getResult } from "@/lib/exam/service";
 import { PRACTICE_TARGETS } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPIC_BY_ID, type QuestionView, type SectionId } from "@/lib/questions";
 import { OPTION_LETTERS, QuestionBody } from "@/components/QuestionBody";
+import { ReportProblem } from "@/components/ReportProblem";
 import { ProgressBar, pct } from "@/components/charts";
 import { startPractice } from "../../start-actions";
 
@@ -120,6 +121,7 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
                   ))}
                 </ul>
                 <p className="mt-3 rounded-md bg-slate-50 p-3 text-sm text-slate-700"><b>Explanation: </b>{q.explanation}</p>
+                {view.community && <ReportProblem questionId={view.community.id} />}
               </li>
             );
           })}

@@ -35,7 +35,9 @@ export async function startPractice(form: FormData) {
   // Several topics from one section (dashboard "Section quizzes") get the section's name as the title.
   const sections = new Set(topics.map((t) => TOPIC_BY_ID.get(t)!.section));
   const title = topics.length > 1 && sections.size === 1 ? `${SECTION_LABELS[[...sections][0]]} quiz` : undefined;
-  const id = await createPractice(user.id, { topicIds: topics, count, timed, title });
+  // Topics the student opted into community questions for (only among the chosen topics).
+  const communityTopics = form.getAll("community").map(String).filter((t) => topics.includes(t));
+  const id = await createPractice(user.id, { topicIds: topics, count, timed, title, communityTopics });
   redirect(`/attempt/${id}`);
 }
 
