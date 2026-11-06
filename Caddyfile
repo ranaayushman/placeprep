@@ -5,5 +5,12 @@ placeprep.me, www.placeprep.me {
 
 	encode zstd gzip
 	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	# GitHub webhook — proxied through Caddy so port 9000 stays closed.
+	# GitHub sends POST https://placeprep.me/webhook/deploy
+	handle /webhook/deploy {
+		reverse_proxy host.docker.internal:9000
+	}
+
 	reverse_proxy app:3000
 }

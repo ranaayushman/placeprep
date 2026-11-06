@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ExamState } from "@/lib/exam/service";
+import type { ExamState, ViolationType } from "@/lib/exam/service";
 import { OPTION_LETTERS, QuestionBody } from "@/components/QuestionBody";
 import { ReportProblem } from "@/components/ReportProblem";
 import { useProctoring } from "./useProctoring";
-import { CameraPreview } from "./CameraPreview";
+import { FaceProctoringTile } from "./CameraPreview";
 
 type InProgress = Extract<ExamState, { status: "IN_PROGRESS" }>;
 type Q = InProgress["current"]["questions"][number];
@@ -173,9 +173,8 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
     }
   }, [remaining, load]);
 
-  const proctor = useProctoring({
-    enabled: !!isMock,
-    onViolation: async (type) => {
+  const handleViolation = useCallback(
+    async (type: ViolationType) => {
       try {
         const res = await api<{ violations: number; autoSubmitted: boolean }>(attemptId, { action: "violation", type });
         setState((s) => (s ? { ...s, violations: res.violations } : s));
@@ -184,6 +183,12 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
         /* the next state load will reconcile */
       }
     },
+    [attemptId, router],
+  );
+
+  const proctor = useProctoring({
+    enabled: !!isMock,
+    onViolation: handleViolation,
   });
 
   const counts = useMemo(() => {
@@ -223,7 +228,12 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
               Warnings {state.violations}/{state.maxViolations}
             </span>
           )}
-          {isMock && <CameraPreview />}
+          {isMock && (
+              <FaceProctoringTile
+                enabled={!!isMock}
+                onViolation={handleViolation}
+              />
+            )}
           <div
             className={`rounded-lg px-3 py-1.5 font-mono text-lg font-bold tabular-nums ${
               lowTime ? "animate-pulse bg-red-600 text-white" : "bg-slate-900 text-white"

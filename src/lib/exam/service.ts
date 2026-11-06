@@ -378,7 +378,7 @@ export async function submitAll(attemptId: string, userId: string) {
   await finalize(attemptId, false);
 }
 
-const VIOLATION_TYPES = ["tab-hidden", "window-blur", "fullscreen-exit", "copy-paste", "devtools-key"] as const;
+const VIOLATION_TYPES = ["tab-hidden", "window-blur", "fullscreen-exit", "copy-paste", "devtools-key", "no-face", "multiple-faces", "gaze-away"] as const;
 export type ViolationType = (typeof VIOLATION_TYPES)[number];
 export const isViolationType = (v: unknown): v is ViolationType => VIOLATION_TYPES.includes(v as ViolationType);
 

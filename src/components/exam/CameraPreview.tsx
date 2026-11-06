@@ -1,48 +1,92 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import type { ViolationType } from "@/lib/exam/service";
+import { useFaceProctor } from "./useFaceProctor";
+
+const STATE_LABEL: Record<string, string> = {
+  idle:       "Camera off",
+  requesting: "Requesting camera…",
+  denied:     "Camera denied",
+  loading:    "Loading model…",
+  running:    "Live",
+  error:      "Camera error",
+};
 
 /**
- * Optional webcam tile, like the self-view in proctored exams. The video never leaves the browser:
- * nothing is recorded or uploaded. It exists only so practice feels like the real thing.
+ * FaceProctoringTile — shows the student's webcam feed with the
+ * MediaPipe iris-tracking overlay, and fires violations via onViolation().
+ *
+ * Replaces the old <CameraPreview /> in mock mode.
+ */
+export function FaceProctoringTile({
+  enabled,
+  onViolation,
+}: {
+  enabled: boolean;
+  onViolation: (t: ViolationType) => void;
+}) {
+  const { videoRef, canvasRef, state } = useFaceProctor({ enabled, onViolation });
+
+  const isLive = state === "running";
+  const isDenied = state === "denied" || state === "error";
+
+  return (
+    <div className="relative overflow-hidden rounded-md border border-slate-300 bg-slate-900"
+         style={{ width: 112, height: 84 }}>
+
+      {/* Video feed (mirrored like a selfie cam) */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        className="absolute inset-0 h-full w-full -scale-x-100 object-cover"
+      />
+
+      {/* Iris overlay canvas */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 h-full w-full -scale-x-100 object-cover"
+      />
+
+      {/* Status badge */}
+      <span
+        className={`absolute left-1 top-1 flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[9px] font-semibold
+          ${isLive ? "bg-black/50 text-green-400" : isDenied ? "bg-black/60 text-red-400" : "bg-black/50 text-yellow-300"}`}
+      >
+        <span className={`h-1.5 w-1.5 rounded-full ${isLive ? "animate-pulse bg-green-400" : isDenied ? "bg-red-400" : "bg-yellow-300"}`} />
+        {STATE_LABEL[state] ?? state}
+      </span>
+
+      {/* Overlay message when not live */}
+      {!isLive && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 p-2 text-center">
+          <p className="text-[10px] leading-tight text-white/80">
+            {state === "idle"       && "Starting camera…"}
+            {state === "requesting" && "Allow camera access"}
+            {state === "loading"    && "Loading face model…"}
+            {isDenied               && "Camera unavailable — face checks disabled"}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Kept for backward-compat with practice mode (non-mock).
+ * Shows a simple opt-in camera preview with no analysis.
  */
 export function CameraPreview() {
-  const [on, setOn] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const video = useRef<HTMLVideoElement>(null);
-  const stream = useRef<MediaStream | null>(null);
-
-  useEffect(() => {
-    if (!on) return;
-    let cancelled = false;
-    navigator.mediaDevices
-      ?.getUserMedia({ video: { width: 160, height: 120 }, audio: false })
-      .then((s) => {
-        if (cancelled) return s.getTracks().forEach((t) => t.stop());
-        stream.current = s;
-        if (video.current) video.current.srcObject = s;
-      })
-      .catch(() => {
-        setErr("Camera unavailable");
-        setOn(false);
-      });
-    return () => {
-      cancelled = true;
-      stream.current?.getTracks().forEach((t) => t.stop());
-      stream.current = null;
-    };
-  }, [on]);
-
-  if (!on)
-    return (
-      <button onClick={() => { setErr(null); setOn(true); }} className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50" title={err ?? "Show a local camera preview (nothing is recorded)"}>
-        {err ?? "Camera"}
-      </button>
-    );
+  const { videoRef, state } = useFaceProctor({ enabled: true, onViolation: () => {} });
+  const isLive = state === "running";
   return (
-    <button onClick={() => setOn(false)} title="Camera preview — local only. Click to turn off." className="relative overflow-hidden rounded-md border border-slate-300">
-      <video ref={video} autoPlay muted playsInline className="h-12 w-16 -scale-x-100 object-cover" />
-      <span className="absolute left-1 top-1 h-2 w-2 animate-pulse rounded-full bg-red-500" />
-    </button>
+    <div className="relative overflow-hidden rounded-md border border-slate-300 bg-slate-900"
+         style={{ width: 64, height: 48 }}>
+      <video ref={videoRef} autoPlay muted playsInline
+             className="h-full w-full -scale-x-100 object-cover" />
+      <span className="absolute left-1 top-1 h-2 w-2 rounded-full"
+            style={{ background: isLive ? "#4ade80" : "#94a3b8" }} />
+    </div>
   );
 }
