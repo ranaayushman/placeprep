@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
+import { CookieSettingsButton } from "./CookieConsent";
 import { logout } from "@/app/(auth)/actions";
 import type { SafeUser } from "@/lib/auth";
 
@@ -13,7 +14,7 @@ const NAV = [
 
 export function AppShell({ user, children }: { user: SafeUser; children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-canvas">
+    <div className="flex min-h-screen flex-col bg-canvas">
       <header className="sticky top-0 z-10 border-b border-deep/10 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Logo href="/dashboard" />
@@ -30,7 +31,24 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
           </form>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl flex-1 px-4 py-8 w-full">{children}</main>
+      <footer className="mt-auto border-t border-deep/10 bg-white/60">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-5 text-xs text-muted sm:flex-row">
+          <p>© {new Date().getFullYear()} PlacePrep · Free placement aptitude practice</p>
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link href="/privacy" className="hover:text-deep">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-deep">
+              Terms &amp; Conditions
+            </Link>
+            <Link href="/cookies" className="hover:text-deep">
+              Cookie Policy
+            </Link>
+            <CookieSettingsButton className="text-muted hover:text-deep underline decoration-brand/50 underline-offset-4" />
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }

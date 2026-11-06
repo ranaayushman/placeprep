@@ -79,6 +79,7 @@ export function useFaceProctor({
   const rafRef    = useRef<number>(0);
 
   const [state, setState] = useState<FaceProcState>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Mutable refs so the rAF loop never captures a stale closure.
   const onViolationRef = useRef(onViolation);
@@ -105,15 +106,36 @@ export function useFaceProctor({
 
     async function start() {
       // ── 1. Camera ──────────────────────────────────────────────────────────
+      setErrorMessage(null);
       setState("requesting");
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
-          audio: false,
-        });
-      } catch {
-        if (!cancelled) setState("denied");
+      let stream: MediaStream | null = null;
+      let cameraError: unknown;
+      for (let attempt = 0; attempt < 2 && !cancelled; attempt += 1) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+            audio: false,
+          });
+          break;
+        } catch (error: unknown) {
+          cameraError = error;
+          if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+      }
+      if (!stream) {
+        if (!cancelled) {
+          const name = cameraError instanceof DOMException ? cameraError.name : "UnknownError";
+          const message =
+            name === "NotReadableError"
+              ? "Camera is busy. Close other camera apps and try again."
+              : name === "NotAllowedError"
+                ? "Camera permission is blocked for this site."
+                : name === "NotFoundError"
+                  ? "No camera was found on this device."
+                  : `Camera could not start (${name}).`;
+          setErrorMessage(message);
+          setState("denied");
+        }
         return;
       }
       if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
@@ -219,7 +241,12 @@ export function useFaceProctor({
       }
     }
 
-    start().catch(() => { if (!cancelled) setState("error"); });
+    start().catch((error: unknown) => {
+      if (!cancelled) {
+        setErrorMessage(error instanceof Error ? `Face checks could not start: ${error.message}` : "Face checks could not start.");
+        setState("error");
+      }
+    });
 
     return () => {
       cancelled = true;
@@ -232,6 +259,5 @@ export function useFaceProctor({
     };
   }, [enabled, report]);
 
-  return { videoRef, canvasRef, state };
+  return { videoRef, canvasRef, state, errorMessage };
 }
-

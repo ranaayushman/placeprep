@@ -83,6 +83,19 @@ export function AuthForm({ mode, google, errorCode }: { mode: "login" | "registe
         <button disabled={pending} className={SUBMIT}>
           {pending ? "Please wait…" : isRegister ? "Create account →" : "Log in →"}
         </button>
+        {isRegister && (
+          <p className="mt-3 text-center text-xs text-muted leading-relaxed">
+            By creating an account, you agree to our{" "}
+            <Link href="/terms" target="_blank" className="underline hover:text-deep">
+              Terms &amp; Conditions
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" target="_blank" className="underline hover:text-deep">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        )}
       </form>
 
       <p className="mt-6 text-center text-sm text-muted">

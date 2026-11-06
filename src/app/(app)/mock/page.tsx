@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { EXAM_BY_ID, EXAMS, MAX_VIOLATIONS } from "@/lib/exam/pattern";
 import { SECTION_LABELS } from "@/lib/questions";
-import { startMock } from "../start-actions";
-import { SystemCheck } from "./SystemCheck";
 
 export default async function MockPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
   const exam = EXAM_BY_ID.get((await searchParams).exam ?? "") ?? EXAMS[0];
@@ -57,19 +55,12 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
         </ul>
       </div>
 
-      <SystemCheck />
-
-      <form action={startMock} className="card flex flex-wrap items-center justify-between gap-4">
-        <input type="hidden" name="exam" value={exam.id} />
-        {hasWriting ? (
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="writing" defaultChecked /> Include the writing test (essay, 20 min)
-          </label>
-        ) : (
-          <span className="text-sm text-slate-500">{exam.pattern.reduce((a, s) => a + s.questions, 0)} questions · {mcqMinutes} min</span>
-        )}
-        <button className="btn-primary px-6 py-3">I understand — start the test</button>
-      </form>
+      <div className="card flex flex-wrap items-center justify-between gap-4">
+        <span className="text-sm text-slate-500">Ready? Complete the system check before starting.</span>
+        <Link href={`/mock/system-check?exam=${exam.id}`} className="btn-primary px-6 py-3">
+          Continue to system check
+        </Link>
+      </div>
     </div>
   );
 }

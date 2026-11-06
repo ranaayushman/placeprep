@@ -25,10 +25,11 @@ export function FaceProctoringTile({
   enabled: boolean;
   onViolation: (t: ViolationType) => void;
 }) {
-  const { videoRef, canvasRef, state } = useFaceProctor({ enabled, onViolation });
+  const { videoRef, canvasRef, state, errorMessage } = useFaceProctor({ enabled, onViolation });
 
   const isLive = state === "running";
-  const isDenied = state === "denied" || state === "error";
+  const isDenied = state === "denied";
+  const hasError = state === "error";
 
   return (
     <div className="relative overflow-hidden rounded-md border border-slate-300 bg-slate-900"
@@ -52,9 +53,9 @@ export function FaceProctoringTile({
       {/* Status badge */}
       <span
         className={`absolute left-1 top-1 flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[9px] font-semibold
-          ${isLive ? "bg-black/50 text-green-400" : isDenied ? "bg-black/60 text-red-400" : "bg-black/50 text-yellow-300"}`}
+          ${isLive ? "bg-black/50 text-green-400" : isDenied || hasError ? "bg-black/60 text-red-400" : "bg-black/50 text-yellow-300"}`}
       >
-        <span className={`h-1.5 w-1.5 rounded-full ${isLive ? "animate-pulse bg-green-400" : isDenied ? "bg-red-400" : "bg-yellow-300"}`} />
+        <span className={`h-1.5 w-1.5 rounded-full ${isLive ? "animate-pulse bg-green-400" : isDenied || hasError ? "bg-red-400" : "bg-yellow-300"}`} />
         {STATE_LABEL[state] ?? state}
       </span>
 
@@ -66,6 +67,7 @@ export function FaceProctoringTile({
             {state === "requesting" && "Allow camera access"}
             {state === "loading"    && "Loading face model…"}
             {isDenied               && "Camera unavailable — face checks disabled"}
+            {hasError               && (errorMessage ?? "Face checks could not start")}
           </p>
         </div>
       )}

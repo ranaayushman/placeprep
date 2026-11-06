@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { CookieSettingsButton } from "@/components/CookieConsent";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { INFOSYS_SE_PATTERN, MAX_VIOLATIONS, PRACTICE_TARGETS } from "@/lib/exam/pattern";
@@ -362,10 +363,33 @@ export default async function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-deep/10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-sm text-muted sm:flex-row">
-          <Logo />
-          <p>Free aptitude practice for every placement-bound student. No subscription, no catch.</p>
+      <footer className="border-t border-deep/10 bg-canvas/60">
+        <div className="mx-auto max-w-6xl px-4 py-10">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <Logo />
+              <p className="text-sm text-muted">
+                Free aptitude and MCQ practice for every placement-bound student. No subscription, no catch.
+              </p>
+            </div>
+            <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium text-muted">
+              <Link href="/privacy" className="hover:text-deep">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="hover:text-deep">
+                Terms &amp; Conditions
+              </Link>
+              <Link href="/cookies" className="hover:text-deep">
+                Cookie Policy
+              </Link>
+              <CookieSettingsButton className="text-muted hover:text-deep underline decoration-brand/50 underline-offset-4" />
+            </nav>
+          </div>
+          <div className="mt-8 border-t border-deep/10 pt-6 text-xs text-muted/80">
+            <p>
+              Independent educational preparation platform. Not affiliated with, endorsed by, or sponsored by Infosys Limited, Deloitte, or any mentioned corporate entity.
+            </p>
+          </div>
         </div>
       </footer>
     </div>

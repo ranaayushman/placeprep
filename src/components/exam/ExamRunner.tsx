@@ -452,11 +452,11 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
       {isMock && proctor.blocked && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4">
           <div className="max-w-md rounded-xl bg-white p-6 text-center shadow-xl">
-            <h2 className="text-lg font-semibold">{proctor.everEntered ? "You left full screen" : "Full screen required"}</h2>
+            <h2 className="text-lg font-semibold">{proctor.everEntered ? "You left full screen" : "Exam full screen required"}</h2>
             <p className="mt-2 text-sm text-slate-600">
               {proctor.everEntered
                 ? `This was recorded as a warning (${state.violations}/${state.maxViolations}). At ${state.maxViolations} warnings the test is submitted automatically. Your timer is still running.`
-                : "The test runs in full screen, like a proctored exam. Switching tabs, leaving full screen or opening other windows will be recorded as warnings."}
+                : "Use the button below to enter the browser's exam fullscreen mode. Maximising the window or pressing F11 does not enable this mode."}
             </p>
             <button onClick={proctor.enterFullscreen} className="btn-primary mt-5">
               {proctor.everEntered ? "Return to full screen" : "Enter full screen & start"}

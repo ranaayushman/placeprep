@@ -46,6 +46,10 @@ export function useProctoring({ enabled, onViolation }: { enabled: boolean; onVi
   useEffect(() => {
     if (!enabled) return;
 
+    // Read the current state as well as listening for future changes. This matters when
+    // the exam page is loaded while the document is already in web fullscreen.
+    setIsFullscreen(!!document.fullscreenElement);
+
     const onFs = () => {
       const fs = !!document.fullscreenElement;
       setIsFullscreen(fs);

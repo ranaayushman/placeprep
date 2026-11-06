@@ -33,9 +33,11 @@ export function isConfiguredAdmin(email: string) {
 export async function createSession(userId: string) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-  await db.insert(sessions).values({ tokenHash: hashToken(token), userId, expiresAt });
-  // Opportunistic cleanup of this user's expired sessions.
-  await db.delete(sessions).where(and(eq(sessions.userId, userId), lt(sessions.expiresAt, new Date())));
+  await Promise.all([
+    db.insert(sessions).values({ tokenHash: hashToken(token), userId, expiresAt }),
+    // Opportunistic cleanup of this user's expired sessions.
+    db.delete(sessions).where(and(eq(sessions.userId, userId), lt(sessions.expiresAt, new Date()))),
+  ]);
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
