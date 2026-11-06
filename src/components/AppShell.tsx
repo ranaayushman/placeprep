@@ -8,6 +8,7 @@ const NAV = [
   { href: "/practice", label: "Practice" },
   { href: "/mock", label: "Mock Test" },
   { href: "/analytics", label: "Analytics" },
+  { href: "/community", label: "Community" },
 ];
 
 export function AppShell({ user, children }: { user: SafeUser; children: React.ReactNode }) {
