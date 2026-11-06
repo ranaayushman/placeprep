@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { CookieSettingsButton } from "@/components/CookieConsent";
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
 import { INFOSYS_SE_PATTERN, MAX_VIOLATIONS, PRACTICE_TARGETS } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPICS, topicsFor } from "@/lib/questions";
 
@@ -101,8 +99,8 @@ function ExamWindow() {
   );
 }
 
-export default async function Home() {
-  if (await getCurrentUser()) redirect("/dashboard");
+// Static (served from the CDN); signed-in users are sent to /dashboard by the middleware.
+export default function Home() {
   const totalQ = INFOSYS_SE_PATTERN.reduce((s, p) => s + p.questions, 0);
   const totalMin = INFOSYS_SE_PATTERN.reduce((s, p) => s + p.minutes, 0);
   const mcq = INFOSYS_SE_PATTERN.filter((p) => p.section !== "writing");

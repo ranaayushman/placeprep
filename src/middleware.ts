@@ -6,6 +6,13 @@ const PROTECTED = ["/dashboard", "/practice", "/mock", "/attempt", "/results", "
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  // Keeps the homepage static: no server render just to redirect signed-in users. A stale cookie
+  // lands on /dashboard, which sends it to /login.
+  if (pathname === "/" && req.cookies.has("sid")) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
   if (PROTECTED.some((p) => pathname.startsWith(p)) && !req.cookies.has("sid")) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
