@@ -114,8 +114,9 @@ export function sectionStats(stats: TopicStat[]) {
     const attempted = ts.reduce((a, t) => a + t.attempted, 0);
     const correct = ts.reduce((a, t) => a + t.correct, 0);
     const totalW = ts.reduce((a, t) => a + t.weight, 0);
-    // Readiness: mastery weighted by how often each topic appears in the paper.
-    const readiness = ts.reduce((a, t) => a + t.mastery * t.weight, 0) / totalW;
+    // Readiness: mastery weighted by how often each topic appears in the paper. Unpractised topics
+    // count as 0, not as the 50% prior, so a few answers can't look like half-ready.
+    const readiness = ts.reduce((a, t) => a + (t.attempted ? t.mastery : 0) * t.weight, 0) / totalW;
     return {
       section,
       label: SECTION_LABELS[section],

@@ -184,7 +184,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             return (
               <div key={s.section} className="flex flex-col rounded-2xl border border-deep/10 bg-surface p-5">
                 <h3 className="font-semibold">{s.label}</h3>
-                <p className="mt-0.5 text-xs text-muted">{ids.length} topics · {s.attempted ? `${pct(s.readiness)} ready` : "not started"}</p>
+                <p className="mt-0.5 text-xs text-muted">{ids.length} topics · {s.attempted ? `${s.correct}/${s.attempted} correct · ${pct(s.readiness)} ready` : "not started"}</p>
                 <div className="mt-3">
                   <ProgressBar value={s.attempted ? s.readiness : null} target={s.target} label={`${s.label} readiness`} />
                 </div>
