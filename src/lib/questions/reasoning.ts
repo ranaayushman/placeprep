@@ -244,6 +244,9 @@ const BLOOD = [
   { prompt: "{A}'s mother is the sister of {B}'s father. How is {B} related to {A}?", options: ["Cousin", "Brother", "Nephew", "Uncle"], answer: 0, explanation: "{A}'s mother and {B}'s father are siblings, so {A} and {B} are cousins." },
 ];
 
+/** Hand-written puzzles live at seeds 0, 4, 8, … (see bloodRelations). */
+export const bloodPuzzleRefs = () => BLOOD.map((_, k) => `r-blood:${k * 4}`);
+
 function bloodRelationPuzzle(seed: number): Question {
   const r = rng(seed);
   const item = BLOOD[seed % BLOOD.length];
