@@ -1,0 +1,9 @@
+node_modules
+.next
+.env
+data/*.db*
+next-env.d.ts
+*.tsbuildinfo
+.DS_Store
+scripts/load/sessions.json
+.env.production

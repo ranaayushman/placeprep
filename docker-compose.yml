@@ -1,0 +1,26 @@
+# Production on one VPS: the app plus Caddy, which gets and renews HTTPS certificates
+# for placeprep.me automatically. Point the domain's A record at the server first.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env.production # DATABASE_URL points at Supabase
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  caddy-data:
+  caddy-config:

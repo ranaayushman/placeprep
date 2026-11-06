@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360">
+<title>PlacePrep compact logo</title>
+<g transform="translate(35 35) scale(.78)">
+  <g>
+    <path d="M92 330V128c0-42 27-69 69-69h125c79 0 124 45 124 119s-45 119-124 119H205v33c0 17-12 29-29 29h-55c-17 0-29-12-29-29Z" fill="#153D3B"/>
+    <path d="M202 139h92v-39l88 69-88 69v-39h-92z" fill="#F5F4EC"/>
+    <path d="M18 166h55M5 215h55" fill="none" stroke="#39877A" stroke-width="20" stroke-linecap="round"/>
+    <path d="M82 27 216 -15 350 27 216 69Z" fill="#153D3B"/>
+    <path d="M112 39v37c69 33 138 33 207 0V39" fill="#153D3B"/>
+    <path d="M350 27v61" stroke="#153D3B" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="350" cy="96" r="8" fill="#C6DC75"/>
+  </g>
+</g>
+<g font-family="Inter, Arial, Helvetica, sans-serif" font-weight="750" letter-spacing="-4">
+<text x="390" y="238" font-size="176" fill="#153D3B">Place</text>
+<text x="850" y="238" font-size="176" fill="#39877A">Prep</text>
+</g></svg>

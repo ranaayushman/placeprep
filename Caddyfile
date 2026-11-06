@@ -1,0 +1,9 @@
+placeprep.me, www.placeprep.me {
+	# Canonical host
+	@www host www.placeprep.me
+	redir @www https://placeprep.me{uri} permanent
+
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	reverse_proxy app:3000
+}

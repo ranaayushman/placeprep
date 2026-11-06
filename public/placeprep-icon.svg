@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<title>PlacePrep symbol</title>
+<rect x="16" y="16" width="480" height="480" rx="104" fill="#153D3B"/>
+<g transform="translate(67 122) scale(0.98)">
+  <path d="M92 330V128c0-42 27-69 69-69h125c79 0 124 45 124 119s-45 119-124 119H205v33c0 17-12 29-29 29h-55c-17 0-29-12-29-29Z" fill="#F5F4EC"/>
+  <path d="M202 139h92v-39l88 69-88 69v-39h-92z" fill="#39877A"/>
+  <path d="M82 27 216 -15 350 27 216 69Z" fill="#C6DC75"/>
+  <path d="M112 39v37c69 33 138 33 207 0V39" fill="#C6DC75"/>
+  <path d="M350 27v61" stroke="#C6DC75" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="350" cy="96" r="8" fill="#F5F4EC"/>
+</g>
+</svg>

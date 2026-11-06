@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="500" viewBox="0 0 1600 500">
+<title>PlacePrep monochrome logo</title>
+<g transform="translate(60 85)">
+<g fill="#202A29">
+<path d="M92 330V128c0-42 27-69 69-69h125c79 0 124 45 124 119s-45 119-124 119H205v33c0 17-12 29-29 29h-55c-17 0-29-12-29-29Z"/>
+<path d="M82 27 216 -15 350 27 216 69Z"/><path d="M112 39v37c69 33 138 33 207 0V39"/>
+</g><path d="M202 139h92v-39l88 69-88 69v-39h-92z" fill="#FFFFFF"/>
+<path d="M18 166h55M5 215h55" fill="none" stroke="#202A29" stroke-width="20" stroke-linecap="round"/>
+</g>
+<g font-family="Inter, Arial, Helvetica, sans-serif" font-weight="750" letter-spacing="-5">
+<text x="565" y="300" font-size="184" fill="#202A29">PlacePrep</text></g>
+<text x="570" y="380" font-family="Arial, sans-serif" font-size="39" fill="#202A29">Practice • Prepare • Get Placed</text>
+</svg>
