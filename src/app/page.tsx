@@ -7,20 +7,20 @@ import { SECTION_LABELS, TOPICS, topicsFor } from "@/lib/questions";
 
 const TRAPS = [
   {
+    test: "Aptitude platforms charge ₹500–₹2000 just to practise.",
+    train: "PlacePrep is completely free — no subscription, no trial, no card. Every question, every mock, every explanation. Free.",
+  },
+  {
     test: "The clock runs per section, not for the whole test.",
-    train: "Every mock uses the real sectional timers. When a section's time is up, it ends, finished or not.",
+    train: "Every mock uses real sectional timers. When a section's time is up it ends, finished or not — just like the real thing.",
   },
   {
     test: "Submitted means gone. No going back.",
-    train: "Once you move on, the section locks, so you learn to decide when to cut your losses.",
-  },
-  {
-    test: "Leave the tab and you get flagged.",
-    train: `Mocks run in full-screen with copy-paste blocked, and leaving the tab or window counts as a warning. ${MAX_VIOLATIONS} warnings and the test submits itself, so you get used to it before drive day.`,
+    train: "Once you move on, the section locks, so you learn to decide when to cut your losses before it costs you a seat.",
   },
   {
     test: "Most people practise what they're already good at.",
-    train: "Per-topic mastery and speed show you the weak, heavily-weighted topics and tell you to drill those first.",
+    train: "Per-topic mastery and speed scores show you the weak, heavily-weighted topics and tell you to drill those first.",
   },
 ];
 
@@ -106,7 +106,7 @@ export default async function Home() {
   const secPerQ = (p: (typeof mcq)[number]) => Math.round((p.minutes * 60) / p.questions);
   const tightest = mcq.reduce((a, b) => (secPerQ(b) < secPerQ(a) ? b : a));
   const targets = Object.values(PRACTICE_TARGETS).map((t) => Math.round(t * 100));
-  const ticker = [`${totalQ} questions`, `${totalMin} minutes`, `${INFOSYS_SE_PATTERN.length} sectional timers`, "0 negative marking", `${TOPICS.length} topics`];
+  const ticker = [`${totalQ} questions`, `${TOPICS.length} topics`, "100% free", "No subscription", "No card needed", "0 negative marking"];
 
   return (
     <div className="min-h-screen bg-canvas text-deep selection:bg-brand-soft">
@@ -114,7 +114,8 @@ export default async function Home() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Logo />
           <nav className="flex items-center gap-1 text-sm font-medium">
-            <a href="#test" className="hidden px-3 py-2 text-muted hover:text-deep sm:block">The test</a>
+            <a href="#test" className="hidden px-3 py-2 text-muted hover:text-deep sm:block">How it works</a>
+            <a href="#community" className="hidden px-3 py-2 text-muted hover:text-deep sm:block">Community</a>
             <Link href="/login" className="px-3 py-2 text-muted hover:text-deep">Log in</Link>
             <Link href="/register" className="rounded-lg bg-brand-dark px-4 py-2 font-semibold text-white hover:bg-deep">Sign up free</Link>
           </nav>
@@ -127,19 +128,18 @@ export default async function Home() {
         <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 pt-14 pb-24 lg:grid-cols-[1.1fr_1fr] lg:pt-20">
           <div>
             <h1 className="text-5xl leading-[1.02] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
-              Walk into the test like it&apos;s your{" "}
+              Aptitude practice that{" "}
               <span className="text-sun">
-                fifth attempt.
+                doesn&apos;t cost a thing.
               </span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-white/70">
-              Knowing the formulas isn&apos;t enough. The test checks whether you can do {mcq[0].questions} reasoning
-              questions in {mcq[0].minutes} minutes, in full-screen, with the clock running and no going back. So practise
-              in exactly that environment, until drive day feels like a repeat.
+              Other platforms charge ₹500–₹2000 just for aptitude practice. PlacePrep gives you full mocks, unlimited
+              topic drills, proctored environments, and worked explanations — completely free, forever.
             </p>
             <p className="mt-5 max-w-xl rounded-lg border border-sun/40 bg-sun/10 px-4 py-3 text-sm leading-relaxed text-sun">
-              <span className="font-semibold">Platform scope:</span> PlacePrep is for aptitude and MCQ practice only.
-              It does not provide coding-question practice.
+              <span className="font-semibold">What we cover:</span> Reasoning, Quantitative, Verbal, Pseudocode, and
+              Puzzle sections — all the aptitude and MCQ rounds you&apos;ll face in placement drives.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-5">
               <Link
@@ -147,10 +147,10 @@ export default async function Home() {
                 className="inline-flex items-center gap-2 rounded-xl bg-sun px-6 py-3 font-semibold text-deep shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sun"
               >
                 Take your first mock <span aria-hidden>→</span>
-              </Link>
-              <a href="#test" className="font-medium text-white/80 underline decoration-sun decoration-2 underline-offset-4 hover:text-white">
-                What&apos;s in the test?
-              </a>
+            </Link>
+            <a href="#how" className="font-medium text-white/80 underline decoration-sun decoration-2 underline-offset-4 hover:text-white">
+              How it works
+            </a>
             </div>
             <p className="mt-5 text-sm text-white/60">Free. No card. Takes 30 seconds to sign up.</p>
           </div>
@@ -173,7 +173,7 @@ export default async function Home() {
         {/* What the test does vs how we train */}
         <section className="mx-auto max-w-6xl px-4 py-24">
           <h2 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            Prepared students still get filtered out. Here&apos;s why.
+            Why free aptitude practice matters.
           </h2>
           <ol className="mt-14 grid gap-x-12 gap-y-12 md:grid-cols-2">
             {TRAPS.map((t, i) => (
@@ -191,8 +191,8 @@ export default async function Home() {
             ))}
           </ol>
           <p className="mt-14 max-w-2xl border-l-4 border-brand pl-5 text-lg text-muted">
-            And you won&apos;t run out of questions. Practice questions are generated fresh every time, and each one shows the
-            answer and a worked explanation as soon as you lock it in.
+            You won&apos;t run out of questions. Practice questions are generated fresh every time, and each one shows the
+            answer and a worked explanation as soon as you lock it in. No paywall, no daily limit.
           </p>
         </section>
 
@@ -201,11 +201,11 @@ export default async function Home() {
           <div className="mx-auto max-w-6xl px-4 py-24">
             <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-xs font-semibold tracking-wider uppercase text-danger">THE TEST, SECTION BY SECTION</p>
-                <h2 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">Know your pace before you log in.</h2>
+                <p className="text-xs font-semibold tracking-wider uppercase text-danger">WHAT YOU PRACTISE</p>
+                <h2 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">Know your pace before drive day.</h2>
                 <p className="mt-4 max-w-2xl text-muted">
-                  This is the most commonly reported pattern for recent SE drives. Infosys changes details between drives,
-                  so confirm with your placement cell.
+                  These sections cover what most Indian placement aptitude rounds test. We&apos;ll keep adding more
+                  company patterns as the community grows.
                 </p>
               </div>
               <aside className="w-full max-w-xs -rotate-2 self-start rounded-xl bg-sun p-5 text-deep shadow-lg shadow-brand/20 lg:self-auto">
@@ -248,7 +248,7 @@ export default async function Home() {
               {
                 k: "Before the drive",
                 t: "Mock again until every section clears.",
-                b: `Each section has a practice target of ${Math.min(...targets)}–${Math.max(...targets)}% correct. Clear them all, then take the real one.`,
+                b: `Each section has a practice target. Clear them all before the real drive — it's free, so there's no reason not to.`,
               },
             ].map((s) => (
               <li key={s.k} className="rounded-2xl border border-deep/10 bg-surface p-6">
@@ -260,13 +260,63 @@ export default async function Home() {
           </ol>
         </section>
 
+        {/* Community */}
+        <section id="community" className="scroll-mt-20 border-y border-deep/10 bg-brand-soft/30">
+          <div className="mx-auto max-w-6xl px-4 py-24">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold tracking-wider uppercase text-danger">MAKE PLACEMENT PREP BETTER FOR EVERYONE</p>
+              <h2 className="mt-3 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+                You can help the next student prepare better.
+              </h2>
+              <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
+                Remember a good aptitude or MCQ question from your placement drive? Share it with the community.
+                Every submission is checked and reviewed before it reaches other students.
+              </p>
+            </div>
+            <ol className="mt-12 grid gap-6 md:grid-cols-3">
+              {[
+                {
+                  n: "01",
+                  title: "Share what you remember",
+                  body: "Add an original aptitude question or a memory-based placement question in your own words, with the answer and explanation.",
+                },
+                {
+                  n: "02",
+                  title: "Strengthen the question bank",
+                  body: "More quality questions mean better practice, more realistic mocks, and fewer students seeing the same limited set.",
+                },
+                {
+                  n: "03",
+                  title: "Improve placement outcomes",
+                  body: "Your contribution helps future candidates find their weak areas, build confidence, and walk into their placement drive better prepared.",
+                },
+              ].map((item) => (
+                <li key={item.n} className="rounded-2xl border border-deep/10 bg-surface p-6">
+                  <p className="font-mono text-sm font-semibold text-brand">{item.n}</p>
+                  <h3 className="mt-4 text-xl font-semibold">{item.title}</h3>
+                  <p className="mt-2 leading-relaxed text-muted">{item.body}</p>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-10 flex flex-wrap items-center gap-4">
+              <Link href="/register" className="inline-flex items-center gap-2 rounded-xl bg-brand-dark px-5 py-3 font-semibold text-white transition hover:bg-deep">
+                Join and contribute <span aria-hidden>→</span>
+              </Link>
+              <p className="text-sm text-muted">Submit after answering 20 practice questions. Every question is reviewed.</p>
+            </div>
+          </div>
+        </section>
+
         {/* Closing */}
         <section className="px-4 pb-24">
           <div className="mx-auto max-w-6xl rounded-2xl bg-deep px-6 py-16 text-center text-white sm:px-12">
             <h2 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-              Placement season won&apos;t wait. <span className="text-sun">Start tonight.</span>
+              Other platforms charge. <span className="text-sun">We don&apos;t.</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-white/70">One mock tonight gives you a baseline. A week of practice shows you a trend.</p>
+            <p className="mx-auto mt-4 max-w-xl text-white/70">
+              PlacePrep exists because aptitude practice shouldn&apos;t cost money. Sign up free — no card, no trial,
+              no catch. Take a mock tonight and you&apos;ll know exactly where you stand.
+            </p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-5">
               <Link
                 href="/register"
@@ -285,7 +335,7 @@ export default async function Home() {
       <footer className="border-t border-deep/10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-sm text-muted sm:flex-row">
           <Logo />
-          <p>Built for students sitting the Infosys SE drive. Independent, not affiliated with Infosys.</p>
+          <p>Free aptitude practice for every placement-bound student. No subscription, no catch.</p>
         </div>
       </footer>
     </div>
