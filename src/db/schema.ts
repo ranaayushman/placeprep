@@ -97,6 +97,8 @@ export const attempts = pgTable(
     mode: text("mode", { enum: ["MOCK", "PRACTICE"] }).notNull(),
     status: text("status", { enum: ["IN_PROGRESS", "SUBMITTED"] }).notNull().default("IN_PROGRESS"),
     title: text("title").notNull(),
+    /** Which company exam a MOCK follows (lib/exam/pattern.ts EXAMS); null for practice. */
+    exam: text("exam"),
     currentSection: integer("current_section").notNull().default(0),
     /** Counter only; the individual violations live in `events` (type = "violation"). */
     violations: integer("violations").notNull().default(0),

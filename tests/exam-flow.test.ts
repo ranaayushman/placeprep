@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { attemptQuestions, attemptSections, db, users } from "@/db";
 import { createMock, createPractice, getExamState, recordViolation, saveAnswer, submitSection, getResult } from "@/lib/exam/service";
 import { getTopicStats, mockHistory, recommend } from "@/lib/analytics";
-import { INFOSYS_SE_PATTERN, MAX_VIOLATIONS } from "@/lib/exam/pattern";
+import { DELOITTE_NLA_PATTERN, INFOSYS_SE_PATTERN, MAX_VIOLATIONS } from "@/lib/exam/pattern";
 
 let userId: string;
 
@@ -27,6 +27,21 @@ describe("mock exam", () => {
     expect(new Set(rc.map((q) => JSON.parse(q.payload).passage)).size).toBe(1);
     // The payload sent to the browser must never contain the answer.
     for (const q of questions) expect(JSON.parse(q.payload)).not.toHaveProperty("answer");
+  });
+
+  it("builds a Deloitte NLA mock: verbal, reasoning, quant and technical, tagged with its exam", async () => {
+    const id = await createMock(userId, { exam: "deloitte-nla", includeWriting: true });
+    const { attempt, sections, questions } = await getResult(id, userId);
+    expect(attempt.exam).toBe("deloitte-nla");
+    expect(attempt.title).toBe("Deloitte NLA Mock #1");
+    expect(sections.map((s) => [s.section, s.durationSec])).toEqual(DELOITTE_NLA_PATTERN.map((p) => [p.section, p.minutes * 60]));
+    for (const spec of DELOITTE_NLA_PATTERN) {
+      expect(questions.filter((q) => q.section === spec.section)).toHaveLength(spec.questions);
+    }
+    expect(questions.filter((q) => q.section === "technical").every((q) => q.topic.startsWith("t-"))).toBe(true);
+    // No repeated bank item inside one mock.
+    expect(new Set(questions.map((q) => `${q.topic}:${q.ref}`)).size).toBe(questions.length);
+    expect(questions.filter((q) => q.topic === "v-rc")).toHaveLength(4);
   });
 
   it("only exposes the current section, and refuses answers to closed sections", async () => {
@@ -113,10 +128,10 @@ describe("practice", () => {
   });
 
   it("avoids repeating finite-bank items until the bank is exhausted", async () => {
-    const id = await createPractice(userId, { topicIds: ["r-syllogism"], count: 12, timed: false });
+    const id = await createPractice(userId, { topicIds: ["r-ds"], count: 10, timed: false });
     const rows = await db.select().from(attemptQuestions).where(eq(attemptQuestions.attemptId, id));
-    const items = rows.map((r) => Number(r.ref.split(":")[1]) % 12);
-    expect(new Set(items).size).toBe(12);
+    const items = rows.map((r) => Number(r.ref.split(":")[1]) % 10);
+    expect(new Set(items).size).toBe(10);
   });
 });
 

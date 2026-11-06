@@ -4,15 +4,12 @@ import { attempts, db, users } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { getTopicStats, mockHistory, recommend, sectionStats, type TopicStat } from "@/lib/analytics";
 import { wrongRefs } from "@/lib/exam/service";
-import { INFOSYS_SE_PATTERN, MAX_VIOLATIONS } from "@/lib/exam/pattern";
+import { EXAMS, MAX_VIOLATIONS } from "@/lib/exam/pattern";
 import { ProgressBar, pct } from "@/components/charts";
 import { SECTION_LABELS } from "@/lib/questions";
 import { retryMistakes, startPractice } from "../start-actions";
 
-/** Exams students can take today. Add an entry here when a new company's pattern and question bank exist. */
-const EXAMS = [{ company: "Infosys", name: "Systems Engineer (SE) online test", href: "/mock", pattern: INFOSYS_SE_PATTERN }];
-
-/** Recruiters students ask for most. Only Infosys has a real pattern + bank today; the rest are shown as "coming soon". */
+/** Recruiters students ask for most that have no mock yet (see EXAMS in lib/exam/pattern.ts). */
 const UPCOMING_COMPANIES = ["TCS", "Wipro", "Accenture", "Cognizant", "Capgemini"];
 
 const QUIZ_BTN =
@@ -55,9 +52,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const best = history.reduce((m, h) => Math.max(m, h.maxScore ? h.score / h.maxScore : 0), 0);
 
   const dream = profile?.dreamCompany?.trim();
-  const dreamIsInfosys = dream?.toLowerCase().includes("infosys");
+  const dreamIsAvailable = !!dream && EXAMS.some((e) => dream.toLowerCase().includes(e.company.toLowerCase()));
   // Put the student's dream company first among the upcoming ones.
-  const upcoming = dream && !dreamIsInfosys ? [dream, ...UPCOMING_COMPANIES.filter((c) => c.toLowerCase() !== dream.toLowerCase())].slice(0, 5) : UPCOMING_COMPANIES;
+  const upcoming = dream && !dreamIsAvailable ? [dream, ...UPCOMING_COMPANIES.filter((c) => c.toLowerCase() !== dream.toLowerCase())].slice(0, 5) : UPCOMING_COMPANIES;
   const weakest = stats.filter((t) => t.attempted > 0).sort((a, b) => a.mastery - b.mastery).slice(0, 3);
 
   return (
@@ -99,7 +96,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-xl font-bold">Exams available now</h2>
           <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-semibold text-brand-dark">
-            {EXAMS.length} {EXAMS.length === 1 ? "exam" : "exams"}
+            {EXAMS.length} exams
           </span>
         </div>
         <p className="mt-1 text-sm text-muted">Full-length mocks that copy the company&apos;s pattern, timers and proctoring rules.</p>
@@ -108,16 +105,22 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             {EXAMS.map((exam) => {
               const q = exam.pattern.reduce((a, p) => a + p.questions, 0);
               const min = exam.pattern.reduce((a, p) => a + p.minutes, 0);
+              // Mocks from before exams were tracked have exam = null; they were all Infosys.
+              const mine = history.filter((h) => (h.exam ?? "infosys-se") === exam.id);
+              const best = mine.reduce((m, h) => Math.max(m, h.maxScore ? h.score / h.maxScore : 0), 0);
+              const isDream = !!dream && dream.toLowerCase().includes(exam.company.toLowerCase());
               return (
-                <article key={exam.href} className="rounded-2xl bg-deep p-6 text-white">
+                <article key={exam.id} className="rounded-2xl bg-deep p-6 text-white">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-semibold tracking-wider text-sun uppercase">{exam.company} · available</p>
+                      <p className="text-xs font-semibold tracking-wider text-sun uppercase">
+                        {exam.company} · available{isDream ? " · your dream company" : ""}
+                      </p>
                       <h3 className="mt-1 text-2xl font-bold">{exam.name}</h3>
                       <p className="mt-1 text-white/70">{q} questions · {min} min · {exam.pattern.length} timed sections · no negative marking</p>
                     </div>
-                    {history.length > 0 && (
-                      <span className="rounded-lg bg-white/10 px-3 py-1.5 text-sm tabular-nums">{history.length} taken · best {pct(best)}</span>
+                    {mine.length > 0 && (
+                      <span className="rounded-lg bg-white/10 px-3 py-1.5 text-sm tabular-nums">{mine.length} taken · best {pct(best)}</span>
                     )}
                   </div>
                   <ol className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -136,11 +139,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                       <li key={f} className="rounded-full border border-white/15 px-2.5 py-1">{f}</li>
                     ))}
                   </ul>
+                  {exam.note && <p className="mt-4 rounded-lg bg-white/10 px-3 py-2 text-sm text-white/80">{exam.note}</p>}
                   <div className="mt-6 flex flex-wrap items-center gap-4">
-                    <Link href={exam.href} className="inline-flex items-center gap-2 rounded-xl bg-sun px-5 py-2.5 font-semibold text-deep transition hover:bg-white">
-                      {history.length ? "Take another mock" : "Take your first mock"} →
+                    <Link href={`/mock?exam=${exam.id}`} className="inline-flex items-center gap-2 rounded-xl bg-sun px-5 py-2.5 font-semibold text-deep transition hover:bg-white">
+                      {mine.length ? "Take another mock" : "Take your first mock"} →
                     </Link>
-                    <span className="text-sm text-white/60">Set aside about {Math.ceil(min / 60)} hours</span>
+                    <span className="text-sm text-white/60">Set aside about {min >= 90 ? `${Math.round(min / 60)} hours` : `${min} minutes`}</span>
                   </div>
                 </article>
               );
@@ -152,7 +156,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               {upcoming.map((c, i) => (
                 <li key={c} className="flex items-center justify-between rounded-xl bg-canvas-deep px-4 py-2.5 text-sm">
                   <span className="font-medium">{c}</span>
-                  {i === 0 && dream && !dreamIsInfosys ? (
+                  {i === 0 && dream && !dreamIsAvailable ? (
                     <span className="rounded-full bg-sun px-2 py-0.5 text-xs font-semibold">Your dream company</span>
                   ) : (
                     <span className="text-xs text-muted">soon</span>
@@ -174,7 +178,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </div>
           <Link href="/practice" className="text-sm font-semibold text-brand-dark hover:underline">Build a custom quiz →</Link>
         </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sections.map((s) => {
             const ids = stats.filter((t) => t.section === s.section).sort((a, b) => b.weight - a.weight).map((t) => t.id);
             return (

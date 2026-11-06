@@ -4,7 +4,7 @@ import { SECTION_LABELS, type SectionId } from "@/lib/questions";
 import { pct } from "@/components/charts";
 import { startPractice } from "../start-actions";
 
-const SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle"];
+const SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "technical"];
 
 export default async function PracticePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await requireUser();

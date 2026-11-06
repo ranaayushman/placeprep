@@ -4,7 +4,7 @@ import { activityByDay, getTopicStats, mockHistory, sectionStats } from "@/lib/a
 import { SECTION_LABELS, type SectionId } from "@/lib/questions";
 import { LineChart, ProgressBar, pct } from "@/components/charts";
 
-const SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle"];
+const SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "technical"];
 
 export default async function AnalyticsPage() {
   const user = await requireUser();

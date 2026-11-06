@@ -1,5 +1,6 @@
 /** Logical / Reasoning Ability: generators plus small original static banks. */
 import { mcq, rng, staticMcq, type Rng } from "./rng";
+import { RELATION_REASON, RELATION_WORDS, sentence, solveChain, solveSyllogism, STEP_WORDS, type Form, type Prop } from "./logic";
 import type { Question, Topic } from "./types";
 
 const NAMES = ["Aman", "Bela", "Chirag", "Divya", "Esha", "Farhan", "Gita", "Harsh", "Isha", "Jatin", "Kavya", "Laksh"];
@@ -243,47 +244,88 @@ const BLOOD = [
   { prompt: "{A}'s mother is the sister of {B}'s father. How is {B} related to {A}?", options: ["Cousin", "Brother", "Nephew", "Uncle"], answer: 0, explanation: "{A}'s mother and {B}'s father are siblings, so {A} and {B} are cousins." },
 ];
 
-function bloodRelations(seed: number): Question {
+function bloodRelationPuzzle(seed: number): Question {
   const r = rng(seed);
   const item = BLOOD[seed % BLOOD.length];
-  const names = r.shuffle(NAMES);
+  // Letters, not names: the templates fix each person's gender, and a name could contradict it.
+  const names = r.shuffle(["P", "Q", "R", "S", "T", "U"]);
   const fill = (s: string) => s.replace(/\{([A-F])\}/g, (_, k: string) => names[k.charCodeAt(0) - 65]);
   return staticMcq(r, { prompt: fill(item.prompt), options: item.options, answer: item.answer, explanation: fill(item.explanation) });
 }
 
-const SYLLOGISMS: { s: string[]; c: string[]; answer: number }[] = [
-  { s: ["All pens are books.", "All books are tables."], c: ["All pens are tables.", "Some tables are pens."], answer: 2 },
-  { s: ["Some cats are dogs.", "No dog is a rat."], c: ["Some cats are not rats.", "No cat is a rat."], answer: 0 },
-  { s: ["All roses are flowers.", "Some flowers are red."], c: ["Some roses are red.", "All red things are flowers."], answer: 3 },
-  { s: ["No car is a bus.", "All buses are trucks."], c: ["Some trucks are not cars.", "No truck is a car."], answer: 0 },
-  { s: ["Some phones are laptops.", "Some laptops are tablets."], c: ["Some phones are tablets.", "No phone is a tablet."], answer: 4 },
-  { s: ["All teachers are learners.", "No learner is lazy."], c: ["No teacher is lazy.", "Some learners are teachers."], answer: 2 },
-  { s: ["All circles are shapes.", "No shape is a colour."], c: ["No circle is a colour.", "Some shapes are circles."], answer: 2 },
-  { s: ["Some fruits are sweet.", "All sweet things are tasty."], c: ["Some fruits are tasty.", "All tasty things are sweet."], answer: 0 },
-  { s: ["All engineers are graduates.", "Some graduates are artists."], c: ["Some engineers are artists.", "Some artists are graduates."], answer: 1 },
-  { s: ["No bird is a fish.", "Some fish are pets."], c: ["Some pets are not birds.", "No pet is a bird."], answer: 0 },
-  { s: ["All servers are computers.", "All computers are machines."], c: ["Some machines are servers.", "All machines are servers."], answer: 0 },
-  { s: ["Some rivers are lakes.", "All lakes are ponds."], c: ["Some rivers are ponds.", "Some ponds are lakes."], answer: 2 },
-];
-const SYLL_OPTIONS = ["Only conclusion I follows", "Only conclusion II follows", "Both I and II follow", "Neither I nor II follows", "Either I or II follows"];
+const cap = (w: string) => w[0].toUpperCase() + w.slice(1);
+const MALE_NAMES = ["Aman", "Chirag", "Farhan", "Harsh", "Jatin", "Laksh", "Rohan", "Vikram"];
+const FEMALE_NAMES = ["Bela", "Divya", "Esha", "Gita", "Isha", "Kavya", "Meera", "Sana"];
 
+/** Every 4th seed is a hand-written puzzle ("pointing to a photo…"); the rest are generated chains. */
+function bloodRelations(seed: number): Question {
+  if (seed % 4 === 0) return bloodRelationPuzzle(seed / 4);
+  const r = rng(seed);
+  for (;;) {
+    const steps = Array.from({ length: r.int(2, 3) }, () => r.pick(["parent", "child", "sibling"] as const));
+    const males = steps.map(() => r.next() < 0.5);
+    const solved = solveChain(steps, males[0]);
+    if (!solved) continue;
+    // Each speaker's name must match the gender of their relation word; the last person can be anyone.
+    const [m, f] = [r.shuffle(MALE_NAMES), r.shuffle(FEMALE_NAMES)];
+    const names = [...steps.map((_, i) => (males[i] ? m.pop()! : f.pop()!)), r.pick([...m, ...f])];
+    const lines = steps.map((st, i) => `${names[i]} is the ${STEP_WORDS[st][males[i] ? 0 : 1]} of ${names[i + 1]}.`);
+    const [x, y] = [names[0], names[steps.length]];
+    const pool = males[0] ? RELATION_WORDS.male : RELATION_WORDS.female;
+    return mcq(r, {
+      prompt: `${lines.join(" ")} How is ${x} related to ${y}?`,
+      correct: cap(solved.relation),
+      distractors: r.shuffle(pool.filter((w) => w !== solved.relation)).map(cap),
+      explanation: `Draw the family tree one statement at a time: ${lines.join(" ")} Then ${x} ${RELATION_REASON[solved.key]} ${y}, so ${x} is ${y}'s ${solved.relation}.`,
+    });
+  }
+}
+
+const SYLL_OPTIONS = ["Only conclusion I follows", "Only conclusion II follows", "Both I and II follow", "Neither I nor II follows", "Either I or II follows"];
+const SYLL_TERMS = ["pens", "books", "tables", "cats", "dogs", "rats", "roses", "flowers", "phones", "laptops", "tablets", "teachers", "learners", "engineers", "artists", "servers", "machines", "rivers", "lakes", "ponds", "cars", "buses", "trucks", "fruits", "apples", "birds", "pets", "chairs", "desks", "coins", "notes", "keys", "locks"];
+
+/**
+ * Generated two-statement syllogism, solved exactly by checking every Venn diagram (see logic.ts).
+ * Always five options, so the number of options never hints at "Either I or II".
+ */
 function syllogism(seed: number): Question {
   const r = rng(seed);
-  const item = SYLLOGISMS[seed % SYLLOGISMS.length];
-  const options = item.answer === 4 ? SYLL_OPTIONS : SYLL_OPTIONS.slice(0, 4);
-  const why = [
-    "Conclusion I is definitely true from the statements; II cannot be guaranteed.",
-    "Conclusion II is definitely true (it follows by conversion or directly); I cannot be guaranteed.",
-    "Both conclusions are forced by the statements — draw the Venn diagram to check.",
-    "Neither conclusion is forced: a valid Venn diagram exists where each one fails.",
-    "The two conclusions form a complementary pair (“some are” / “none are”) about the same terms, and neither is individually certain, so exactly one of them must be true.",
-  ][item.answer];
+  const target = r.pick([0, 0, 1, 1, 2, 3, 3, 4]); // spread answers like real papers
+  const form = (): Form => r.pick(["A", "A", "E", "I", "I", "O"] as const);
+  const pair = (a: number, b: number) => (r.next() < 0.5 ? [a, b] : [b, a]);
+  let best: { st: Prop[]; c: [Prop, Prop]; answer: number } | null = null;
+  for (let tries = 0; tries < 300; tries++) {
+    const [s1a, s1b] = pair(0, 1);
+    const [s2a, s2b] = pair(1, 2);
+    const st: Prop[] = [{ f: form(), s: s1a, p: s1b }, { f: form(), s: s2a, p: s2b }];
+    const conc = () => {
+      const [a, b] = r.pick([[0, 2], [2, 0], [0, 1], [1, 0], [1, 2], [2, 1]]);
+      return { f: form(), s: a, p: b };
+    };
+    const c: [Prop, Prop] = [conc(), conc()];
+    const same = (x: Prop, y: Prop) => x.f === y.f && x.s === y.s && x.p === y.p;
+    if (same(c[0], c[1]) || c.some((x) => st.some((y) => same(x, y)))) continue;
+    try {
+      const answer = solveSyllogism(st, c[0], c[1]);
+      if (!best || answer === target) best = { st, c, answer };
+      if (answer === target) break;
+    } catch {
+      // contradictory statements cannot happen with two premises over three terms, but stay safe
+    }
+  }
+  const { st, c, answer } = best!;
+  const terms = r.shuffle(SYLL_TERMS).slice(0, 3);
+  const [c1, c2] = c.map((x) => sentence(x, terms));
+  const verdict = (i: 0 | 1) => (answer === 2 || answer === i ? "must be true in every Venn diagram that fits both statements" : "is not certain: the statements allow a diagram where it is false");
   return {
     kind: "mcq",
-    prompt: `Statements:\n${item.s.map((s, i) => `${i + 1}. ${s}`).join("\n")}\nConclusions:\nI. ${item.c[0]}\nII. ${item.c[1]}\nWhich conclusion(s) logically follow?`,
-    options,
-    answer: item.answer,
-    explanation: why,
+    prompt: `Statements:\n1. ${sentence(st[0], terms)}\n2. ${sentence(st[1], terms)}\nConclusions:\nI. ${c1}\nII. ${c2}\nWhich conclusion(s) logically follow?`,
+    options: SYLL_OPTIONS,
+    answer,
+    explanation:
+      answer === 4
+        ? `Neither conclusion is certain on its own, but they are exact opposites about the same groups, so in every possible diagram exactly one of them is true.`
+        : `Conclusion I (“${c1}”) ${verdict(0)}. Conclusion II (“${c2}”) ${verdict(1)}. Draw three overlapping circles and try to break each conclusion.`,
   };
 }
 
@@ -320,10 +362,10 @@ function dataSufficiency(seed: number): Question {
 
 export const reasoningTopics: Topic[] = [
   { id: "r-seating", section: "reasoning", label: "Seating Arrangement", weight: 3, targetSec: 150, generate: seating },
-  { id: "r-syllogism", section: "reasoning", label: "Syllogisms", weight: 3, targetSec: 75, poolSize: SYLLOGISMS.length, generate: syllogism },
+  { id: "r-syllogism", section: "reasoning", label: "Syllogisms", weight: 3, targetSec: 75, generate: syllogism },
   { id: "r-series", section: "reasoning", label: "Number Series", weight: 2, targetSec: 75, generate: numberSeries },
   { id: "r-coding", section: "reasoning", label: "Coding–Decoding", weight: 2, targetSec: 75, generate: codingDecoding },
-  { id: "r-blood", section: "reasoning", label: "Blood Relations", weight: 2, targetSec: 90, poolSize: BLOOD.length, generate: bloodRelations },
+  { id: "r-blood", section: "reasoning", label: "Blood Relations", weight: 2, targetSec: 90, generate: bloodRelations },
   { id: "r-direction", section: "reasoning", label: "Direction Sense", weight: 1, targetSec: 90, generate: directions },
   { id: "r-clock", section: "reasoning", label: "Clocks", weight: 1, targetSec: 75, generate: clocks },
   { id: "r-calendar", section: "reasoning", label: "Calendars", weight: 1, targetSec: 90, generate: calendar },

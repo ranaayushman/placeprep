@@ -5,10 +5,11 @@
  */
 import { rng, staticMcq } from "./rng";
 import type { Question, Topic } from "./types";
+import { MORE_FILL_BLANKS, MORE_PARA_JUMBLES, MORE_PASSAGES, MORE_SENTENCE_CORRECTION } from "./verbal-extra";
 
 type Item = { prompt: string; options: string[]; answer: number; explanation: string };
 
-const SENTENCE_CORRECTION: Item[] = [
+const BASE_SENTENCE_CORRECTION: Item[] = [
   { prompt: "Choose the grammatically correct sentence.", options: ["Neither the manager nor the employees was ready for the audit.", "Neither the manager nor the employees were ready for the audit.", "Neither the manager or the employees were ready for the audit.", "Neither the manager nor the employees has been ready for the audit."], answer: 1, explanation: "With neither…nor, the verb agrees with the nearer subject (employees → were)." },
   { prompt: "Choose the grammatically correct sentence.", options: ["Each of the students have submitted the assignment.", "Each of the students has submitted the assignment.", "Each of the student has submitted the assignment.", "Each of the students have submitted their assignments."], answer: 1, explanation: "“Each” is singular and takes a singular verb; it is followed by a plural noun (each of the students)." },
   { prompt: "Choose the grammatically correct sentence.", options: ["I have been working here since five years.", "I am working here since five years.", "I have been working here for five years.", "I worked here since five years."], answer: 2, explanation: "Use “for” with a duration and the present perfect continuous for an action still going on." },
@@ -31,7 +32,7 @@ const SENTENCE_CORRECTION: Item[] = [
   { prompt: "Choose the grammatically correct sentence.", options: ["Please discuss about the issue with your mentor.", "Please discuss the issue with your mentor.", "Please discuss on the issue with your mentor.", "Please discuss regarding the issue with your mentor."], answer: 1, explanation: "“Discuss” is transitive — no preposition after it." },
 ];
 
-const FILL_BLANKS: Item[] = [
+const BASE_FILL_BLANKS: Item[] = [
   { prompt: "Fill in the blank: The new policy will come into effect ___ 1 April.", options: ["from", "on", "since", "at"], answer: 1, explanation: "Use “on” with specific dates." },
   { prompt: "Fill in the blank: She has been unwell ___ last Monday.", options: ["for", "from", "since", "by"], answer: 2, explanation: "“Since” marks a starting point in time." },
   { prompt: "Fill in the blank: The committee could not reach a ___ decision after hours of debate.", options: ["unanimous", "anonymous", "unanimity", "unanimously"], answer: 0, explanation: "An adjective is needed before “decision”; “unanimous” means agreed by all." },
@@ -54,7 +55,7 @@ const FILL_BLANKS: Item[] = [
   { prompt: "Fill in the blank: The CEO will ___ the new office next week.", options: ["inaugurate", "insinuate", "infuriate", "inundate"], answer: 0, explanation: "“Inaugurate” means formally open." },
 ];
 
-const PARA_JUMBLES: { parts: string[]; first: string; explanation: string }[] = [
+const BASE_PARA_JUMBLES: { parts: string[]; first: string; explanation: string }[] = [
   { first: "Cloud computing has changed how companies run software.", parts: ["Instead of buying servers, they rent computing power on demand.", "This turns a large upfront cost into a monthly bill.", "As a result, even small start-ups can scale like large firms."], explanation: "The opening sentence introduces the change; A explains what changed, B explains the cost effect of A, and C gives the result." },
   { first: "Every year, thousands of students prepare for campus placements.", parts: ["Most of them begin by practising aptitude questions.", "Once they clear the test, they face technical interviews.", "The final step is usually an HR conversation."], explanation: "The sequence follows the order of the hiring process: test → technical → HR." },
   { first: "Bees play a vital role in agriculture.", parts: ["They carry pollen from one flower to another.", "This process helps plants produce fruits and seeds.", "Without bees, many crops would yield far less food."], explanation: "What bees do → why it matters → consequence of their absence." },
@@ -129,7 +130,7 @@ function vocabulary(seed: number): Question {
   });
 }
 
-const PASSAGES: { text: string; qs: Item[] }[] = [
+const BASE_PASSAGES: { text: string; qs: Item[] }[] = [
   {
     text: "Remote work was once seen as a perk offered by a few technology firms. Within a few years it became normal for millions of office workers. Supporters argue that it saves commuting time and lets companies hire talent from anywhere. Critics point out that junior employees, in particular, lose the informal learning that happens when they sit near experienced colleagues. Many organisations have therefore settled on a hybrid model, asking staff to come to the office on fixed days. The debate is no longer about whether remote work is possible, but about which kinds of work benefit from being together in person.",
     qs: [
@@ -178,6 +179,11 @@ const PASSAGES: { text: string; qs: Item[] }[] = [
 ];
 
 /** Questions per passage. RC_POOL is ordered passage by passage, so indices g*RC_GROUP… form one passage. */
+const SENTENCE_CORRECTION = [...BASE_SENTENCE_CORRECTION, ...MORE_SENTENCE_CORRECTION];
+const FILL_BLANKS = [...BASE_FILL_BLANKS, ...MORE_FILL_BLANKS];
+const PARA_JUMBLES = [...BASE_PARA_JUMBLES, ...MORE_PARA_JUMBLES];
+const PASSAGES = [...BASE_PASSAGES, ...MORE_PASSAGES];
+
 export const RC_GROUP = 4;
 export const RC_PASSAGES = PASSAGES.length;
 const RC_POOL = PASSAGES.flatMap((p) => p.qs.map((q) => ({ passage: p.text, ...q })));

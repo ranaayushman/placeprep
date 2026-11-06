@@ -4,7 +4,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { attemptQuestions, attempts, attemptSections, db, type Attempt, type AttemptSection } from "@/db";
 import { generate, SECTION_LABELS, TOPIC_BY_ID, TOPICS, toView, topicsFor, type SectionId, type Topic } from "@/lib/questions";
 import { RC_GROUP, RC_PASSAGES } from "@/lib/questions/verbal";
-import { INFOSYS_SE_PATTERN, MAX_VIOLATIONS, SUBMIT_GRACE_MS } from "./pattern";
+import { EXAM_BY_ID, MAX_VIOLATIONS, SUBMIT_GRACE_MS, type ExamId } from "./pattern";
 import { logEvent } from "@/lib/events";
 
 const POOL_TOPICS = TOPICS.filter((t) => t.poolSize).map((t) => t.id);
@@ -72,6 +72,7 @@ async function insertAttempt(
   userId: string,
   mode: Attempt["mode"],
   title: string,
+  exam: ExamId | null,
   sections: { section: SectionId; durationSec: number; refs: string[] }[],
 ) {
   const attemptId = crypto.randomUUID();
@@ -94,7 +95,7 @@ async function insertAttempt(
     }),
   );
   await db.transaction(async (tx) => {
-    await tx.insert(attempts).values({ id: attemptId, userId, mode, title });
+    await tx.insert(attempts).values({ id: attemptId, userId, mode, title, exam });
     await tx.insert(attemptSections).values(sections.map((s, order) => ({ attemptId, section: s.section, order, durationSec: s.durationSec })));
     await tx.insert(attemptQuestions).values(qRows);
   });
@@ -102,10 +103,12 @@ async function insertAttempt(
   return attemptId;
 }
 
-export async function createMock(userId: string, opts: { includeWriting: boolean }) {
+export async function createMock(userId: string, opts: { includeWriting: boolean; exam?: ExamId }) {
+  const exam = EXAM_BY_ID.get(opts.exam ?? "infosys-se");
+  if (!exam) throw new ExamError("Unknown exam");
   const seen = await seenIndices(userId);
   const taken = new Set<string>();
-  const plan = INFOSYS_SE_PATTERN.filter((s) => opts.includeWriting || s.section !== "writing").map((spec) => {
+  const plan = exam.pattern.filter((s) => opts.includeWriting || s.section !== "writing").map((spec) => {
     const refs: string[] = [];
     if (spec.section === "verbal") {
       // One reading passage with all its questions, like the real paper.
@@ -121,8 +124,8 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
     }
     return { section: spec.section, durationSec: spec.minutes * 60, refs };
   });
-  const n = (await db.select({ id: attempts.id }).from(attempts).where(and(eq(attempts.userId, userId), eq(attempts.mode, "MOCK")))).length;
-  return insertAttempt(userId, "MOCK", `Full Mock #${n + 1}`, plan);
+  const n = (await db.select({ id: attempts.id }).from(attempts).where(and(eq(attempts.userId, userId), eq(attempts.exam, exam.id)))).length;
+  return insertAttempt(userId, "MOCK", `${exam.short} Mock #${n + 1}`, exam.id, plan);
 }
 
 export async function createPractice(
@@ -146,7 +149,7 @@ export async function createPractice(
   const title =
     opts.title ??
     (opts.topicIds.length === 1 ? `Practice: ${TOPIC_BY_ID.get(opts.topicIds[0])!.label}` : `Practice: ${opts.topicIds.length} topics`);
-  return insertAttempt(userId, "PRACTICE", title, [
+  return insertAttempt(userId, "PRACTICE", title, null, [
     { section: planned[0].section, durationSec: opts.timed ? Math.ceil(targetSec / 60) * 60 : 0, refs: planned.map((p) => p.ref) },
   ]);
 }

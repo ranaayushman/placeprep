@@ -6,6 +6,7 @@ import { z } from "zod";
 import { attempts, db } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { createMock, createPractice, wrongRefs } from "@/lib/exam/service";
+import { EXAM_BY_ID, type ExamId } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPIC_BY_ID } from "@/lib/questions";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
 
@@ -48,7 +49,9 @@ export async function startMock(form: FormData) {
     .limit(1);
   if (open) redirect(`/attempt/${open.id}`);
   guardStart(user.id);
-  const id = await createMock(user.id, { includeWriting: form.get("writing") === "on" });
+  const examId = String(form.get("exam") ?? "infosys-se");
+  if (!EXAM_BY_ID.has(examId)) redirect("/dashboard");
+  const id = await createMock(user.id, { exam: examId as ExamId, includeWriting: form.get("writing") === "on" });
   redirect(`/attempt/${id}`);
 }
 

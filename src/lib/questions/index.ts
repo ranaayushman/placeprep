@@ -2,6 +2,7 @@ import { mathTopics } from "./math";
 import { pseudocodeTopics } from "./pseudocode";
 import { puzzleTopics } from "./puzzle";
 import { reasoningTopics } from "./reasoning";
+import { technicalTopics } from "./technical";
 import type { Question, QuestionView, SectionId, Topic } from "./types";
 import { ESSAY_PROMPTS, verbalTopics } from "./verbal";
 
@@ -23,7 +24,7 @@ const essayTopic: Topic = {
   }),
 };
 
-export const TOPICS: Topic[] = [...reasoningTopics, ...mathTopics, ...verbalTopics, ...pseudocodeTopics, ...puzzleTopics, essayTopic];
+export const TOPICS: Topic[] = [...reasoningTopics, ...mathTopics, ...verbalTopics, ...pseudocodeTopics, ...puzzleTopics, ...technicalTopics, essayTopic];
 export const TOPIC_BY_ID = new Map(TOPICS.map((t) => [t.id, t]));
 
 export const SECTION_LABELS: Record<SectionId, string> = {
@@ -32,6 +33,7 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   verbal: "Verbal Ability",
   pseudocode: "Pseudocode",
   puzzle: "Numerical Puzzles",
+  technical: "Technical (CS Fundamentals)",
   writing: "Writing Test",
 };
 

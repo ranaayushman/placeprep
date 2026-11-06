@@ -1,22 +1,40 @@
-import { INFOSYS_SE_PATTERN, MAX_VIOLATIONS } from "@/lib/exam/pattern";
+import Link from "next/link";
+import { EXAM_BY_ID, EXAMS, MAX_VIOLATIONS } from "@/lib/exam/pattern";
 import { SECTION_LABELS } from "@/lib/questions";
 import { startMock } from "../start-actions";
 import { SystemCheck } from "./SystemCheck";
 
-export default function MockPage() {
-  const mcqMinutes = INFOSYS_SE_PATTERN.filter((s) => s.section !== "writing").reduce((a, s) => a + s.minutes, 0);
+export default async function MockPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
+  const exam = EXAM_BY_ID.get((await searchParams).exam ?? "") ?? EXAMS[0];
+  const hasWriting = exam.pattern.some((s) => s.section === "writing");
+  const mcqMinutes = exam.pattern.filter((s) => s.section !== "writing").reduce((a, s) => a + s.minutes, 0);
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Full mock test</h1>
-        <p className="text-slate-500">A complete Infosys SE-pattern paper with the real exam rules. Set aside about {mcqMinutes + 20} minutes.</p>
+        {EXAMS.length > 1 && (
+          <nav className="mb-4 flex flex-wrap gap-2" aria-label="Choose an exam">
+            {EXAMS.map((e) => (
+              <Link
+                key={e.id}
+                href={`/mock?exam=${e.id}`}
+                aria-current={e.id === exam.id ? "page" : undefined}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${e.id === exam.id ? "border-brand bg-brand-soft text-brand-dark" : "border-slate-200 bg-white text-slate-600 hover:border-brand"}`}
+              >
+                {e.company}
+              </Link>
+            ))}
+          </nav>
+        )}
+        <h1 className="text-2xl font-bold">{exam.company} · {exam.name}</h1>
+        <p className="text-slate-500">A complete mock in the reported pattern, with the real exam rules. Set aside about {mcqMinutes + (hasWriting ? 20 : 0)} minutes.</p>
+        {exam.note && <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">{exam.note}</p>}
       </div>
 
       <div className="card">
         <h2 className="font-semibold">Sections</h2>
         <table className="mt-3 w-full text-sm">
           <tbody className="divide-y divide-slate-100">
-            {INFOSYS_SE_PATTERN.map((s) => (
+            {exam.pattern.map((s) => (
               <tr key={s.section}>
                 <td className="py-2 font-medium">{SECTION_LABELS[s.section]}</td>
                 <td className="py-2 tabular-nums text-slate-600">{s.questions} {s.section === "writing" ? "essay" : "questions"}</td>
@@ -42,9 +60,14 @@ export default function MockPage() {
       <SystemCheck />
 
       <form action={startMock} className="card flex flex-wrap items-center justify-between gap-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="writing" defaultChecked /> Include the writing test (essay, 20 min)
-        </label>
+        <input type="hidden" name="exam" value={exam.id} />
+        {hasWriting ? (
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="writing" defaultChecked /> Include the writing test (essay, 20 min)
+          </label>
+        ) : (
+          <span className="text-sm text-slate-500">{exam.pattern.reduce((a, s) => a + s.questions, 0)} questions · {mcqMinutes} min</span>
+        )}
         <button className="btn-primary px-6 py-3">I understand — start the test</button>
       </form>
     </div>

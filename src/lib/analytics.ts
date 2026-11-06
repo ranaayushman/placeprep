@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { PRACTICE_TARGETS } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPICS, topicsFor, type SectionId } from "@/lib/questions";
 
-const MCQ_SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle"];
+const MCQ_SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "technical"];
 const TOPIC_SECTION = new Map(TOPICS.map((t) => [t.id, t.section]));
 
 export interface TopicStat {
@@ -132,10 +132,10 @@ export function sectionStats(stats: TopicStat[]) {
 export async function mockHistory(userId: string) {
   // One grouped query instead of one query per mock.
   const rows = await db.execute<{
-    id: string; title: string; submitted_at: number; score: number; max_score: number; violations: number; auto_submitted: boolean;
+    id: string; title: string; exam: string | null; submitted_at: number; score: number; max_score: number; violations: number; auto_submitted: boolean;
     section: string; correct: number; total: number;
   }>(sql`
-    SELECT a.id, a.title, a.submitted_at, a.score, a.max_score, a.violations, a.auto_submitted,
+    SELECT a.id, a.title, a.exam, a.submitted_at, a.score, a.max_score, a.violations, a.auto_submitted,
            q.section AS section,
            SUM(CASE WHEN q.is_correct THEN 1 ELSE 0 END) AS correct,
            COUNT(*) AS total
@@ -148,7 +148,7 @@ export async function mockHistory(userId: string) {
     let m = byId.get(r.id);
     if (!m) {
       m = {
-        id: r.id, title: r.title, submittedAt: new Date(Number(r.submitted_at)), score: Number(r.score ?? 0), maxScore: Number(r.max_score ?? 0),
+        id: r.id, title: r.title, exam: r.exam, submittedAt: new Date(Number(r.submitted_at)), score: Number(r.score ?? 0), maxScore: Number(r.max_score ?? 0),
         violations: Number(r.violations), autoSubmitted: !!r.auto_submitted,
         bySection: Object.fromEntries(MCQ_SECTIONS.map((s) => [s, { correct: 0, total: 0 }])) as MockSummary["bySection"],
       };
@@ -162,6 +162,7 @@ export async function mockHistory(userId: string) {
 export interface MockSummary {
   id: string;
   title: string;
+  exam: string | null;
   submittedAt: Date;
   score: number;
   maxScore: number;
