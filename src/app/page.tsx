@@ -7,16 +7,16 @@ import { SECTION_LABELS, TOPICS, topicsFor } from "@/lib/questions";
 
 const TRAPS = [
   {
-    test: "Aptitude platforms charge ₹500–₹2000 just to practise.",
-    train: "PlacePrep is completely free — no subscription, no trial, no card. Every question, every mock, every explanation. Free.",
-  },
-  {
     test: "The clock runs per section, not for the whole test.",
     train: "Every mock uses real sectional timers. When a section's time is up it ends, finished or not — just like the real thing.",
   },
   {
     test: "Submitted means gone. No going back.",
     train: "Once you move on, the section locks, so you learn to decide when to cut your losses before it costs you a seat.",
+  },
+  {
+    test: `Leave the tab and you get flagged.`,
+    train: `Mocks run in full-screen with copy-paste blocked, and leaving the tab or window counts as a warning. ${MAX_VIOLATIONS} warnings and the test submits itself, so you get used to it before drive day.`,
   },
   {
     test: "Most people practise what they're already good at.",
@@ -128,14 +128,14 @@ export default async function Home() {
         <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 pt-14 pb-24 lg:grid-cols-[1.1fr_1fr] lg:pt-20">
           <div>
             <h1 className="text-5xl leading-[1.02] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
-              Aptitude practice that{" "}
+              Walk into the test like it&apos;s your{" "}
               <span className="text-sun">
-                doesn&apos;t cost a thing.
+                fifth attempt.
               </span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-white/70">
-              Other platforms charge ₹500–₹2000 just for aptitude practice. PlacePrep gives you full mocks, unlimited
-              topic drills, proctored environments, and worked explanations — completely free, forever.
+              Full mocks, unlimited topic drills, a proctored environment, and worked explanations for every question —
+              completely free, forever. No card, no subscription, no catch.
             </p>
             <p className="mt-5 max-w-xl rounded-lg border border-sun/40 bg-sun/10 px-4 py-3 text-sm leading-relaxed text-sun">
               <span className="font-semibold">What we cover:</span> Reasoning, Quantitative, Verbal, Pseudocode, and
