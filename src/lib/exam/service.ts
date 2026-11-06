@@ -94,11 +94,34 @@ async function insertAttempt(
       };
     }),
   );
-  await db.transaction(async (tx) => {
+  const reused = await db.transaction(async (tx) => {
+    // One start at a time per student, so a double-tap on "Start" can't create two tests.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
+    // Already open: a mock of the same exam, or the same practice set with nothing answered yet.
+    const [open] = await tx
+      .select({ id: attempts.id })
+      .from(attempts)
+      .where(
+        and(
+          eq(attempts.userId, userId),
+          eq(attempts.mode, mode),
+          eq(attempts.status, "IN_PROGRESS"),
+          mode === "MOCK"
+            ? eq(attempts.exam, exam!)
+            : and(
+                eq(attempts.title, title),
+                sql`NOT EXISTS (SELECT 1 FROM attempt_questions q WHERE q.attempt_id = ${attempts.id} AND q.chosen_index IS NOT NULL)`,
+              ),
+        ),
+      )
+      .limit(1);
+    if (open) return open.id;
     await tx.insert(attempts).values({ id: attemptId, userId, mode, title, exam });
     await tx.insert(attemptSections).values(sections.map((s, order) => ({ attemptId, section: s.section, order, durationSec: s.durationSec })));
     await tx.insert(attemptQuestions).values(qRows);
+    return null;
   });
+  if (reused) return reused;
   await logEvent(mode === "MOCK" ? "mock_started" : "practice_started", { userId, attemptId, meta: { title, questions: qRows.length } });
   return attemptId;
 }

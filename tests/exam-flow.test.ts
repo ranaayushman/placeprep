@@ -127,6 +127,17 @@ describe("practice", () => {
     expect(new Set(rows.map((r) => r.section))).toEqual(new Set(["math", "pseudocode"]));
   });
 
+  it("a double-tap on Start opens one quiz, not two", async () => {
+    const opts = { topicIds: ["t-dbms"], count: 5, timed: false };
+    const [a, b] = await Promise.all([createPractice(userId, opts), createPractice(userId, opts)]);
+    expect(a).toBe(b);
+    // Once the student has answered something, starting the same quiz again gives a fresh one.
+    const s = await getExamState(a, userId);
+    if (s.status !== "IN_PROGRESS") throw new Error();
+    await saveAnswer(a, userId, { questionId: s.current.questions[0].id, chosenIndex: 0 });
+    expect(await createPractice(userId, opts)).not.toBe(a);
+  });
+
   it("avoids repeating finite-bank items until the bank is exhausted", async () => {
     const id = await createPractice(userId, { topicIds: ["r-ds"], count: 10, timed: false });
     const rows = await db.select().from(attemptQuestions).where(eq(attemptQuestions.attemptId, id));
