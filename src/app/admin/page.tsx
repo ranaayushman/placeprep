@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { adminOverview, FLAG_VIOLATIONS_7D } from "@/lib/admin";
+import { statusCounts } from "@/lib/community/service";
 import { ago } from "@/components/admin/when";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverview() {
-  const { counts, live, flagged, signupSeries } = await adminOverview();
+  const [{ counts, live, flagged, signupSeries }, community] = await Promise.all([adminOverview(), statusCounts()]);
+  const toReview = (community.FLAGGED_DUPLICATE ?? 0) + (community.PENDING_REVIEW ?? 0) + (community.NEEDS_REVIEW ?? 0);
   const maxSignup = Math.max(1, ...signupSeries.map((d) => d.c));
   const tiles = [
     { label: "Students", value: counts.students, sub: `+${counts.new7d} this week` },
@@ -13,20 +15,34 @@ export default async function AdminOverview() {
     { label: "Mocks submitted (24 h)", value: counts.mocks24h, sub: `${counts.answers24h} answers saved` },
     { label: "Warnings (24 h)", value: counts.violations24h, sub: `${counts.failedLogins24h} failed logins`, tone: counts.violations24h ? "text-amber-600" : "" },
     { label: "Blocked", value: counts.blocked, sub: "on the block list", tone: counts.blocked ? "text-red-600" : "" },
+    {
+      label: "Community",
+      value: toReview,
+      sub: `to review · ${community.FLAGGED_DUPLICATE ?? 0} flagged · ${community.PUBLISHED ?? 0} published`,
+      tone: toReview ? "text-amber-600" : "",
+      href: "/admin/community",
+    },
   ];
 
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Overview</h1>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {tiles.map((t) => (
-          <div key={t.label} className="card">
-            <p className="text-sm text-slate-500">{t.label}</p>
-            <p className={`mt-1 text-3xl font-bold tabular-nums ${t.tone ?? ""}`}>{t.value}</p>
-            <p className="mt-1 text-xs text-slate-400">{t.sub}</p>
-          </div>
-        ))}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        {tiles.map((t) => {
+          const body = (
+            <>
+              <p className="text-sm text-slate-500">{t.label}</p>
+              <p className={`mt-1 text-3xl font-bold tabular-nums ${t.tone ?? ""}`}>{t.value}</p>
+              <p className="mt-1 text-xs text-slate-400">{t.sub}</p>
+            </>
+          );
+          return "href" in t && t.href ? (
+            <Link key={t.label} href={t.href} className="card hover:border-slate-400">{body}</Link>
+          ) : (
+            <div key={t.label} className="card">{body}</div>
+          );
+        })}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
