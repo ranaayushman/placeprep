@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { INFOSYS_SE_PATTERN, MAX_VIOLATIONS, PRACTICE_TARGETS } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPICS, topicsFor } from "@/lib/questions";
 
+const SITE_URL = process.env.APP_URL ?? "https://placeprep.me";
+
 const TRAPS = [
   {
     test: "The clock runs per section, not for the whole test.",
@@ -107,9 +109,37 @@ export default async function Home() {
   const tightest = mcq.reduce((a, b) => (secPerQ(b) < secPerQ(a) ? b : a));
   const targets = Object.values(PRACTICE_TARGETS).map((t) => Math.round(t * 100));
   const ticker = [`${totalQ} questions`, `${TOPICS.length} topics`, "100% free", "No subscription", "No card needed", "0 negative marking"];
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        url: SITE_URL,
+        name: "PlacePrep",
+        description: "Free aptitude and MCQ practice for Infosys and Deloitte placement preparation.",
+      },
+      {
+        "@type": "EducationalOrganization",
+        "@id": `${SITE_URL}/#organization`,
+        name: "PlacePrep",
+        url: SITE_URL,
+        description: "A free placement preparation platform focused on Infosys and Deloitte aptitude and MCQ practice.",
+      },
+      {
+        "@type": "Course",
+        name: "Infosys and Deloitte Placement Aptitude and MCQ Practice",
+        description: "Practice reasoning, quantitative aptitude, verbal ability, pseudocode, and puzzle questions for Infosys and Deloitte placement preparation.",
+        provider: { "@id": `${SITE_URL}/#organization` },
+        isAccessibleForFree: true,
+        educationalLevel: "Higher education",
+      },
+    ],
+  };
 
   return (
     <div className="min-h-screen bg-canvas text-deep selection:bg-brand-soft">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <header className="sticky top-0 z-20 border-b border-deep/10 bg-canvas/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Logo />
@@ -128,7 +158,7 @@ export default async function Home() {
         <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 pt-14 pb-24 lg:grid-cols-[1.1fr_1fr] lg:pt-20">
           <div>
             <h1 className="text-5xl leading-[1.02] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
-              Walk into the test like it&apos;s your{" "}
+              Infosys placement aptitude practice for your{" "}
               <span className="text-sun">
                 fifth attempt.
               </span>
