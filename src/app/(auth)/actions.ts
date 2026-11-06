@@ -9,6 +9,8 @@ import { profileSchema } from "@/lib/profile";
 import { logEvent } from "@/lib/events";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
 import { requestInfo } from "@/lib/request-info";
+import { after } from "next/server";
+import { addToBrevo } from "@/lib/brevo";
 
 export type AuthState = { error?: string } | undefined;
 
@@ -86,7 +88,10 @@ export async function saveProfile(_: AuthState, form: FormData): Promise<AuthSta
   const user = await requireUser();
   const parsed = profileSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  await db.update(users).set({ ...parsed.data, onboardedAt: new Date() }).where(eq(users.id, user.id));
+  const optIn = form.get("marketing") === "on";
+  await db.update(users).set({ ...parsed.data, onboardedAt: new Date(), marketingOptInAt: optIn ? new Date() : null }).where(eq(users.id, user.id));
+  // After the response, so a slow Brevo call never delays onboarding.
+  if (optIn) after(() => addToBrevo(user.email, user.name));
   redirect(user.role === "ADMIN" ? "/admin" : "/dashboard");
 }
 

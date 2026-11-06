@@ -43,6 +43,13 @@
       "when": 1793969249442,
       "tag": "0005_community_trgm_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793981824608,
+      "tag": "0006_marketing_opt_in",
+      "breakpoints": true
     }
   ]
 }

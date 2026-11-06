@@ -89,6 +89,11 @@ export function OnboardingForm({ firstName, initial }: { firstName: string; init
           </div>
         </div>
 
+        <label className="flex items-start gap-2 text-sm text-muted">
+          <input type="checkbox" name="marketing" className="mt-0.5" />
+          <span>Email me placement tips, new mock tests and drive updates. Unsubscribe anytime.</span>
+        </label>
+
         <button disabled={pending} className={SUBMIT}>{pending ? "Saving…" : "Take me to my dashboard →"}</button>
       </form>
     </AuthShell>

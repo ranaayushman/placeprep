@@ -37,6 +37,8 @@ export const users = pgTable(
     blockedBy: text("blocked_by"),
     /** Updated at most once a minute per user (see auth.ts), used for "active now" in the admin panel. */
     lastSeenAt: ms("last_seen_at"),
+    /** When the student ticked "send me emails" (proof of consent). Null = never opted in. */
+    marketingOptInAt: ms("marketing_opt_in_at"),
     createdAt: now("created_at"),
   },
   (t) => [index("users_last_seen_idx").on(t.lastSeenAt), index("users_blocked_idx").on(t.blockedAt)],
