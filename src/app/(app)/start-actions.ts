@@ -6,7 +6,7 @@ import { z } from "zod";
 import { attempts, db } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { createMock, createPractice, wrongRefs } from "@/lib/exam/service";
-import { TOPIC_BY_ID } from "@/lib/questions";
+import { SECTION_LABELS, TOPIC_BY_ID } from "@/lib/questions";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
 
 function guardStart(userId: string) {
@@ -30,7 +30,11 @@ export async function startPractice(form: FormData) {
     timed: form.get("timed") === "on",
   });
   if (!parsed.success) redirect(`/practice?error=${encodeURIComponent(parsed.error.issues[0].message)}`);
-  const id = await createPractice(user.id, { topicIds: parsed.data.topics, count: parsed.data.count, timed: parsed.data.timed });
+  const { topics, count, timed } = parsed.data;
+  // Several topics from one section (dashboard "Section quizzes") get the section's name as the title.
+  const sections = new Set(topics.map((t) => TOPIC_BY_ID.get(t)!.section));
+  const title = topics.length > 1 && sections.size === 1 ? `${SECTION_LABELS[[...sections][0]]} quiz` : undefined;
+  const id = await createPractice(user.id, { topicIds: topics, count, timed, title });
   redirect(`/attempt/${id}`);
 }
 

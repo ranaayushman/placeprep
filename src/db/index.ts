@@ -12,11 +12,12 @@ const url = process.env.DATABASE_URL ?? "postgres://localhost:5432/placeprep";
 const asNumber = { from: [20, 1700], to: 20, parse: Number, serialize: String };
 
 const globalForDb = globalThis as unknown as { pg?: postgres.Sql };
-// One pool per process; reused across dev hot reloads. Pool size via DATABASE_POOL (default 10).
+// One pool per process; reused across dev hot reloads. Pool size via DATABASE_POOL (default 10, or 1
+// on Vercel, where each serverless instance handles one request at a time).
 // prepare: false — Supabase's transaction pooler (port 6543) doesn't support prepared statements.
 // SSL comes from the URL (?sslmode=require for Supabase).
 const client =
-  globalForDb.pg ?? postgres(url, { max: Number(process.env.DATABASE_POOL ?? 10), prepare: false, types: { asNumber } });
+  globalForDb.pg ?? postgres(url, { max: Number(process.env.DATABASE_POOL ?? (process.env.VERCEL ? 1 : 10)), prepare: false, types: { asNumber } });
 globalForDb.pg = client;
 
 export const db = drizzle(client, { schema });
