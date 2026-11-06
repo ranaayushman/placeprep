@@ -23,13 +23,13 @@ import type { ViolationType } from "@/lib/exam/service";
 // ─── Tuning knobs ────────────────────────────────────────────────────────────
 
 /** Seconds gaze must be off-screen / no-face before we fire a violation. */
-const GAZE_GRACE_MS = 3000;
+const GAZE_GRACE_MS = 2000;
 
 /**
  * Iris deviation threshold (0–1 scale of eye width).
- * 0.35 ≈ looking ~30° off-centre. Increase to be more lenient.
+ * Straight ahead measures ~0.05–0.1; 0.2 ≈ a clear sideways glance. Increase to be more lenient.
  */
-const GAZE_THRESHOLD = 0.35;
+const GAZE_THRESHOLD = 0.2;
 
 /** How often (ms) we re-evaluate the last landmark result. */
 const CHECK_INTERVAL_MS = 500;
@@ -46,6 +46,28 @@ const R_INNER = 362;
 const R_OUTER = 263;
 const L_IRIS  = 468;
 const R_IRIS  = 473;
+
+// Head turn: nose tip vs. the face's left/right edges.
+const NOSE = 1;
+const FACE_L = 234;
+const FACE_R = 454;
+/** Nose offset from face centre as a fraction of face width; 0.18 ≈ head turned ~30°. */
+const YAW_THRESHOLD = 0.18;
+
+const MEDIAPIPE_CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619";
+
+let scriptPromise: Promise<void> | null = null;
+function loadScript(src: string) {
+  scriptPromise ??= new Promise<void>((resolve, reject) => {
+    const el = document.createElement("script");
+    el.src = src;
+    el.crossOrigin = "anonymous";
+    el.onload = () => resolve();
+    el.onerror = () => { scriptPromise = null; reject(new Error("could not load the face model")); };
+    document.head.appendChild(el);
+  });
+  return scriptPromise;
+}
 
 type Landmark = { x: number; y: number; z: number };
 
@@ -80,6 +102,8 @@ export function useFaceProctor({
 
   const [state, setState] = useState<FaceProcState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  /** What the camera sees right now, so the student gets live feedback. */
+  const [seen, setSeen] = useState<"ok" | "away" | "no-face" | "multiple" | null>(null);
 
   // Mutable refs so the rAF loop never captures a stale closure.
   const onViolationRef = useRef(onViolation);
@@ -147,12 +171,13 @@ export function useFaceProctor({
 
       // ── 2. Load MediaPipe FaceMesh ─────────────────────────────────────────
       setState("loading");
-      const { FaceMesh } = await import("@mediapipe/face_mesh");
+      // Script and its wasm/model files must come from the same version, or initialize() fails.
+      // The package has no exports (it sets window.FaceMesh), so load it as a plain script.
+      await loadScript(`${MEDIAPIPE_CDN}/face_mesh.js`);
       if (cancelled) return;
 
-      faceMesh = new FaceMesh({
-        locateFile: (file: string) =>
-          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+      faceMesh = new (window as any).FaceMesh({
+        locateFile: (file: string) => `${MEDIAPIPE_CDN}/${file}`,
       });
       faceMesh.setOptions({
         maxNumFaces: 2,          // detect up to 2 so we can flag multiple faces
@@ -185,6 +210,7 @@ export function useFaceProctor({
 
         if (faces.length === 0) {
           // No face in frame
+          setSeen("no-face");
           if (noFaceSince.current === null) noFaceSince.current = now;
           else if (now - noFaceSince.current > GAZE_GRACE_MS) report("no-face");
           gazeAwaySince.current = null;
@@ -193,6 +219,7 @@ export function useFaceProctor({
         noFaceSince.current = null;
 
         if (faces.length >= 2) {
+          setSeen("multiple");
           report("multiple-faces");
         }
 
@@ -202,8 +229,13 @@ export function useFaceProctor({
           const lRatio = gazeRatio(lm[L_IRIS], lm[L_INNER], lm[L_OUTER]);
           const rRatio = gazeRatio(lm[R_IRIS], lm[R_INNER], lm[R_OUTER]);
           const avgRatio = (Math.abs(lRatio) + Math.abs(rRatio)) / 2;
+          // Turning the head keeps the iris centred in the eye, so check head yaw too.
+          const faceW = Math.abs(lm[FACE_R].x - lm[FACE_L].x);
+          const yaw = faceW > 0.001 ? Math.abs(lm[NOSE].x - (lm[FACE_L].x + lm[FACE_R].x) / 2) / faceW : 0;
 
-          if (avgRatio > GAZE_THRESHOLD) {
+          const away = avgRatio > GAZE_THRESHOLD || yaw > YAW_THRESHOLD;
+          if (faces.length === 1) setSeen(away ? "away" : "ok");
+          if (away) {
             if (gazeAwaySince.current === null) gazeAwaySince.current = now;
             else if (now - gazeAwaySince.current > GAZE_GRACE_MS) report("gaze-away");
           } else {
@@ -234,7 +266,8 @@ export function useFaceProctor({
         for (const idx of [L_IRIS, R_IRIS]) {
           if (lm[idx]) {
             ctx.beginPath();
-            ctx.arc(lm[idx].x * W, lm[idx].y * H, 4, 0, Math.PI * 2);
+            // Sized to the frame: the tile shows it at ~1/6 scale.
+            ctx.arc(lm[idx].x * W, lm[idx].y * H, W / 60, 0, Math.PI * 2);
             ctx.fill();
           }
         }
@@ -256,8 +289,9 @@ export function useFaceProctor({
       streamRef.current = null;
       faceMesh?.close?.();
       setState("idle");
+      setSeen(null);
     };
   }, [enabled, report]);
 
-  return { videoRef, canvasRef, state, errorMessage };
+  return { videoRef, canvasRef, state, errorMessage, seen };
 }

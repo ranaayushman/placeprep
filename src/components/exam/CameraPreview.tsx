@@ -12,6 +12,8 @@ const STATE_LABEL: Record<string, string> = {
   error:      "Camera error",
 };
 
+const SEEN_LABEL = { ok: "Face OK", away: "Look at the screen", "no-face": "No face", multiple: "Multiple faces" } as const;
+
 /**
  * FaceProctoringTile — shows the student's webcam feed with the
  * MediaPipe iris-tracking overlay, and fires violations via onViolation().
@@ -25,7 +27,7 @@ export function FaceProctoringTile({
   enabled: boolean;
   onViolation: (t: ViolationType) => void;
 }) {
-  const { videoRef, canvasRef, state, errorMessage } = useFaceProctor({ enabled, onViolation });
+  const { videoRef, canvasRef, state, errorMessage, seen } = useFaceProctor({ enabled, onViolation });
 
   const isLive = state === "running";
   const isDenied = state === "denied";
@@ -58,6 +60,15 @@ export function FaceProctoringTile({
         <span className={`h-1.5 w-1.5 rounded-full ${isLive ? "animate-pulse bg-green-400" : isDenied || hasError ? "bg-red-400" : "bg-yellow-300"}`} />
         {STATE_LABEL[state] ?? state}
       </span>
+
+      {isLive && seen && (
+        <span
+          role="status"
+          className={`absolute inset-x-0 bottom-0 py-0.5 text-center text-[9px] font-semibold ${seen === "ok" ? "bg-black/50 text-green-400" : "bg-red-600/90 text-white"}`}
+        >
+          {SEEN_LABEL[seen]}
+        </span>
+      )}
 
       {/* Overlay message when not live */}
       {!isLive && (
