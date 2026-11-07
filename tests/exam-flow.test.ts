@@ -185,3 +185,13 @@ it("a mock started with camera proctoring off is saved and reported as camera of
   expect(state.status === "IN_PROGRESS" && state.cameraOff).toBe(true);
   expect((await getResult(id, u.id)).attempt.cameraOff).toBe(true);
 });
+
+it("camera alerts are counted separately and never auto-submit the mock", async () => {
+  const [u] = await db.insert(users).values({ email: "alerts@example.com", name: "Alerts", passwordHash: "x" }).returning();
+  const id = await createMock(u.id, { includeWriting: false });
+  let res;
+  for (let i = 0; i < MAX_VIOLATIONS + 2; i++) res = await recordViolation(id, u.id, "no-face");
+  expect(res).toEqual({ violations: 0, cameraAlerts: MAX_VIOLATIONS + 2, autoSubmitted: false });
+  const state = await getExamState(id, u.id);
+  expect(state.status === "IN_PROGRESS" && state.cameraAlerts).toBe(MAX_VIOLATIONS + 2);
+});

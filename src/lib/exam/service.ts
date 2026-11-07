@@ -286,6 +286,7 @@ export async function getExamState(attemptId: string, userId: string) {
     title: attempt.title,
     violations: attempt.violations,
     cameraOff: attempt.cameraOff,
+    cameraAlerts: attempt.cameraAlerts,
     maxViolations: MAX_VIOLATIONS,
     serverNow: Date.now(),
     sections: sections.map((s) => ({ order: s.order, section: s.section, label: SECTION_LABELS[s.section as SectionId], durationSec: s.durationSec })),
@@ -384,23 +385,34 @@ const VIOLATION_TYPES = ["tab-hidden", "window-blur", "fullscreen-exit", "copy-p
 export type ViolationType = (typeof VIOLATION_TYPES)[number];
 export const isViolationType = (v: unknown): v is ViolationType => VIOLATION_TYPES.includes(v as ViolationType);
 
+/**
+ * Camera checks are a guess (looking down at rough paper can hide the face), so they are counted
+ * as camera alerts for the student to see, never as warnings that auto-submit the test.
+ */
+const CAMERA_TYPES: readonly ViolationType[] = ["no-face", "multiple-faces", "gaze-away"];
+
 export async function recordViolation(attemptId: string, userId: string, type: ViolationType) {
+  const camera = CAMERA_TYPES.includes(type);
   // Atomic increment; the WHERE makes it a no-op for practice sets and finished tests.
   const [row] = await db
     .update(attempts)
-    .set({ violations: sql`${attempts.violations} + 1` })
+    .set(camera ? { cameraAlerts: sql`${attempts.cameraAlerts} + 1` } : { violations: sql`${attempts.violations} + 1` })
     .where(and(eq(attempts.id, attemptId), eq(attempts.userId, userId), eq(attempts.mode, "MOCK"), eq(attempts.status, "IN_PROGRESS")))
-    .returning({ violations: attempts.violations });
+    .returning({ violations: attempts.violations, cameraAlerts: attempts.cameraAlerts });
   if (!row) {
     const attempt = await loadOwned(attemptId, userId);
-    return { violations: attempt.violations, autoSubmitted: false };
+    return { violations: attempt.violations, cameraAlerts: attempt.cameraAlerts, autoSubmitted: false };
+  }
+  if (camera) {
+    await logEvent("camera_alert", { userId, attemptId, meta: { type, count: row.cameraAlerts } });
+    return { ...row, autoSubmitted: false };
   }
   await logEvent("violation", { userId, attemptId, meta: { type, count: row.violations } });
   if (row.violations >= MAX_VIOLATIONS) {
     await finalize(attemptId, true);
-    return { violations: row.violations, autoSubmitted: true };
+    return { ...row, autoSubmitted: true };
   }
-  return { violations: row.violations, autoSubmitted: false };
+  return { ...row, autoSubmitted: false };
 }
 
 export async function getResult(attemptId: string, userId: string) {

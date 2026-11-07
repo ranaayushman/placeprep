@@ -107,6 +107,8 @@ export const attempts = pgTable(
     autoSubmitted: boolean("auto_submitted").notNull().default(false),
     /** MOCK only: the student turned camera proctoring off in the system check. */
     cameraOff: boolean("camera_off").notNull().default(false),
+    /** Face not visible / looking away / another face. Shown to the student; never ends the test. */
+    cameraAlerts: integer("camera_alerts").notNull().default(0),
     score: integer("score"),
     maxScore: integer("max_score"),
     startedAt: now("started_at"),

@@ -1,0 +1,1 @@
+ALTER TABLE "attempts" ADD COLUMN "camera_alerts" integer DEFAULT 0 NOT NULL;

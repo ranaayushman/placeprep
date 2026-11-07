@@ -50,6 +50,7 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
           <li>Once you submit a section you <b>cannot go back</b> to it. Within a section you can move freely.</li>
           <li><b>No negative marking</b> — attempt every question. Every section has its own cut-off.</li>
           <li>The test runs in <b>full screen</b>. Leaving full screen, switching tabs or windows counts as a warning. At {MAX_VIOLATIONS} warnings the test is submitted automatically.</li>
+          <li>With camera proctoring on, times your face isn&apos;t visible, you look away, or another face appears are counted as <b>camera alerts</b> and shown on your result. They never end the test, and looking down at rough paper for a few seconds is fine.</li>
           <li>Copy, paste, right-click and developer tools are disabled. Keep rough paper and a pen ready — calculators are not allowed.</li>
           <li>Closing the tab does not pause the timer. You can resume from the dashboard.</li>
         </ul>

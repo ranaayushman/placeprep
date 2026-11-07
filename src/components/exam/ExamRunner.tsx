@@ -176,8 +176,8 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   const handleViolation = useCallback(
     async (type: ViolationType) => {
       try {
-        const res = await api<{ violations: number; autoSubmitted: boolean }>(attemptId, { action: "violation", type });
-        setState((s) => (s ? { ...s, violations: res.violations } : s));
+        const res = await api<{ violations: number; cameraAlerts: number; autoSubmitted: boolean }>(attemptId, { action: "violation", type });
+        setState((s) => (s ? { ...s, violations: res.violations, cameraAlerts: res.cameraAlerts } : s));
         if (res.autoSubmitted) router.replace(`/results/${attemptId}?auto=1`);
       } catch {
         /* the next state load will reconcile */
@@ -226,6 +226,14 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
               title="Leaving full screen, switching tabs or windows counts as a warning"
             >
               Warnings {state.violations}/{state.maxViolations}
+            </span>
+          )}
+          {isMock && !state.cameraOff && (
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${state.cameraAlerts ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}
+              title="Times your face wasn't visible, you looked away, or another face appeared. Shown on your result; never ends the test."
+            >
+              Camera alerts {state.cameraAlerts}
             </span>
           )}
           {isMock && !state.cameraOff && (

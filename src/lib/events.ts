@@ -12,6 +12,7 @@ export type EventType =
   | "mock_submitted"
   | "practice_started"
   | "violation"
+  | "camera_alert"
   | "rate_limited"
   | "question_submitted"
   | "question_flagged"

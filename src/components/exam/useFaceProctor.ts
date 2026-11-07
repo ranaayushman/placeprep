@@ -22,8 +22,10 @@ import type { ViolationType } from "@/lib/exam/service";
 
 // ─── Tuning knobs ────────────────────────────────────────────────────────────
 
-/** Seconds gaze must be off-screen / no-face before we fire a violation. */
+/** How long gaze must be off-screen before it counts. */
 const GAZE_GRACE_MS = 2000;
+/** Longer for no-face: looking down at rough paper often hides the face from the camera. */
+const NO_FACE_GRACE_MS = 5000;
 
 /**
  * Iris deviation threshold (0–1 scale of eye width).
@@ -212,7 +214,7 @@ export function useFaceProctor({
           // No face in frame
           setSeen("no-face");
           if (noFaceSince.current === null) noFaceSince.current = now;
-          else if (now - noFaceSince.current > GAZE_GRACE_MS) report("no-face");
+          else if (now - noFaceSince.current > NO_FACE_GRACE_MS) report("no-face");
           gazeAwaySince.current = null;
           return;
         }
