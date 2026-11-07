@@ -116,14 +116,14 @@ export default function Home() {
         "@id": `${SITE_URL}/#website`,
         url: SITE_URL,
         name: "PlacePrep",
-        description: "Free aptitude and MCQ practice for Infosys and Deloitte placement preparation.",
+        description: "Free aptitude and MCQ practice and mock tests for campus placement drives.",
       },
       {
         "@type": "EducationalOrganization",
         "@id": `${SITE_URL}/#organization`,
         name: "PlacePrep",
         url: SITE_URL,
-        description: "A free placement preparation platform focused on Infosys and Deloitte aptitude and MCQ practice.",
+        description: "A free placement preparation platform with aptitude practice and mock tests for campus drives, including Infosys and Deloitte patterns.",
       },
       {
         "@type": "Course",
@@ -157,14 +157,12 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 pt-14 pb-24 lg:grid-cols-[1.1fr_1fr] lg:pt-20">
           <div>
             <h1 className="text-5xl leading-[1.02] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
-              Infosys placement aptitude practice for your{" "}
-              <span className="text-sun">
-                fifth attempt.
-              </span>
+              Practise like it&apos;s{" "}
+              <span className="text-sun">drive day.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-white/70">
-              Full mocks, unlimited topic drills, a proctored environment, and worked explanations for every question —
-              completely free, forever. No card, no subscription, no catch.
+              Walk into your placement test already knowing it. Full mocks in the real pattern, unlimited topic drills,
+              proctoring, and worked explanations for every question — free, forever.
             </p>
             <p className="mt-5 max-w-xl rounded-lg border border-sun/40 bg-sun/10 px-4 py-3 text-sm leading-relaxed text-sun">
               <span className="font-semibold">What we cover:</span> Reasoning, Quantitative, Verbal, Pseudocode, and
