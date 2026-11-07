@@ -71,6 +71,13 @@
       "when": 1794039428041,
       "tag": "0009_camera_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794047056774,
+      "tag": "0010_user_deletions",
+      "breakpoints": true
     }
   ]
 }

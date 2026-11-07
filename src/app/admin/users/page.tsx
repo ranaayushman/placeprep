@@ -12,7 +12,7 @@ const FILTERS: { id: UserFilter; label: string }[] = [
   { id: "admins", label: "Admins" },
 ];
 
-export default async function AdminUsers({ searchParams }: { searchParams: Promise<{ q?: string; filter?: string; page?: string }> }) {
+export default async function AdminUsers({ searchParams }: { searchParams: Promise<{ q?: string; filter?: string; page?: string; msg?: string }> }) {
   const sp = await searchParams;
   const filter = (FILTERS.find((f) => f.id === sp.filter)?.id ?? "all") as UserFilter;
   const page = Math.max(1, Number(sp.page) || 1);
@@ -25,6 +25,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
 
   return (
     <div className="space-y-5">
+      {sp.msg && <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-900">{sp.msg}</div>}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Users</h1>

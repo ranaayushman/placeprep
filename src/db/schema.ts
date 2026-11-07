@@ -68,7 +68,8 @@ export const adminActions = pgTable(
   "admin_actions",
   {
     id: id(),
-    adminId: text("admin_id").notNull().references(() => users.id),
+    /** Null once that admin's own account is deleted; the action itself stays on the target's record. */
+    adminId: text("admin_id").references(() => users.id, { onDelete: "set null" }),
     targetUserId: text("target_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     action: text("action").notNull(),
     reason: text("reason"),
@@ -76,6 +77,19 @@ export const adminActions = pgTable(
   },
   (t) => [index("admin_actions_target_idx").on(t.targetUserId, t.createdAt)],
 );
+
+/**
+ * Proof that an account was deleted. No foreign keys on purpose: the user (and maybe the admin) rows are
+ * gone, and admin_actions rows about the user are deleted with it. Only a hash of the email is kept.
+ */
+export const userDeletions = pgTable("user_deletions", {
+  id: id(),
+  userId: text("user_id").notNull(),
+  emailSha256: text("email_sha256").notNull(),
+  adminId: text("admin_id").notNull(),
+  reason: text("reason").notNull(),
+  createdAt: now("created_at"),
+});
 
 /** The cookie holds a random token; only its SHA-256 hash is stored here. */
 export const sessions = pgTable(

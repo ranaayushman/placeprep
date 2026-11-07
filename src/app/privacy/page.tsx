@@ -71,12 +71,12 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-3">
             <h2 className="text-2xl font-bold text-deep">1. Who We Are</h2>
             <p className="leading-relaxed text-slate-700">
-              PlacePrep (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;) operates{" "}
+              PlacePrep (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;), operated by Ayushman Rana, runs{" "}
               <Link href="/" className="font-medium text-brand underline">
                 placeprep.me
               </Link>
               , an independent, open placement aptitude practice platform designed for college and university students.
-              For queries related to data privacy and protection, our contact email is{" "}
+              Grievance contact for privacy and data protection:{" "}
               <a href="mailto:support@placeprep.me" className="font-medium text-brand underline">
                 support@placeprep.me
               </a>
@@ -115,7 +115,7 @@ export default function PrivacyPolicyPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <h3 className="font-semibold text-deep">D. Audit &amp; Security Logs</h3>
                 <p className="mt-1 text-sm text-slate-600 leading-relaxed">
-                  We log login timestamps, IP addresses, and request rates to protect students against brute-force attacks, session hijacking, and server abuse.
+                  We log login timestamps, IP addresses, your browser and device details (user agent), request rates, proctoring warnings for each attempt, and when you were last active, to protect students against brute-force attacks, session hijacking, and server abuse. Administrators can view your activity and assessment data to run the platform and investigate misuse.
                 </p>
               </div>
             </div>
@@ -148,7 +148,7 @@ export default function PrivacyPolicyPage() {
                   <strong>Volatile Memory Only:</strong> Video frames exist in temporary GPU/RAM memory for landmark estimation and are immediately discarded on the next render frame.
                 </li>
                 <li>
-                  <strong>What Reaches Our Server:</strong> Only high-level event counters (e.g. &ldquo;no face detected for &gt; 5 seconds&rdquo;, &ldquo;multiple faces&rdquo;, or &ldquo;tab switch&rdquo;) are sent to your attempt log. Camera events are shown to you as camera alerts and never end a test. Camera proctoring is optional and can be switched off before each mock.
+                  <strong>What Reaches Our Server:</strong> Only high-level event counters (e.g. &ldquo;no face detected for &gt; 5 seconds&rdquo;, &ldquo;multiple faces&rdquo;, or &ldquo;tab switch&rdquo;) are sent to your attempt log. Camera events are shown to you as camera alerts and never end a test. Full-screen exits and tab switches are different: they count as warnings, and reaching the limit submits the test automatically (see our Terms). Camera proctoring is optional and can be switched off before each mock.
                 </li>
               </ul>
             </div>
@@ -193,6 +193,9 @@ export default function PrivacyPolicyPage() {
             <ul className="list-inside list-disc space-y-2 text-sm text-slate-700">
               <li>
                 <strong>Supabase (PostgreSQL):</strong> Used as our managed database backend. Access is controlled by our application, which only lets each student read and write their own attempts; Row Level Security blocks Supabase&apos;s public data API entirely.
+              </li>
+              <li>
+                <strong>jsDelivr (CDN):</strong> Serves the face-tracking files your browser downloads when camera proctoring is on. Like any website, it sees your IP address when serving those files; it never receives any camera images.
               </li>
               <li>
                 <strong>Google Identity Services:</strong> Used optionally if you choose to authenticate with Google.

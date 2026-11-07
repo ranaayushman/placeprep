@@ -4,7 +4,8 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { adminActions, announcements, db, users } from "@/db";
+import { createHash } from "node:crypto";
+import { adminActions, announcements, db, userDeletions, users } from "@/db";
 import { requireAdmin, revokeAllSessions } from "@/lib/auth";
 import { closeOpenAttempts } from "@/lib/exam/service";
 import { sendCampaign } from "@/lib/brevo";
@@ -66,6 +67,29 @@ export async function setRole(form: FormData) {
   await db.update(users).set({ role }).where(eq(users.id, target.id));
   await db.insert(adminActions).values({ adminId: admin.id, targetUserId: target.id, action: role === "ADMIN" ? "make_admin" : "remove_admin" });
   done(target.id, role === "ADMIN" ? `${target.name} is now an admin.` : `${target.name} is no longer an admin.`);
+}
+
+/** Permanent. Every linked row (attempts, events, sessions, submissions…) goes with the user via ON DELETE CASCADE. */
+export async function deleteUser(form: FormData) {
+  const { admin, target } = await loadTarget(form);
+  const reason = z.string().trim().min(3).max(300).safeParse(form.get("reason"));
+  if (target.id === admin.id) done(target.id, "You can't delete yourself.");
+  if (target.role === "ADMIN") done(target.id, "Remove admin rights before deleting an admin.");
+  if (String(form.get("confirmEmail") ?? "").trim().toLowerCase() !== target.email.toLowerCase()) done(target.id, "The email you typed doesn't match. Nothing was deleted.");
+  if (!reason.success) done(target.id, "Add a reason (3+ characters) before deleting.");
+  await revokeAllSessions(target.id);
+  await closeOpenAttempts(target.id);
+  await db.transaction(async (tx) => {
+    await tx.insert(userDeletions).values({
+      userId: target.id,
+      emailSha256: createHash("sha256").update(target.email.toLowerCase()).digest("hex"),
+      adminId: admin.id,
+      reason: reason.data!,
+    });
+    await tx.delete(users).where(eq(users.id, target.id));
+  });
+  revalidatePath("/admin", "layout");
+  redirect(`/admin/users?msg=${encodeURIComponent(`${target.name}'s account and all their data were deleted.`)}`);
 }
 
 const campaignSchema = z.object({

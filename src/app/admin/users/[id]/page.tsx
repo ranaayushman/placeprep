@@ -5,7 +5,7 @@ import { describeEvent, userDetail } from "@/lib/admin";
 import { getTopicStats, sectionStats } from "@/lib/analytics";
 import { ProgressBar, pct } from "@/components/charts";
 import { ago, fmtDate, fmtDateTime, isOnline } from "@/components/admin/when";
-import { blockUser, revokeSessions, setRole, unblockUser } from "../../actions";
+import { blockUser, deleteUser, revokeSessions, setRole, unblockUser } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +92,21 @@ export default async function AdminUserDetail({ params, searchParams }: { params
             )}
           </div>
           <p className="mt-2 text-xs text-slate-500">Blocking signs the user out immediately and stops them logging in. Every action is recorded in the audit log below.</p>
+        </section>
+      )}
+
+      {!isSelf && user.role !== "ADMIN" && (
+        <section className="card border-red-200">
+          <h2 className="font-semibold text-red-800">Delete account</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Permanently deletes this account and all its attempts, activity logs, sessions and community submissions. This can&apos;t be undone. Only a record of the deletion (with a hash of the email) is kept.
+          </p>
+          <form action={deleteUser} className="mt-3 flex flex-wrap gap-2">
+            <input type="hidden" name="userId" value={user.id} />
+            <input name="confirmEmail" required autoComplete="off" placeholder={`Type ${user.email} to confirm`} aria-label="Type the user's email to confirm" className="input w-72" />
+            <input name="reason" required minLength={3} maxLength={300} placeholder="Reason, e.g. user asked for deletion" aria-label="Reason" className="input w-72" />
+            <button className="btn-danger">Delete permanently</button>
+          </form>
         </section>
       )}
 

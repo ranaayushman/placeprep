@@ -141,8 +141,8 @@ export async function userDetail(userId: string) {
       SELECT id, type, meta, ip, user_agent, created_at, attempt_id
       FROM events WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT 100`),
     db.execute<{ action: string; reason: string | null; created_at: number; admin_name: string }>(sql`
-      SELECT aa.action, aa.reason, aa.created_at, u.name AS admin_name
-      FROM admin_actions aa JOIN users u ON u.id = aa.admin_id
+      SELECT aa.action, aa.reason, aa.created_at, COALESCE(u.name, 'a deleted admin') AS admin_name
+      FROM admin_actions aa LEFT JOIN users u ON u.id = aa.admin_id
       WHERE aa.target_user_id = ${userId} ORDER BY aa.created_at DESC LIMIT 50`),
     // Distinct IPs used to log in — several accounts from one IP or many IPs can indicate sharing.
     db.execute<{ ip: string; c: number; last: number }>(sql`
