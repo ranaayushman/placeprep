@@ -17,7 +17,10 @@ const globalForDb = globalThis as unknown as { pg?: postgres.Sql };
 // prepare: false — Supabase's transaction pooler (port 6543) doesn't support prepared statements.
 // SSL comes from the URL (?sslmode=require for Supabase).
 const client =
-  globalForDb.pg ?? postgres(url, { max: Number(process.env.DATABASE_POOL ?? (process.env.VERCEL ? 1 : 10)), prepare: false, types: { asNumber } });
+  globalForDb.pg ??
+  // idle_timeout: close idle connections (seconds) before the pooler or network silently drops them,
+  // which otherwise fails the next query with "Failed query".
+  postgres(url, { max: Number(process.env.DATABASE_POOL ?? (process.env.VERCEL ? 1 : 10)), prepare: false, idle_timeout: 20, types: { asNumber } });
 globalForDb.pg = client;
 
 export const db = drizzle(client, { schema });
