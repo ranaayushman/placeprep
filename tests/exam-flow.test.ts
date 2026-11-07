@@ -177,3 +177,11 @@ describe("rate limiter", () => {
     expect(rateLimit(key, 3, 60_000).ok).toBe(false);
   });
 });
+
+it("a mock started with camera proctoring off is saved and reported as camera off", async () => {
+  const [u] = await db.insert(users).values({ email: "cam@example.com", name: "Cam", passwordHash: "x" }).returning();
+  const id = await createMock(u.id, { includeWriting: false, cameraOff: true });
+  const state = await getExamState(id, u.id);
+  expect(state.status === "IN_PROGRESS" && state.cameraOff).toBe(true);
+  expect((await getResult(id, u.id)).attempt.cameraOff).toBe(true);
+});

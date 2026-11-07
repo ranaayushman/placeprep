@@ -50,6 +50,20 @@
       "when": 1793981824608,
       "tag": "0006_marketing_opt_in",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794038169749,
+      "tag": "0007_mock_camera_off",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794038494372,
+      "tag": "0008_announcements",
+      "breakpoints": true
     }
   ]
 }

@@ -48,3 +48,16 @@ it("seating puzzles have exactly one valid arrangement in the explanation", () =
     expect(q.prompt.split("\n").filter((l) => l.startsWith("•")).length).toBeGreaterThan(0);
   }
 });
+
+it("cryptarithmetic: the solver finds SEND + MORE = MONEY, and every generated answer is the only possible value", async () => {
+  const { solveAddition } = await import("@/lib/questions/puzzle");
+  expect(solveAddition(["SEND", "MORE", "MONEY"])).toEqual([{ D: 7, E: 5, Y: 2, N: 6, R: 8, O: 0, S: 9, M: 1 }]);
+  for (let seed = 1; seed <= 200; seed++) {
+    const q = generate(`z-crypt:${seed}`);
+    const [a, b, c] = q.code!.split("\n").filter((l) => /[A-Z]/.test(l)).map((l) => l.replace(/[^A-Z]/g, ""));
+    const target = /value of ([A-Z])/.exec(q.prompt)![1];
+    const given = Object.fromEntries([...q.prompt.matchAll(/([A-Z]) = (\d)/g)].map((m) => [m[1], Number(m[2])]));
+    const values = new Set(solveAddition([a, b, c], given).map((s) => s[target]));
+    expect([...values], `z-crypt:${seed}`).toEqual([Number(q.options[q.answer])]);
+  }
+});

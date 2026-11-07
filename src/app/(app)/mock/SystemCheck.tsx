@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 type Check = { label: string; ok: boolean | null; hint: string };
 
 /** Pre-exam checks, like the "system compatibility" step on assessment platforms. */
-export function SystemCheck({ onReady }: { onReady: (ready: boolean) => void }) {
+export function SystemCheck({ onReady, camera }: { onReady: (ready: boolean) => void; camera: boolean }) {
   const [checks, setChecks] = useState<Check[]>([]);
   const [fullscreen, setFullscreen] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
@@ -48,7 +48,8 @@ export function SystemCheck({ onReady }: { onReady: (ready: boolean) => void }) 
     };
   }, []);
 
-  const ready = checks.every((check) => check.ok === true) && fullscreenSupported && fullscreen;
+  const shown = camera ? checks : checks.filter((check) => check.label !== "Camera");
+  const ready = shown.every((check) => check.ok === true) && fullscreenSupported && fullscreen;
   useEffect(() => {
     onReady(ready);
   }, [onReady, ready]);
@@ -71,7 +72,7 @@ export function SystemCheck({ onReady }: { onReady: (ready: boolean) => void }) 
         </button>
       </div>
       <ul className="mt-3 space-y-2 text-sm">
-        {checks.map((c) => (
+        {shown.map((c) => (
           <li key={c.label} className="flex items-start gap-2">
             <span className={c.ok === true ? "text-emerald-600" : c.ok === false ? "text-red-600" : "text-amber-600"}>{c.ok === true ? "✓" : c.ok === false ? "✕" : "…"}</span>
             <span>

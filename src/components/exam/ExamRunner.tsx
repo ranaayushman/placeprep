@@ -228,7 +228,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
               Warnings {state.violations}/{state.maxViolations}
             </span>
           )}
-          {isMock && (
+          {isMock && !state.cameraOff && (
               <FaceProctoringTile
                 enabled={!!isMock}
                 onViolation={handleViolation}

@@ -76,6 +76,7 @@ async function insertAttempt(
   title: string,
   exam: ExamId | null,
   sections: { section: SectionId; durationSec: number; refs: string[] }[],
+  cameraOff = false,
 ) {
   const attemptId = crypto.randomUUID();
   // Community refs come from the DB (generate() is synchronous); unpublished ones are dropped.
@@ -123,7 +124,7 @@ async function insertAttempt(
       )
       .limit(1);
     if (open) return open.id;
-    await tx.insert(attempts).values({ id: attemptId, userId, mode, title, exam });
+    await tx.insert(attempts).values({ id: attemptId, userId, mode, title, exam, cameraOff });
     await tx.insert(attemptSections).values(sections.map((s, order) => ({ attemptId, section: s.section, order, durationSec: s.durationSec })));
     await tx.insert(attemptQuestions).values(qRows);
     return null;
@@ -133,7 +134,7 @@ async function insertAttempt(
   return attemptId;
 }
 
-export async function createMock(userId: string, opts: { includeWriting: boolean; exam?: ExamId }) {
+export async function createMock(userId: string, opts: { includeWriting: boolean; exam?: ExamId; cameraOff?: boolean }) {
   const exam = EXAM_BY_ID.get(opts.exam ?? "infosys-se");
   if (!exam) throw new ExamError("Unknown exam");
   const seen = await seenIndices(userId);
@@ -155,7 +156,7 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
     return { section: spec.section, durationSec: spec.minutes * 60, refs };
   });
   const n = (await db.select({ id: attempts.id }).from(attempts).where(and(eq(attempts.userId, userId), eq(attempts.exam, exam.id)))).length;
-  return insertAttempt(userId, "MOCK", `${exam.short} Mock #${n + 1}`, exam.id, plan);
+  return insertAttempt(userId, "MOCK", `${exam.short} Mock #${n + 1}`, exam.id, plan, opts.cameraOff);
 }
 
 export async function createPractice(
@@ -284,6 +285,7 @@ export async function getExamState(attemptId: string, userId: string) {
     mode: attempt.mode,
     title: attempt.title,
     violations: attempt.violations,
+    cameraOff: attempt.cameraOff,
     maxViolations: MAX_VIOLATIONS,
     serverNow: Date.now(),
     sections: sections.map((s) => ({ order: s.order, section: s.section, label: SECTION_LABELS[s.section as SectionId], durationSec: s.durationSec })),

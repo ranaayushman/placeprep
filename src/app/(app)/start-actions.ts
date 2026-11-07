@@ -53,7 +53,7 @@ export async function startMock(form: FormData) {
   guardStart(user.id);
   const examId = String(form.get("exam") ?? "infosys-se");
   if (!EXAM_BY_ID.has(examId)) redirect("/dashboard");
-  const id = await createMock(user.id, { exam: examId as ExamId, includeWriting: form.get("writing") === "on" });
+  const id = await createMock(user.id, { exam: examId as ExamId, includeWriting: form.get("writing") === "on", cameraOff: form.get("camera") !== "on" });
   redirect(`/attempt/${id}`);
 }
 

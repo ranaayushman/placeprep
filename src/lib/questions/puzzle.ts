@@ -114,7 +114,96 @@ function symbolEquations(seed: number): Question {
   });
 }
 
+// No I, O, L, Z, S: they look like digits.
+const CRYPT_LETTERS = "ABCDEFGHKMNPRTUWXY".split("");
+
+/** Every assignment of distinct digits (no leading zero) that makes a + b = c true. */
+export function solveAddition(words: [string, string, string], fixed: Record<string, number> = {}) {
+  const [a, b, c] = words;
+  const cols = c.length;
+  // Letters ordered by rightmost column, so each column is checked as soon as its letters are set.
+  const order: string[] = [];
+  const doneAt: number[] = [];
+  for (let i = 0; i < cols; i++) {
+    for (const w of words) {
+      const ch = w[w.length - 1 - i];
+      if (ch && !order.includes(ch)) order.push(ch);
+    }
+    doneAt[i] = order.length;
+  }
+  const leading = new Set(words.map((w) => w[0]));
+  const val: Record<string, number> = {};
+  const used = new Set<number>();
+  const tail = (w: string, k: number) => [...w.slice(-k)].reduce((n, ch) => n * 10 + val[ch], 0);
+  const out: Record<string, number>[] = [];
+  const go = (idx: number) => {
+    for (let i = 0; i < cols; i++) {
+      if (doneAt[i] !== idx) continue;
+      const m = 10 ** (i + 1);
+      if ((tail(a, i + 1) + tail(b, i + 1)) % m !== tail(c, i + 1) % m) return;
+    }
+    if (idx === order.length) {
+      if (tail(a, a.length) + tail(b, b.length) === tail(c, c.length)) out.push({ ...val });
+      return;
+    }
+    const ch = order[idx];
+    for (let d = 0; d <= 9; d++) {
+      if ((ch in fixed && fixed[ch] !== d) || used.has(d) || (d === 0 && leading.has(ch))) continue;
+      val[ch] = d;
+      used.add(d);
+      go(idx + 1);
+      used.delete(d);
+      delete val[ch];
+    }
+  };
+  go(0);
+  return out;
+}
+
+/** Letter-sum (cryptarithmetic) puzzles like SEND + MORE = MONEY, a frequently reported Infosys topic. */
+function cryptarithm(seed: number): Question {
+  const r = rng(seed);
+  const a = r.int(100, 999);
+  const b = r.int(100, 999);
+  const sum = a + b;
+  const digits = [...new Set(`${a}${b}${sum}`)];
+  const letters = r.shuffle(CRYPT_LETTERS).slice(0, digits.length);
+  const letterOf = Object.fromEntries(digits.map((d, i) => [d, letters[i]]));
+  const word = (n: number) => [...`${n}`].map((d) => letterOf[d]).join("");
+  const words: [string, string, string] = [word(a), word(b), word(sum)];
+  const truth: Record<string, number> = Object.fromEntries(digits.map((d) => [letterOf[d], Number(d)]));
+  const target = r.pick(letters);
+
+  // Reveal other letters until the asked letter has exactly one possible value. Some letters can
+  // never be pinned down (a column like G + 0 = G), and more than 3 hints is plain arithmetic:
+  // both cases try another sum.
+  const given: Record<string, number> = {};
+  const hidden = r.shuffle(letters.filter((l) => l !== target));
+  while (new Set(solveAddition(words, given).map((s) => s[target])).size > 1) {
+    if (hidden.length === 0 || Object.keys(given).length === 3) return cryptarithm(seed + 7919);
+    const l = hidden.pop()!;
+    given[l] = truth[l];
+  }
+
+  const w = words[2].length + 2;
+  const code = [`  ${words[0]}`.padStart(w), `+ ${words[1]}`.padStart(w), "-".repeat(w), words[2].padStart(w)].join("\n");
+  const hints = Object.entries(given).map(([l, d]) => `${l} = ${d}`);
+  const ans = truth[target];
+  const taken = new Set([ans, ...Object.values(given)]);
+  const carry = words[2].length > words[0].length ? `The sum has one more digit than the numbers being added, so its first letter is the carry: ${words[2][0]} = 1. ` : "";
+  return mcq(r, {
+    prompt: `Each letter stands for a different digit (0–9), and no number starts with 0.${hints.length ? ` Given: ${hints.join(", ")}.` : ""}\nWhat is the value of ${target}?`,
+    code,
+    correct: `${ans}`,
+    // Only digits not already used by a hint, so options can't be ruled out without solving.
+    distractors: r.shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => !taken.has(d))).map(String),
+    explanation: `${carry}Work column by column from the right, carrying 1 whenever a column adds up to 10 or more. One assignment that fits is ${letters.map((l) => `${l} = ${truth[l]}`).join(", ")}, i.e. ${a} + ${b} = ${sum}, and every assignment that fits gives ${target} = ${ans}.`,
+  });
+}
+
 export const puzzleTopics: Topic[] = [
+  // weight 3 = "FREQUENT" badge: cryptarithmetic shows up often in Infosys puzzle questions.
+  { id: "z-crypt", section: "puzzle", label: "Cryptarithmetic", weight: 3, targetSec: 180, generate: cryptarithm },
   { id: "z-rowrule", section: "puzzle", label: "Grid Row Rules", weight: 3, targetSec: 150, generate: rowRule },
   { id: "z-magic", section: "puzzle", label: "Magic Squares", weight: 2, targetSec: 150, generate: magicSquare },
   { id: "z-pyramid", section: "puzzle", label: "Number Pyramids", weight: 2, targetSec: 150, generate: pyramid },

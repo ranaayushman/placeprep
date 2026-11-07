@@ -1,0 +1,1 @@
+ALTER TABLE "attempts" ADD COLUMN "camera_off" boolean DEFAULT false NOT NULL;

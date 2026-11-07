@@ -16,12 +16,24 @@ export function StartMockForm({
   minutes: number;
 }) {
   const [ready, setReady] = useState(false);
+  const [camera, setCamera] = useState(true);
 
   return (
     <>
-      <SystemCheck onReady={setReady} />
+      <SystemCheck onReady={setReady} camera={camera} />
       <form action={startMock} className="card flex flex-wrap items-center justify-between gap-4">
         <input type="hidden" name="exam" value={examId} />
+        <label className="flex w-full items-start gap-2 text-sm">
+          <input type="checkbox" name="camera" checked={camera} onChange={(e) => setCamera(e.target.checked)} className="mt-0.5" />
+          <span>
+            <span className="font-medium">Camera proctoring</span>
+            <span className="block text-slate-500">
+              {camera
+                ? "Your camera checks for your face and where you look (nothing is recorded or uploaded)."
+                : "Off: no camera checks. Full screen and tab-switch warnings still apply, and your result is marked “camera off”."}
+            </span>
+          </span>
+        </label>
         {hasWriting ? (
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="writing" defaultChecked /> Include the writing test (essay, 20 min)

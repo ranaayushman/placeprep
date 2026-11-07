@@ -120,7 +120,7 @@ export default async function AdminUserDetail({ params, searchParams }: { params
                     <td className="py-2 text-slate-500">{fmtDateTime(a.startedAt)}</td>
                     <td className="py-2 tabular-nums">{a.status === "SUBMITTED" ? `${a.score}/${a.max_score}` : <span className="text-amber-600">in progress</span>}</td>
                     <td className={`py-2 text-right tabular-nums ${a.violations ? "font-semibold text-red-600" : "text-slate-400"}`}>
-                      {a.violations}{a.auto_submitted ? " · auto" : ""}
+                      {a.violations}{a.auto_submitted ? " · auto" : ""}{a.camera_off ? " · camera off" : ""}
                     </td>
                   </tr>
                 ))}

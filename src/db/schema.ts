@@ -105,6 +105,8 @@ export const attempts = pgTable(
     /** Counter only; the individual violations live in `events` (type = "violation"). */
     violations: integer("violations").notNull().default(0),
     autoSubmitted: boolean("auto_submitted").notNull().default(false),
+    /** MOCK only: the student turned camera proctoring off in the system check. */
+    cameraOff: boolean("camera_off").notNull().default(false),
     score: integer("score"),
     maxScore: integer("max_score"),
     startedAt: now("started_at"),
@@ -242,6 +244,15 @@ export const questionReports = pgTable(
 );
 
 export type User = typeof users.$inferSelect;
+/** In-product updates posted by admins, shown to every student under the navbar bell. */
+export const announcements = pgTable("announcements", {
+  id: id(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  authorId: text("author_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: now("created_at"),
+});
+
 export type CommunityQuestion = typeof communityQuestions.$inferSelect;
 export type Attempt = typeof attempts.$inferSelect;
 export type AttemptSection = typeof attemptSections.$inferSelect;

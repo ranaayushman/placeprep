@@ -3,6 +3,8 @@ import { Logo } from "./Logo";
 import { CookieSettingsButton } from "./CookieConsent";
 import { logout } from "@/app/(auth)/actions";
 import type { SafeUser } from "@/lib/auth";
+import type { Announcement } from "@/lib/announcements";
+import { NotificationBell } from "./NotificationBell";
 
 const NAV = [
   { href: "/dashboard", label: "Home" },
@@ -12,7 +14,7 @@ const NAV = [
   { href: "/community", label: "Community" },
 ];
 
-export function AppShell({ user, children }: { user: SafeUser; children: React.ReactNode }) {
+export function AppShell({ user, updates, children }: { user: SafeUser; updates: Announcement[]; children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
       <header className="sticky top-0 z-10 border-b border-deep/10 bg-white/90 backdrop-blur">
@@ -25,10 +27,13 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
               </Link>
             ))}
           </nav>
-          <form action={logout} className="flex items-center gap-3">
-            <span className="hidden text-sm text-muted md:inline">{user.name}</span>
-            <button className="text-sm font-medium text-muted hover:text-deep">Log out</button>
-          </form>
+          <div className="flex items-center gap-3">
+            <NotificationBell items={updates} />
+            <form action={logout} className="flex items-center gap-3">
+              <span className="hidden text-sm text-muted md:inline">{user.name}</span>
+              <button className="text-sm font-medium text-muted hover:text-deep">Log out</button>
+            </form>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl flex-1 px-4 py-8 w-full">{children}</main>

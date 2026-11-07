@@ -51,7 +51,7 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
         </div>
         <div className="text-right">
           <p className="text-4xl font-bold tabular-nums">{attempt.score}<span className="text-xl text-slate-400">/{attempt.maxScore}</span></p>
-          <p className="text-sm text-slate-500">{pct(attempt.maxScore ? (attempt.score ?? 0) / attempt.maxScore : null)} correct{attempt.mode === "MOCK" ? ` · ${attempt.violations} warnings` : ""}</p>
+          <p className="text-sm text-slate-500">{pct(attempt.maxScore ? (attempt.score ?? 0) / attempt.maxScore : null)} correct{attempt.mode === "MOCK" ? ` · ${attempt.violations} warnings${attempt.cameraOff ? " · camera off" : ""}` : ""}</p>
         </div>
       </div>
 

@@ -134,8 +134,8 @@ export async function userDetail(userId: string) {
   if (!user) return null;
 
   const [attemptRows, eventRows, actionRows, ipRows] = await Promise.all([
-    db.execute<{ id: string; mode: string; title: string; status: string; score: number | null; max_score: number | null; violations: number; auto_submitted: boolean; started_at: number; submitted_at: number | null }>(sql`
-      SELECT id, mode, title, status, score, max_score, violations, auto_submitted, started_at, submitted_at
+    db.execute<{ id: string; mode: string; title: string; status: string; score: number | null; max_score: number | null; violations: number; auto_submitted: boolean; camera_off: boolean; started_at: number; submitted_at: number | null }>(sql`
+      SELECT id, mode, title, status, score, max_score, violations, auto_submitted, camera_off, started_at, submitted_at
       FROM attempts WHERE user_id = ${userId} ORDER BY started_at DESC LIMIT 50`),
     db.execute<{ id: string; type: string; meta: string | null; ip: string | null; user_agent: string | null; created_at: number; attempt_id: string | null }>(sql`
       SELECT id, type, meta, ip, user_agent, created_at, attempt_id
