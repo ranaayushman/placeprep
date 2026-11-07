@@ -4,6 +4,7 @@ import { requestInfo } from "./request-info";
 
 export type EventType =
   | "register"
+  | "email_verified"
   | "login"
   | "login_failed"
   | "login_blocked"

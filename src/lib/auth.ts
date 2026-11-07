@@ -59,7 +59,7 @@ export async function revokeAllSessions(userId: string) {
   await db.delete(sessions).where(eq(sessions.userId, userId));
 }
 
-export type SafeUser = Pick<User, "id" | "email" | "name" | "role" | "onboardedAt">;
+export type SafeUser = Pick<User, "id" | "email" | "name" | "role" | "onboardedAt" | "emailVerifiedAt">;
 
 /**
  * Returns the logged-in user or null. Validates the session (and that the user is not blocked)
@@ -70,7 +70,7 @@ export const getCurrentUser = cache(async (): Promise<SafeUser | null> => {
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const rows = await db
-    .select({ id: users.id, email: users.email, name: users.name, role: users.role, onboardedAt: users.onboardedAt, lastSeenAt: users.lastSeenAt })
+    .select({ id: users.id, email: users.email, name: users.name, role: users.role, onboardedAt: users.onboardedAt, emailVerifiedAt: users.emailVerifiedAt, lastSeenAt: users.lastSeenAt })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(and(eq(sessions.tokenHash, hashToken(token)), gt(sessions.expiresAt, new Date()), isNull(users.blockedAt)))
@@ -86,18 +86,20 @@ export const getCurrentUser = cache(async (): Promise<SafeUser | null> => {
       .set({ lastSeenAt: new Date() })
       .where(and(eq(users.id, row.id), or(isNull(users.lastSeenAt), lt(users.lastSeenAt, cutoff))));
   }
-  return { id: row.id, email: row.email, name: row.name, role: row.role, onboardedAt: row.onboardedAt };
+  return { id: row.id, email: row.email, name: row.name, role: row.role, onboardedAt: row.onboardedAt, emailVerifiedAt: row.emailVerifiedAt };
 });
 
-/** For pages: redirects to /login when not signed in. */
+/** For pages and actions: redirects to /login when not signed in, and to /verify-email until the email is verified. */
 export async function requireUser(): Promise<SafeUser> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.emailVerifiedAt) redirect("/verify-email");
   return user;
 }
 
 /** Where a freshly signed-in user should land. */
-export const homeFor = (u: Pick<User, "role" | "onboardedAt">) => (u.role === "ADMIN" ? "/admin" : u.onboardedAt ? "/dashboard" : "/onboarding");
+export const homeFor = (u: Pick<User, "role" | "onboardedAt" | "emailVerifiedAt">) =>
+  !u.emailVerifiedAt ? "/verify-email" : u.role === "ADMIN" ? "/admin" : u.onboardedAt ? "/dashboard" : "/onboarding";
 
 /** For admin pages and actions. Non-admins get a 404 so the panel's existence isn't revealed. */
 export async function requireAdmin(): Promise<SafeUser> {

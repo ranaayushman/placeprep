@@ -174,7 +174,7 @@ export async function blockedList() {
   return rows.map((r) => ({ ...r, blockedAt: new Date(n(r.blocked_at)) }));
 }
 
-export const EVENT_TYPES = ["login", "login_failed", "login_blocked", "register", "logout", "mock_started", "mock_submitted", "practice_started", "violation", "rate_limited", "question_submitted", "question_flagged", "question_approved", "question_rejected", "question_reported"] as const;
+export const EVENT_TYPES = ["login", "login_failed", "login_blocked", "register", "email_verified", "logout", "mock_started", "mock_submitted", "practice_started", "violation", "rate_limited", "question_submitted", "question_flagged", "question_approved", "question_rejected", "question_reported"] as const;
 
 export async function activityFeed({ type, page = 1 }: { type?: string; page?: number }) {
   const where = type && (EVENT_TYPES as readonly string[]).includes(type) ? sql`e.type = ${type}` : sql`1 = 1`;

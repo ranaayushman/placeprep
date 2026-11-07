@@ -50,11 +50,22 @@ export function toEmailHtml(body: string) {
   return `<html><body style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#1e293b">${paras.join("")}<p style="font-size:12px;color:#94a3b8"><a href="{{ unsubscribe }}">Unsubscribe</a></p></body></html>`;
 }
 
-/** Creates a campaign for the whole list and sends it immediately. */
-export async function sendCampaign(subject: string, body: string) {
+async function activeSender() {
   const { senders } = await brevo<{ senders: { name: string; email: string; active: boolean }[] }>("senders");
   const sender = senders.find((s) => s.active);
   if (!sender) throw new Error("No verified sender in Brevo. Add one under Senders, Domains & Dedicated IPs.");
+  return sender;
+}
+
+/** One transactional email (e.g. a sign-up code) to one person. Throws if Brevo refuses it. */
+export async function sendEmail(to: { email: string; name: string }, subject: string, html: string) {
+  const sender = await activeSender();
+  await brevo("smtp/email", { method: "POST", body: { sender: { name: sender.name, email: sender.email }, to: [to], subject, htmlContent: html } });
+}
+
+/** Creates a campaign for the whole list and sends it immediately. */
+export async function sendCampaign(subject: string, body: string) {
+  const sender = await activeSender();
   const { id } = await brevo<{ id: number }>("emailCampaigns", {
     method: "POST",
     body: {

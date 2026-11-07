@@ -101,7 +101,7 @@ export default function PrivacyPolicyPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <h3 className="font-semibold text-deep">B. Assessment Attempts &amp; Analytics Data</h3>
                 <p className="mt-1 text-sm text-slate-600 leading-relaxed">
-                  When you complete mock exams and topic drills, we store your question selections, time spent per question, marked reviews, sectional scores, and topic mastery history. This data powers your personal recommendations dashboard so you know exactly which weak areas to drill.
+                  When you complete mock exams and topic drills, we store your question selections, time spent per question, marked reviews, sectional scores, and topic mastery history. This data powers your personal recommendations dashboard so you know exactly which weak areas to drill. If you send optional feedback after a test, we store what you write with your account and that test, and use it to improve PlacePrep.
                 </p>
               </div>
 

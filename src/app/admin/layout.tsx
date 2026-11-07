@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/activity", label: "Activity" },
   { href: "/admin/blocked", label: "Block list" },
   { href: "/admin/community", label: "Community" },
+  { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/campaigns", label: "Campaigns" },
   { href: "/admin/announcements", label: "Updates" },
 ];

@@ -8,6 +8,8 @@ import { OPTION_LETTERS, QuestionBody } from "@/components/QuestionBody";
 import { ReportProblem } from "@/components/ReportProblem";
 import { ProgressBar, pct } from "@/components/charts";
 import { startPractice } from "../../start-actions";
+import { hasFeedback } from "@/lib/feedback";
+import { FeedbackForm } from "./FeedbackForm";
 
 export default async function ResultsPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ auto?: string; filter?: string }> }) {
   const user = await requireUser();
@@ -88,6 +90,8 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
           </form>
         </div>
       )}
+
+      <FeedbackForm attemptId={attempt.id} sent={await hasFeedback(attempt.id)} />
 
       <section>
         <div className="mb-3 flex items-center justify-between">

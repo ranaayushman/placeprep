@@ -37,6 +37,11 @@ export const users = pgTable(
     blockedBy: text("blocked_by"),
     /** Updated at most once a minute per user (see auth.ts), used for "active now" in the admin panel. */
     lastSeenAt: ms("last_seen_at"),
+    /**
+     * Null = signed up with email + password and hasn't entered the emailed code yet (see lib/otp.ts).
+     * Defaults to now: Google accounts are verified by Google, and existing accounts were grandfathered in.
+     */
+    emailVerifiedAt: ms("email_verified_at").default(sql`(extract(epoch from now()) * 1000)::bigint`),
     /** When the student ticked "send me emails" (proof of consent). Null = never opted in. */
     marketingOptInAt: ms("marketing_opt_in_at"),
     createdAt: now("created_at"),
@@ -89,6 +94,19 @@ export const userDeletions = pgTable("user_deletions", {
   adminId: text("admin_id").notNull(),
   reason: text("reason").notNull(),
   createdAt: now("created_at"),
+});
+
+/** The pending sign-up code for a user (one at a time). Only a hash of the code is stored. */
+export const emailOtps = pgTable("email_otps", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: ms("expires_at").notNull(),
+  /** Wrong guesses against this code. */
+  attempts: integer("attempts").notNull().default(0),
+  sentAt: ms("sent_at").notNull(),
+  /** Emails sent in the current hour window, which starts at windowStart. */
+  sends: integer("sends").notNull().default(1),
+  windowStart: ms("window_start").notNull(),
 });
 
 /** The cookie holds a random token; only its SHA-256 hash is stored here. */
@@ -260,6 +278,21 @@ export const questionReports = pgTable(
 );
 
 export type User = typeof users.$inferSelect;
+/** What a student wrote after finishing a test: one per attempt, all three parts optional but not all empty. */
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: id(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    attemptId: text("attempt_id").notNull().references(() => attempts.id, { onDelete: "cascade" }),
+    product: text("product"),
+    questions: text("questions"),
+    suggestions: text("suggestions"),
+    createdAt: now("created_at"),
+  },
+  (t) => [uniqueIndex("feedback_attempt_uq").on(t.attemptId), index("feedback_created_idx").on(t.createdAt)],
+);
+
 /** In-product updates posted by admins, shown to every student under the navbar bell. */
 export const announcements = pgTable("announcements", {
   id: id(),

@@ -32,8 +32,11 @@ export async function GET(req: Request) {
       redirect("/login?error=blocked");
     }
     // Same verified email as an existing password account: link it to this Google account.
+    // An unverified password account was never proven to belong to this person: Google proves the email
+    // now, and the old password is dropped so whoever set it can't sign in to the linked account.
     const patch = {
       ...(user.googleId ? {} : { googleId: profile.sub }),
+      ...(user.emailVerifiedAt ? {} : { emailVerifiedAt: new Date(), passwordHash: null }),
       ...(user.role !== "ADMIN" && isConfiguredAdmin(profile.email) ? { role: "ADMIN" as const } : {}),
     };
     if (Object.keys(patch).length) [user] = await db.update(users).set(patch).where(eq(users.id, user.id)).returning();
