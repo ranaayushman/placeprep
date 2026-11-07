@@ -75,7 +75,7 @@ export default function TermsPage() {
             <h2 className="text-2xl font-bold text-deep">2. Educational &amp; Free Service Nature</h2>
             <p className="leading-relaxed text-slate-700">
               PlacePrep is designed solely as an educational preparation and diagnostic aid for campus placement drives and aptitude examinations.
-              Access to full mock tests, sectional drills, personal analytics, and community submissions is provided completely free of charge, with no subscription tiers or paywalls.
+              Access to full mock tests, sectional drills, personal analytics, and community submissions is provided completely free of charge, with no subscription tiers or paywalls. To cover server costs we may show advertising outside exams or accept voluntary donations; donations are optional and never unlock features.
             </p>
           </section>
 
@@ -83,7 +83,7 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-2xl font-bold text-deep">3. User Accounts &amp; Security</h2>
             <ul className="list-inside list-disc space-y-2 text-sm text-slate-700">
-              <li>You must provide accurate and verifiable information during registration.</li>
+              <li>You must be at least 18 years old to create an account, and you must provide accurate information during registration.</li>
               <li>You are solely responsible for maintaining the confidentiality of your login credentials and session tokens.</li>
               <li>You agree not to share your account, sell access, or permit any third party to access the platform using your credentials.</li>
               <li>We reserve the right to suspend or terminate accounts that engage in fraudulent behavior, automated botting, or abuse of platform resources.</li>
@@ -107,7 +107,7 @@ export default function TermsPage() {
                 <strong>Integrity Warnings:</strong> Leaving full-screen mode, switching browser tabs, blurring the window, or attempting to open developer tools is logged as a violation. Accumulating maximum allowed warnings triggers an automatic exam submission.
               </li>
               <li>
-                <strong>Optional Local Camera Proctoring:</strong> Web browser camera access is used for on-device gaze and presence detection via MediaPipe FaceMesh. You acknowledge that camera data is processed 100% locally in your browser and is never recorded or transmitted to our servers.
+                <strong>Optional Local Camera Proctoring:</strong> Web browser camera access is used for on-device gaze and presence detection via MediaPipe FaceMesh. You can switch it off before each mock. Camera events (face not visible, looking away, another face) are counted as camera alerts shown on your result; they never end a test. You acknowledge that camera data is processed 100% locally in your browser and is never recorded or transmitted to our servers.
               </li>
             </ul>
           </section>
@@ -119,7 +119,7 @@ export default function TermsPage() {
               PlacePrep allows eligible students to contribute placement practice questions. By submitting content through the Community module, you represent and warrant that:
             </p>
             <ul className="list-inside list-disc space-y-2 text-sm text-slate-700">
-              <li>The questions, explanations, and code snippets are written in your own words, derived from public educational concepts, or based on personal recollection of placement drives.</li>
+              <li>The questions, explanations, and code snippets are original, written in your own words, and in the style of placement tests, or derived from public educational concepts. You do not submit questions from an actual assessment you took, even from memory, because candidates are often bound to keep them confidential.</li>
               <li>You do not submit confidential proprietary assessment materials, leaked copyrighted question banks, or trade secrets belonging to any assessment vendor or corporate organization.</li>
               <li>You grant PlacePrep a perpetual, worldwide, irrevocable, royalty-free, non-exclusive license to use, display, format, distribute, and include your submitted question in our practice banks for the benefit of all students.</li>
               <li>PlacePrep administrators reserve the right to review, edit, reject, or remove any community submission that fails our similarity checks or quality guidelines.</li>
@@ -173,14 +173,22 @@ export default function TermsPage() {
             </p>
           </section>
 
-          {/* Section 10: Modifications and Contact */}
+          {/* Section 10: Governing Law */}
+          <section className="space-y-3">
+            <h2 className="text-2xl font-bold text-deep">10. Governing Law</h2>
+            <p className="leading-relaxed text-slate-700">
+              These Terms are governed by the laws of India. Any dispute arising from them or from your use of PlacePrep is subject to the exclusive jurisdiction of the courts at Dhanbad, Jharkhand.
+            </p>
+          </section>
+
+          {/* Section 11: Modifications and Contact */}
           <section className="space-y-3 border-t border-deep/10 pt-8">
-            <h2 className="text-2xl font-bold text-deep">10. Modifications &amp; Contact</h2>
+            <h2 className="text-2xl font-bold text-deep">11. Modifications &amp; Contact</h2>
             <p className="leading-relaxed text-slate-700">
               We reserve the right to revise these Terms at any time. Continued use of PlacePrep following the posting of revised Terms signifies your acceptance.
             </p>
             <p className="leading-relaxed text-slate-700">
-              If you have any questions concerning these Terms, please contact us at{" "}
+              To report content on PlacePrep that infringes your rights or breaks these Terms, email us and we will respond within 15 days. If you have any questions concerning these Terms, please contact us at{" "}
               <a href="mailto:support@placeprep.me" className="font-medium text-brand underline">
                 support@placeprep.me
               </a>

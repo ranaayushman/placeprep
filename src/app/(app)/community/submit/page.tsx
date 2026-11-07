@@ -19,7 +19,7 @@ export default async function SubmitPage() {
         <Link href="/community" className="text-sm text-slate-500 hover:text-slate-900">← My submissions</Link>
         <h1 className="mt-2 text-2xl font-bold">Submit a question</h1>
         <p className="mt-1 text-slate-500">
-          Remember a question from your drive, or wrote a good one? Every question is checked against the ones we already have and
+          Wrote a good question in the style of placement tests? Every question is checked against the ones we already have and
           reviewed by an admin before other students see it.
         </p>
       </div>
@@ -28,7 +28,7 @@ export default async function SubmitPage() {
         <p className="font-semibold">Before you submit</p>
         <ul className="mt-1 list-disc space-y-1 pl-5">
           <li>Write it in your own words. Don&apos;t copy from prep websites, books or paid courses.</li>
-          <li>For a real test question (PYQ), write what you remember, not a copy of someone else&apos;s write-up.</li>
+          <li>Don&apos;t submit questions from a real test you took. Companies often require candidates to keep them confidential.</li>
           <li>We remove reported or copied content quickly.</li>
         </ul>
       </aside>

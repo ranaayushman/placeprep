@@ -10,6 +10,8 @@ export type SubmitState = { error?: string; values?: Record<string, string> } | 
 export async function submitAction(_: SubmitState, form: FormData): Promise<SubmitState> {
   const user = await requireUser();
   const v = Object.fromEntries([...form.entries()].map(([k, x]) => [k, String(x)]));
+  // Recalled real-test questions are no longer accepted (candidates are often bound not to share them).
+  if (v.sourceType === "MEMORY_BASED_PYQ") return { error: "We only accept original questions written in your own words.", values: v };
   let status: string;
   try {
     ({ status } = await submitQuestion(user.id, {

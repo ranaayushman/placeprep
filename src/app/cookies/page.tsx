@@ -14,36 +14,29 @@ const COOKIE_INVENTORY = [
     name: "sid",
     provider: "PlacePrep",
     category: "Strictly Necessary",
-    purpose: "Stores your encrypted authentication session token so you stay logged in while practising or taking timed mocks.",
+    purpose: "Stores a random sign-in token so you stay logged in while practising or taking timed mocks.",
     expiry: "30 days (or until logout)",
   },
   {
-    name: "g_state",
-    provider: "Google OAuth / PlacePrep",
+    name: "g_oauth",
+    provider: "PlacePrep",
     category: "Strictly Necessary",
-    purpose: "Temporary anti-CSRF security token used exclusively during the Google Sign-In redirect exchange.",
+    purpose: "Temporary security token that protects the Google Sign-In redirect. Only set while you sign in with Google.",
     expiry: "10 minutes",
   },
   {
     name: "placeprep_cookie_consent",
     provider: "PlacePrep",
     category: "Strictly Necessary",
-    purpose: "Records your consent choices for necessary, functional, and performance cookies so we remember your preferences.",
+    purpose: "Records your cookie consent choices so we remember your preferences.",
     expiry: "1 year",
   },
   {
-    name: "placeprep_prefs",
+    name: "pp-updates-seen",
     provider: "PlacePrep",
     category: "Preferences & Functionality",
-    purpose: "Stores personal exam runner preferences (such as formula reference drawers and question layout options).",
-    expiry: "1 year (local storage / cookie)",
-  },
-  {
-    name: "placeprep_perf",
-    provider: "PlacePrep",
-    category: "Analytics & Performance",
-    purpose: "Anonymous performance diagnostics to detect slow question loading and database latency.",
-    expiry: "1 year",
+    purpose: "Local storage, not a cookie: remembers which product updates you have already seen, so the bell's dot hides.",
+    expiry: "Until you clear site data",
   },
   {
     name: "Advertising cookies (future)",
@@ -168,7 +161,7 @@ export default function CookiePolicyPage() {
                   </span>
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                  Allows our platform to remember your personalized settings—like expanded question passage drawers, custom practice filter selections, or notification preferences.
+                  Remembers small settings on your device, such as which product updates you have already seen.
                 </p>
               </div>
 
@@ -180,7 +173,7 @@ export default function CookiePolicyPage() {
                   </span>
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                  Measures site performance, server response latency, and helps detect client errors or broken questions so our volunteer team can patch bugs rapidly.
+                  Not currently used. If we add performance measurement, it will be listed below and only run with your consent.
                 </p>
               </div>
             </div>

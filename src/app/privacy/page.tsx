@@ -94,7 +94,7 @@ export default function PrivacyPolicyPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <h3 className="font-semibold text-deep">A. Account Credentials &amp; Profile</h3>
                 <p className="mt-1 text-sm text-slate-600 leading-relaxed">
-                  When you sign up, we collect your full name, email address, and a secure bcrypt-hashed password (or your verified Google email and display name if you authenticate via Google OAuth). During onboarding, you may optionally share your college name, graduation year, and degree branch to help calibrate target percentiles.
+                  When you sign up, we collect your full name, email address, and a secure bcrypt-hashed password (or your verified Google email and display name if you authenticate via Google OAuth). During onboarding, you may optionally share your college name, graduation year, and degree branch to personalise your dashboard. If you tick &ldquo;Email me placement tips&rdquo; during onboarding, we also record when you gave that consent.
                 </p>
               </div>
 
@@ -108,7 +108,7 @@ export default function PrivacyPolicyPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <h3 className="font-semibold text-deep">C. Community Question Submissions</h3>
                 <p className="mt-1 text-sm text-slate-600 leading-relaxed">
-                  If you contribute memory-based or original placement questions via our Community module, we store the question text, options, answer key, explanation, and an author identifier to manage moderation, report queues, and contributor rankings.
+                  If you contribute original practice questions via our Community module, we store the question text, options, answer key, explanation, and an author identifier to manage moderation and report queues. Other students only see your first name and last initial.
                 </p>
               </div>
 
@@ -148,7 +148,7 @@ export default function PrivacyPolicyPage() {
                   <strong>Volatile Memory Only:</strong> Video frames exist in temporary GPU/RAM memory for landmark estimation and are immediately discarded on the next render frame.
                 </li>
                 <li>
-                  <strong>What Reaches Our Server:</strong> Only high-level event counters (e.g. &ldquo;no face detected for &gt; 3 seconds&rdquo;, &ldquo;multiple faces&rdquo;, or &ldquo;tab switch&rdquo;) are sent to your attempt log, mirroring how corporate proctoring counts warning limits.
+                  <strong>What Reaches Our Server:</strong> Only high-level event counters (e.g. &ldquo;no face detected for &gt; 5 seconds&rdquo;, &ldquo;multiple faces&rdquo;, or &ldquo;tab switch&rdquo;) are sent to your attempt log. Camera events are shown to you as camera alerts and never end a test. Camera proctoring is optional and can be switched off before each mock.
                 </li>
               </ul>
             </div>
@@ -162,7 +162,8 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className="list-inside list-disc space-y-2 text-sm text-slate-700">
               <li>Providing and managing your user account and authentication sessions.</li>
-              <li>Scoring tests and rendering performance percentiles and topic breakdowns.</li>
+              <li>Scoring tests and showing your scores and topic breakdowns.</li>
+              <li>Sending occasional placement tips and product news by email, only if you opted in. Every email has an unsubscribe link.</li>
               <li>Generating recommendations to help you focus on your lowest-accuracy topics.</li>
               <li>Enforcing test integrity rules during simulated mock exams.</li>
               <li>Detecting platform abuse, automated bots, and unauthorized access attempts.</li>
@@ -174,7 +175,7 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-3">
             <h2 className="text-2xl font-bold text-deep">5. Cookies &amp; Local Storage</h2>
             <p className="leading-relaxed text-slate-700">
-              PlacePrep currently uses cookies for authentication sessions, CSRF security, preferences, performance diagnostics, and recording user consent preferences.
+              PlacePrep currently uses three cookies: one that keeps you signed in, one that secures Google sign-in while it is in progress, and one that remembers your cookie consent choice. Your browser&apos;s local storage also remembers which product updates you have already seen.
               We do not currently run advertising cookies or personalized ad tracking. If advertising is introduced, we will identify the provider and cookie purposes, request any required consent before setting non-essential advertising cookies, and provide a way to withdraw that consent. For an itemized list of all cookies and to customize your choices, please review our{" "}
               <Link href="/cookies" className="font-medium text-brand underline">
                 Cookie Policy
@@ -191,16 +192,19 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className="list-inside list-disc space-y-2 text-sm text-slate-700">
               <li>
-                <strong>Supabase (PostgreSQL):</strong> Used as our managed database backend with strict Row Level Security (RLS) policies ensuring students can only read and write their own attempt records.
+                <strong>Supabase (PostgreSQL):</strong> Used as our managed database backend. Access is controlled by our application, which only lets each student read and write their own attempts; Row Level Security blocks Supabase&apos;s public data API entirely.
               </li>
               <li>
                 <strong>Google Identity Services:</strong> Used optionally if you choose to authenticate with Google.
               </li>
               <li>
+                <strong>Brevo:</strong> Sends our marketing emails. Only students who opted in are shared with Brevo, and only their first name and email address.
+              </li>
+              <li>
                 <strong>Advertising providers (future):</strong> We may use a carefully selected advertising provider in limited, non-exam areas to help fund free access. No advertising provider will receive camera frames, face landmarks, answers, or assessment records. The provider and its data practices will be disclosed before activation.
               </li>
               <li>
-                <strong>Encrypted TLS / HTTPS:</strong> Handled by Caddy with automated SSL/TLS certificates and HSTS security headers.
+                <strong>Vercel:</strong> Hosts the website and serves it over encrypted HTTPS (TLS) with HSTS security headers.
               </li>
             </ul>
           </section>
@@ -216,14 +220,14 @@ export default function PrivacyPolicyPage() {
                 <strong>Right to Access:</strong> You can view all your past mock exams, practice sets, and analytics directly from your dashboard.
               </li>
               <li>
-                <strong>Right to Correction:</strong> You can update your profile details anytime.
+                <strong>Right to Correction:</strong> Email us at support@placeprep.me and we will correct your profile details.
               </li>
               <li>
                 <strong>Right to Deletion:</strong> You may request the permanent deletion of your user account, attempt logs, and personal information by emailing us at{" "}
                 <a href="mailto:support@placeprep.me" className="font-medium text-brand underline">
                   support@placeprep.me
                 </a>
-                .
+                . We act on deletion requests within 30 days. Deleting your account removes your attempts, activity logs and community submissions. We keep your data while your account is in use; if you don&apos;t sign in for 5 years, your account and its data are deleted automatically.
               </li>
               <li>
                 <strong>Right to Withdraw Consent:</strong> You can manage or revoke cookie preferences anytime via our{" "}

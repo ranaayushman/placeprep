@@ -161,7 +161,7 @@ export default function Home() {
               <span className="text-sun">drive day.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-white/70">
-              Walk into your placement test already knowing it. Full mocks in the real pattern, unlimited topic drills,
+              Walk into your placement test already knowing it. Full mocks in the reported exam pattern, unlimited topic drills,
               proctoring, and worked explanations for every question — free, forever.
             </p>
             <p className="mt-5 max-w-xl rounded-lg border border-sun/40 bg-sun/10 px-4 py-3 text-sm leading-relaxed text-sun">
@@ -305,7 +305,7 @@ export default function Home() {
                 {
                   n: "01",
                   title: "Share what you remember",
-                  body: "Add an original aptitude question or a memory-based placement question in your own words, with the answer and explanation.",
+                  body: "Add an original aptitude question in the style of placement tests, in your own words, with the answer and explanation.",
                 },
                 {
                   n: "02",

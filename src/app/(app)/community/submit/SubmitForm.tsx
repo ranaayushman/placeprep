@@ -5,7 +5,7 @@ import { submitAction, type SubmitState } from "../actions";
 
 type Section = { id: string; label: string; topics: { id: string; label: string }[] };
 
-const SOURCE_LABELS = { ORIGINAL: "My own question", MEMORY_BASED_PYQ: "From memory of a real test (PYQ)", OTHER: "Other" };
+const SOURCE_LABELS = { ORIGINAL: "My own question", OTHER: "Other (still in my own words)" };
 
 export function SubmitForm({ sections, companies }: { sections: Section[]; companies: readonly string[] }) {
   const [state, action, pending] = useActionState<SubmitState, FormData>(submitAction, undefined);
@@ -82,7 +82,7 @@ export function SubmitForm({ sections, companies }: { sections: Section[]; compa
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium">Where is it from?</span>
-        <select name="sourceType" defaultValue={v.sourceType ?? "MEMORY_BASED_PYQ"} className="input">
+        <select name="sourceType" defaultValue={v.sourceType ?? "ORIGINAL"} className="input">
           {Object.entries(SOURCE_LABELS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
         </select>
       </label>
