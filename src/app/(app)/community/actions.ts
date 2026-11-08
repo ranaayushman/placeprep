@@ -27,7 +27,7 @@ export async function submitAction(_: SubmitState, form: FormData): Promise<Subm
       explanation: v.explanation ?? "",
       sourceType: v.sourceType as never,
       ownWords: (v.ownWords === "on") as true,
-    }));
+    }, user.role !== "STUDENT"));
   } catch (e) {
     if (e instanceof ZodError) return { error: e.issues[0].message, values: v };
     if (e instanceof CommunityError) return { error: e.message, values: v };

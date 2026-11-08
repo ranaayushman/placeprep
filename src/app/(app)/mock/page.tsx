@@ -21,6 +21,9 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
                 {e.company}
               </Link>
             ))}
+            <span className="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-400" title="A Cognizant GenC mock is coming soon">
+              Cognizant · soon
+            </span>
           </nav>
         )}
         <h1 className="text-2xl font-bold">{exam.company} · {exam.name}</h1>
@@ -46,13 +49,14 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
       <div className="card">
         <h2 className="font-semibold">Rules</h2>
         <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-slate-700">
+          <li><b>New questions every attempt.</b> Each mock is a fresh set, and questions you&apos;ve already seen are skipped, so retaking it is never the same paper.</li>
           <li>Each section has its <b>own timer</b>. When it runs out, the section is submitted automatically.</li>
           <li>Once you submit a section you <b>cannot go back</b> to it. Within a section you can move freely.</li>
           <li><b>No negative marking</b> — attempt every question. Every section has its own cut-off.</li>
           <li>The test runs in <b>full screen</b>. Leaving full screen, switching tabs or windows counts as a warning. At {MAX_VIOLATIONS} warnings the test is submitted automatically.</li>
           <li>With camera proctoring on, times your face isn&apos;t visible, you look away, or another face appears are counted as <b>camera alerts</b> and shown on your result. They never end the test, and looking down at rough paper for a few seconds is fine.</li>
           <li>Copy, paste, right-click and developer tools are disabled. Keep rough paper and a pen ready — calculators are not allowed.</li>
-          <li>Closing the tab does not pause the timer. You can resume from the dashboard.</li>
+          <li>Closing the tab does not pause the timer. If you leave the test for more than 3 minutes, it is submitted and scored with the answers you saved.</li>
         </ul>
       </div>
 

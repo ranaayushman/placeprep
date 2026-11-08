@@ -111,7 +111,7 @@ export default function PrivacyPolicyPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <h3 className="font-semibold text-deep">D. Audit &amp; Security Logs</h3>
                 <p className="mt-1 text-sm text-slate-600 leading-relaxed">
-                  We log login timestamps, IP addresses, your browser and device details (user agent), request rates, proctoring warnings for each attempt, and when you were last active, to protect students against brute-force attacks, session hijacking, and server abuse. Administrators can view your activity and assessment data to run the platform and investigate misuse.
+                  We log login timestamps, IP addresses, your browser and device details (user agent), request rates, proctoring warnings for each attempt, and when you were last active, to protect students against brute-force attacks, session hijacking, and server abuse. Administrators can view your activity and assessment data to run the platform and investigate misuse. Moderators, who review community questions, see only those questions, the reports on them, and the name of whoever wrote or reported them.
                 </p>
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { desc } from "drizzle-orm";
 import { announcements, db } from "@/db";
 import { fmtDateTime } from "@/components/admin/when";
@@ -6,6 +7,7 @@ import { deleteAnnouncement, postAnnouncement } from "../actions";
 export const dynamic = "force-dynamic";
 
 export default async function Announcements({ searchParams }: { searchParams: Promise<{ msg?: string }> }) {
+  await requireAdmin(); // the layout also lets moderators in
   const { msg } = await searchParams;
   const rows = await db.select().from(announcements).orderBy(desc(announcements.createdAt)).limit(50);
   return (

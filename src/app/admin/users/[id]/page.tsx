@@ -38,7 +38,7 @@ export default async function AdminUserDetail({ params, searchParams }: { params
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             {user.name}
             {user.blockedAt && <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">BLOCKED</span>}
-            {user.role === "ADMIN" && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">ADMIN</span>}
+            {user.role !== "STUDENT" && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">{user.role}</span>}
           </h1>
           <p className="text-slate-500">{user.email}</p>
           <p className="mt-1 text-sm text-slate-500">
@@ -84,10 +84,15 @@ export default async function AdminUserDetail({ params, searchParams }: { params
               <button className="btn-secondary" disabled={user.sessions === 0}>Sign out everywhere</button>
             </form>
             {!user.blockedAt && (
-              <form action={setRole}>
+              <form action={setRole} className="flex gap-2">
                 <input type="hidden" name="userId" value={user.id} />
-                <input type="hidden" name="role" value={user.role === "ADMIN" ? "STUDENT" : "ADMIN"} />
-                <button className="btn-secondary">{user.role === "ADMIN" ? "Remove admin" : "Make admin"}</button>
+                <label className="sr-only" htmlFor="role">Role</label>
+                <select id="role" name="role" defaultValue={user.role} className="input w-auto">
+                  <option value="STUDENT">Student</option>
+                  <option value="MODERATOR">Moderator (questions only)</option>
+                  <option value="ADMIN">Admin (everything)</option>
+                </select>
+                <button className="btn-secondary">Change role</button>
               </form>
             )}
           </div>
@@ -183,7 +188,7 @@ export default async function AdminUserDetail({ params, searchParams }: { params
             <ul className="mt-2 space-y-2 text-sm">
               {actions.map((a, i) => (
                 <li key={i}>
-                  <b>{a.action.replace("_", " ")}</b> by {a.admin_name}
+                  <b>{a.action.replaceAll("_", " ")}</b> by {a.admin_name}
                   <div className="text-xs text-slate-500">{fmtDateTime(a.createdAt)}{a.reason ? ` — ${a.reason}` : ""}</div>
                 </li>
               ))}

@@ -79,7 +79,7 @@ export async function listUsers({ q = "", filter = "all" as UserFilter, page = 1
       sql`1 = 1`,
       q.trim() ? sql`(lower(u.name) LIKE ${like} OR lower(u.email) LIKE ${like})` : undefined,
       filter === "blocked" ? sql`u.blocked_at IS NOT NULL` : undefined,
-      filter === "admins" ? sql`u.role = 'ADMIN'` : undefined,
+      filter === "admins" ? sql`u.role <> 'STUDENT'` : undefined,
       filter === "active" ? sql`u.last_seen_at >= ${Date.now() - DAY}` : undefined,
       filter === "flagged"
         ? sql`(SELECT COUNT(*) FROM events e WHERE e.user_id = u.id AND e.type = 'violation' AND e.created_at >= ${since7d}) >= ${FLAG_VIOLATIONS_7D}`
@@ -244,7 +244,7 @@ export async function leaderboard(exam?: string): Promise<LeaderRow[]> {
     FROM users u
     LEFT JOIN m ON m.user_id = u.id
     LEFT JOIN p ON p.user_id = u.id
-    WHERE u.role = 'STUDENT' AND (m.user_id IS NOT NULL ${exam ? sql`` : sql`OR p.user_id IS NOT NULL`})
+    WHERE u.role <> 'ADMIN' AND (m.user_id IS NOT NULL ${exam ? sql`` : sql`OR p.user_id IS NOT NULL`})
     ORDER BY m.user_id IS NULL, m.avg_pct DESC NULLS LAST, m.best_pct DESC NULLS LAST, p.answered DESC NULLS LAST, u.name
     LIMIT 500`);
   return rows.map((r) => ({

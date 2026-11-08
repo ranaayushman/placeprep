@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireStaff } from "@/lib/auth";
 import { queue, statusCounts, suspiciousAnswerKeys } from "@/lib/community/service";
 import { SECTION_LABELS, TOPIC_BY_ID, type SectionId } from "@/lib/questions";
 import { ago } from "@/components/admin/when";
@@ -16,6 +17,7 @@ const TABS = [
 ] as const;
 
 export default async function CommunityQueue({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  await requireStaff();
   const wanted = (await searchParams).tab;
   const tab = TABS.find((t) => t.id === wanted) ?? TABS[0];
   const [counts, rows, suspicious] = await Promise.all([statusCounts(), queue(tab.status), suspiciousAnswerKeys()]);

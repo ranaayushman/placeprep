@@ -10,7 +10,7 @@ import { SECTION_LABELS } from "@/lib/questions";
 import { retryMistakes, startPractice } from "../start-actions";
 
 /** Recruiters students ask for most that have no mock yet (see EXAMS in lib/exam/pattern.ts). */
-const UPCOMING_COMPANIES = ["TCS", "Wipro", "Accenture", "Cognizant", "Capgemini"];
+const UPCOMING_COMPANIES = ["TCS", "Wipro", "Accenture", "Capgemini"]; // Cognizant has its own card below
 
 const QUIZ_BTN =
   "inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-deep";
@@ -140,6 +140,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                       <li key={f} className="rounded-full border border-white/15 px-2.5 py-1">{f}</li>
                     ))}
                   </ul>
+                  <p className="mt-4 rounded-lg bg-sun/15 px-3 py-2 text-sm text-sun">
+                    <b>New questions every attempt.</b> Each mock is a fresh set, and questions you&apos;ve already seen are skipped, so retaking it is never the same paper.
+                  </p>
                   {exam.note && <p className="mt-4 rounded-lg bg-white/10 px-3 py-2 text-sm text-white/80">{exam.note}</p>}
                   <div className="mt-6 flex flex-wrap items-center gap-4">
                     <Link href={`/mock?exam=${exam.id}`} className="inline-flex items-center gap-2 rounded-xl bg-sun px-5 py-2.5 font-semibold text-deep transition hover:bg-white">
@@ -150,6 +153,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 </article>
               );
             })}
+            <article className="rounded-2xl border-2 border-dashed border-deep/20 bg-surface p-6">
+              <p className="text-xs font-semibold tracking-wider text-muted uppercase">Cognizant · coming soon</p>
+              <h3 className="mt-1 text-2xl font-bold">GenC (entry-level role)</h3>
+              <p className="mt-1 text-sm text-muted">
+                A full mock in Cognizant&apos;s GenC pattern is on the way. Until then, the quant, reasoning and verbal practice here covers most of what it tests.
+              </p>
+              <span className="mt-4 inline-block rounded-xl bg-canvas-deep px-5 py-2.5 text-sm font-semibold text-muted" aria-disabled="true">Coming soon</span>
+            </article>
           </div>
           <div className="rounded-2xl border border-deep/10 bg-surface p-6">
             <p className="text-xs font-semibold tracking-wider text-muted uppercase">Coming soon</p>

@@ -110,3 +110,13 @@ export async function requireAdmin(): Promise<SafeUser> {
   if (user.role !== "ADMIN") notFound();
   return user;
 }
+
+/**
+ * Admins and moderators. Moderators only get community questions (review, edit, add): no student
+ * data, analytics, users, campaigns or roles. Everything else in /admin uses requireAdmin.
+ */
+export async function requireStaff(): Promise<SafeUser> {
+  const user = await requireUser();
+  if (user.role !== "ADMIN" && user.role !== "MODERATOR") notFound();
+  return user;
+}

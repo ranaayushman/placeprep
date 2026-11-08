@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { activityFeed, describeEvent, EVENT_TYPES } from "@/lib/admin";
 import { fmtDateTime } from "@/components/admin/when";
@@ -5,6 +6,7 @@ import { fmtDateTime } from "@/components/admin/when";
 export const dynamic = "force-dynamic";
 
 export default async function Activity({ searchParams }: { searchParams: Promise<{ type?: string; page?: string }> }) {
+  await requireAdmin(); // the layout also lets moderators in
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const rows = await activityFeed({ type: sp.type, page });

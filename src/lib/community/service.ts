@@ -22,8 +22,11 @@ export class CommunityError extends Error {}
 const DAY = 86_400_000;
 const ref = (id: string) => `${COMMUNITY_PREFIX}${id}`;
 
-/** Who may upload: enough practice behind them, and under the daily cap. Blocked users have no session at all. */
-export async function uploadEligibility(userId: string) {
+/**
+ * Who may upload: enough practice behind them, and under the daily cap. Blocked users have no session at all.
+ * `staff` (admins, moderators) skip both: adding questions is their job.
+ */
+export async function uploadEligibility(userId: string, staff = false) {
   const [[{ answered }], [{ today }]] = await Promise.all([
     db
       .select({ answered: count() })
@@ -38,8 +41,8 @@ export async function uploadEligibility(userId: string) {
   return {
     answered,
     today,
-    needMore: Math.max(0, MIN_ANSWERED_TO_UPLOAD - answered),
-    ok: answered >= MIN_ANSWERED_TO_UPLOAD && today < MAX_SUBMISSIONS_PER_DAY,
+    needMore: staff ? 0 : Math.max(0, MIN_ANSWERED_TO_UPLOAD - answered),
+    ok: staff || (answered >= MIN_ANSWERED_TO_UPLOAD && today < MAX_SUBMISSIONS_PER_DAY),
   };
 }
 
@@ -59,8 +62,8 @@ const fields = (v: ValidQuestion) => ({
 });
 
 /** Validate → normalise → similarity check → queue (PENDING_REVIEW or FLAGGED_DUPLICATE). */
-export async function submitQuestion(userId: string, input: QuestionInput) {
-  const elig = await uploadEligibility(userId);
+export async function submitQuestion(userId: string, input: QuestionInput, staff = false) {
+  const elig = await uploadEligibility(userId, staff);
   if (elig.needMore) throw new CommunityError(`Answer ${elig.needMore} more practice questions before uploading.`);
   if (!elig.ok) throw new CommunityError(`You can upload ${MAX_SUBMISSIONS_PER_DAY} questions a day. Try again tomorrow.`);
   const f = fields(questionSchema.parse(input));
@@ -223,4 +226,66 @@ export async function queue(status: (typeof communityQuestions.$inferSelect)["st
     .where(eq(communityQuestions.status, status))
     .orderBy(status === "FLAGGED_DUPLICATE" ? desc(communityQuestions.bestMatchScore) : desc(communityQuestions.createdAt))
     .limit(100);
+}
+
+/** Question-only numbers for a moderator's home page: no student data. */
+export async function moderatorStats(userId: string) {
+  const weekAgo = new Date(Date.now() - 7 * DAY);
+  const [queueCounts, mine, [reviews], bySection, suspicious] = await Promise.all([
+    statusCounts(),
+    db.select({ status: communityQuestions.status, n: count() }).from(communityQuestions).where(eq(communityQuestions.authorId, userId)).groupBy(communityQuestions.status),
+    db
+      .select({ total: count(), week: sql<number>`count(*) FILTER (WHERE ${communityQuestions.reviewedAt} >= ${weekAgo.getTime()})` })
+      .from(communityQuestions)
+      .where(eq(communityQuestions.reviewedBy, userId)),
+    db
+      .select({ section: communityQuestions.section, n: count() })
+      .from(communityQuestions)
+      .where(eq(communityQuestions.status, "PUBLISHED"))
+      .groupBy(communityQuestions.section),
+    suspiciousAnswerKeys(),
+  ]);
+  return {
+    queue: queueCounts,
+    mine: Object.fromEntries(mine.map((r) => [r.status, r.n])) as Partial<Record<(typeof communityQuestions.$inferSelect)["status"], number>>,
+    reviewed: { total: reviews.total, week: Number(reviews.week) },
+    publishedBySection: bySection.map((r) => ({ section: r.section, n: r.n })).sort((a, b) => b.n - a.n),
+    suspiciousKeys: suspicious.length,
+  };
+}
+
+/** Below this many answers a topic or question is left out, so no single student's answers can be read off it. */
+export const MIN_ANSWERS_FOR_STATS = 20;
+
+/**
+ * Aggregate student performance for moderators: which topics students get wrong most (last 30 days),
+ * and how each community question performs. Counts only; no names, emails or individual scores.
+ */
+// shortcut: scans attempt_questions on every load; cache it (unstable_cache, a few minutes) once answers reach the millions.
+export async function studentQuestionStats() {
+  const since = Date.now() - 30 * DAY;
+  const [weakTopics, community] = await Promise.all([
+    db.execute<{ topic: string; answers: number; accuracy: number }>(sql`
+      SELECT topic, COUNT(*) AS answers, AVG((chosen_index = answer_index)::int)::float AS accuracy
+      FROM attempt_questions
+      WHERE chosen_index IS NOT NULL AND answer_index >= 0 AND answered_at >= ${since}
+      GROUP BY topic HAVING COUNT(*) >= ${MIN_ANSWERS_FOR_STATS}
+      ORDER BY accuracy ASC LIMIT 8`),
+    db.execute<{ id: string; stem: string; topic: string; answers: number; accuracy: number }>(sql`
+      WITH a AS (
+        -- ::int matters: with an untyped parameter Postgres picks the regex overload of substring.
+        SELECT substring(ref FROM ${COMMUNITY_PREFIX.length + 1}::int) AS id, chosen_index, answer_index
+        FROM attempt_questions WHERE ref LIKE ${COMMUNITY_PREFIX + "%"} AND chosen_index IS NOT NULL
+      )
+      SELECT c.id, c.stem, c.topic, COUNT(*) AS answers, AVG((a.chosen_index = a.answer_index)::int)::float AS accuracy
+      FROM a JOIN community_questions c ON c.id = a.id
+      WHERE c.status = 'PUBLISHED'
+      GROUP BY c.id, c.stem, c.topic HAVING COUNT(*) >= ${MIN_ANSWERS_FOR_STATS}
+      ORDER BY COUNT(*) DESC LIMIT 10`),
+  ]);
+  const num = (v: unknown) => Number(v ?? 0);
+  return {
+    weakTopics: weakTopics.map((r) => ({ topic: r.topic, answers: num(r.answers), accuracy: num(r.accuracy) })),
+    community: community.map((r) => ({ id: r.id, stem: r.stem, topic: r.topic, answers: num(r.answers), accuracy: num(r.accuracy) })),
+  };
 }

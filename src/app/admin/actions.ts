@@ -61,14 +61,15 @@ export async function revokeSessions(form: FormData) {
 
 export async function setRole(form: FormData) {
   const { admin, target } = await loadTarget(form);
-  const role = z.enum(["STUDENT", "ADMIN"]).parse(form.get("role"));
+  const role = z.enum(["STUDENT", "MODERATOR", "ADMIN"]).parse(form.get("role"));
   if (target.id === admin.id) done(target.id, "You can't change your own role.");
   // Owner accounts: one leaked admin password must not be enough to lock the owner out.
   if (isConfiguredAdmin(target.email)) done(target.id, "This is an owner account (ADMIN_EMAILS); its role can't be changed here.");
-  if (role === "ADMIN" && target.blockedAt) done(target.id, "Unblock the user before making them an admin.");
+  if (role !== "STUDENT" && target.blockedAt) done(target.id, "Unblock the user before giving them a role.");
+  if (role === target.role) done(target.id, `${target.name} already has that role.`);
   await db.update(users).set({ role }).where(eq(users.id, target.id));
-  await db.insert(adminActions).values({ adminId: admin.id, targetUserId: target.id, action: role === "ADMIN" ? "make_admin" : "remove_admin" });
-  done(target.id, role === "ADMIN" ? `${target.name} is now an admin.` : `${target.name} is no longer an admin.`);
+  await db.insert(adminActions).values({ adminId: admin.id, targetUserId: target.id, action: role === "ADMIN" ? "make_admin" : role === "MODERATOR" ? "make_moderator" : `remove_${target.role.toLowerCase()}` });
+  done(target.id, role === "STUDENT" ? `${target.name} is a student again.` : `${target.name} is now ${role === "ADMIN" ? "an admin" : "a moderator"}.`);
 }
 
 /** Permanent. Every linked row (attempts, events, sessions, submissions…) goes with the user via ON DELETE CASCADE. */

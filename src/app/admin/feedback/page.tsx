@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { latestFeedback } from "@/lib/feedback";
 import { fmtDateTime } from "@/components/admin/when";
@@ -11,6 +12,7 @@ const PARTS = [
 ] as const;
 
 export default async function AdminFeedback() {
+  await requireAdmin(); // the layout also lets moderators in
   const rows = await latestFeedback();
   return (
     <div className="space-y-5">

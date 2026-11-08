@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Submit a question" };
 
 export default async function SubmitPage() {
   const user = await requireUser();
-  const elig = await uploadEligibility(user.id);
+  const elig = await uploadEligibility(user.id, user.role !== "STUDENT");
   const sections = COMMUNITY_SECTIONS.map((s) => ({ id: s, label: SECTION_LABELS[s], topics: topicsFor(s).map((t) => ({ id: t.id, label: t.label })) }));
 
   return (

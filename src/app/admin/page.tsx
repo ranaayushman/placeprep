@@ -1,3 +1,5 @@
+import { ModeratorOverview } from "./ModeratorOverview";
+import { requireStaff } from "@/lib/auth";
 import Link from "next/link";
 import { adminOverview, FLAG_VIOLATIONS_7D } from "@/lib/admin";
 import { statusCounts } from "@/lib/community/service";
@@ -6,6 +8,8 @@ import { ago } from "@/components/admin/when";
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverview() {
+  const me = await requireStaff();
+  if (me.role !== "ADMIN") return <ModeratorOverview userId={me.id} name={me.name} />; // question numbers only
   const [{ counts, live, flagged, signupSeries }, community] = await Promise.all([adminOverview(), statusCounts()]);
   const toReview = (community.FLAGGED_DUPLICATE ?? 0) + (community.PENDING_REVIEW ?? 0) + (community.NEEDS_REVIEW ?? 0);
   const maxSignup = Math.max(1, ...signupSeries.map((d) => d.c));

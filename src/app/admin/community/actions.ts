@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
+import { eq } from "drizzle-orm";
+import { communityQuestions, db } from "@/db";
 import { approve, CommunityError, editAndApprove, markDuplicate, reject } from "@/lib/community/service";
 
 const back = (id: string, msg: string) => {
@@ -11,10 +13,17 @@ const back = (id: string, msg: string) => {
   redirect(`/admin/community/${encodeURIComponent(id)}?msg=${encodeURIComponent(msg)}`);
 };
 
-/** Runs one admin decision; validation and state errors come back as a message on the review page. */
-async function run(form: FormData, fn: (adminId: string, id: string) => Promise<unknown>, ok: string) {
-  const admin = await requireAdmin(); // non-admins get a 404
+/**
+ * Runs one review decision (admins and moderators); validation and state errors come back as a
+ * message on the review page. `publishes`: a moderator can't publish their own question.
+ */
+async function run(form: FormData, fn: (adminId: string, id: string) => Promise<unknown>, ok: string, publishes = false) {
+  const admin = await requireStaff(); // students get a 404
   const id = String(form.get("id") ?? "");
+  if (publishes && admin.role === "MODERATOR") {
+    const [q] = await db.select({ authorId: communityQuestions.authorId }).from(communityQuestions).where(eq(communityQuestions.id, id));
+    if (q?.authorId === admin.id) back(id, "You wrote this question, so another reviewer has to publish it.");
+  }
   try {
     await fn(admin.id, id);
   } catch (e) {
@@ -26,7 +35,7 @@ async function run(form: FormData, fn: (adminId: string, id: string) => Promise<
 }
 
 export async function approveAction(form: FormData) {
-  await run(form, (a, id) => approve(a, id), "Published.");
+  await run(form, (a, id) => approve(a, id), "Published.", true);
 }
 
 export async function rejectAction(form: FormData) {
@@ -56,5 +65,6 @@ export async function editApproveAction(form: FormData) {
         sourceType: v.sourceType as never,
       }),
     "Edited and published.",
+    true,
   );
 }

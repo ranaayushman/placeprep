@@ -30,7 +30,8 @@ export const users = pgTable(
     passoutYear: integer("passout_year"),
     dreamCompany: text("dream_company"),
     onboardedAt: ms("onboarded_at"),
-    role: text("role", { enum: ["STUDENT", "ADMIN"] }).notNull().default("STUDENT"),
+    /** MODERATOR: reviews and adds community questions only (see requireStaff in lib/auth.ts). */
+    role: text("role", { enum: ["STUDENT", "MODERATOR", "ADMIN"] }).notNull().default("STUDENT"),
     /** Non-null = blocked. Blocked users cannot log in and all their sessions are revoked. */
     blockedAt: ms("blocked_at"),
     blockedReason: text("blocked_reason"),

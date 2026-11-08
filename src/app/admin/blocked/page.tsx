@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { blockedList } from "@/lib/admin";
 import { fmtDateTime } from "@/components/admin/when";
@@ -6,6 +7,7 @@ import { unblockUser } from "../actions";
 export const dynamic = "force-dynamic";
 
 export default async function BlockList() {
+  await requireAdmin(); // the layout also lets moderators in
   const rows = await blockedList();
   return (
     <div className="space-y-5">

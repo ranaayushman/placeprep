@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { leaderboard } from "@/lib/admin";
 import { EXAMS } from "@/lib/exam/pattern";
@@ -7,6 +8,7 @@ import { fmtDate } from "@/components/admin/when";
 export const dynamic = "force-dynamic";
 
 export default async function AdminLeaderboard({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
+  await requireAdmin(); // the layout also lets moderators in
   const { exam: raw } = await searchParams;
   const exam = EXAMS.find((e) => e.id === raw);
   const rows = await leaderboard(exam?.id);

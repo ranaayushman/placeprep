@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { listUsers, type UserFilter } from "@/lib/admin";
 import { ago, fmtDate, isOnline } from "@/components/admin/when";
@@ -9,10 +10,11 @@ const FILTERS: { id: UserFilter; label: string }[] = [
   { id: "active", label: "Active 24 h" },
   { id: "flagged", label: "Flagged" },
   { id: "blocked", label: "Blocked" },
-  { id: "admins", label: "Admins" },
+  { id: "admins", label: "Admins & mods" },
 ];
 
 export default async function AdminUsers({ searchParams }: { searchParams: Promise<{ q?: string; filter?: string; page?: string; msg?: string }> }) {
+  await requireAdmin(); // the layout also lets moderators in
   const sp = await searchParams;
   const filter = (FILTERS.find((f) => f.id === sp.filter)?.id ?? "all") as UserFilter;
   const page = Math.max(1, Number(sp.page) || 1);
@@ -72,7 +74,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
                 <td className={`px-4 py-2.5 text-right tabular-nums ${u.violations >= 3 ? "font-semibold text-red-600" : ""}`}>{u.violations}</td>
                 <td className="px-4 py-2.5">
                   {u.blocked ? <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">Blocked</span>
-                    : u.role === "ADMIN" ? <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Admin</span>
+                    : u.role !== "STUDENT" ? <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">{u.role === "ADMIN" ? "Admin" : "Moderator"}</span>
                     : <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">Student</span>}
                 </td>
               </tr>

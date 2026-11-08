@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { brevoEnabled, campaignOverview } from "@/lib/brevo";
 import { fmtDateTime } from "@/components/admin/when";
 import { sendCampaignAction } from "../actions";
@@ -7,6 +8,7 @@ export const dynamic = "force-dynamic";
 const pct = (n = 0, of = 0) => (of ? `${Math.round((n / of) * 100)}%` : "—");
 
 export default async function Campaigns({ searchParams }: { searchParams: Promise<{ msg?: string }> }) {
+  await requireAdmin(); // the layout also lets moderators in
   const { msg } = await searchParams;
   if (!brevoEnabled()) {
     return <p className="text-slate-600">Set <code>BREVO_API_KEY</code> and <code>BREVO_LIST_ID</code> to send campaigns.</p>;

@@ -1,3 +1,4 @@
+import { requireStaff } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { desc, eq, inArray } from "drizzle-orm";
@@ -59,6 +60,7 @@ function QuestionCard({ q, words, title }: { q: Shown; words?: Set<string>; titl
 }
 
 export default async function ReviewPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ msg?: string }> }) {
+  const me = await requireStaff();
   const { id } = await params;
   const { msg } = await searchParams;
   const [row] = await db.select({ q: communityQuestions, author: users.name, email: users.email }).from(communityQuestions).innerJoin(users, eq(users.id, communityQuestions.authorId)).where(eq(communityQuestions.id, id));
@@ -79,7 +81,7 @@ export default async function ReviewPage({ params, searchParams }: { params: Pro
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-bold">Review question</h1>
         <p className="text-sm text-slate-500">
-          {q.status.replace("_", " ").toLowerCase()} · by {row.author} ({row.email}) · {SECTION_LABELS[q.section as keyof typeof SECTION_LABELS]} · {TOPIC_BY_ID.get(q.topic)?.label} · {q.company}
+          {q.status.replace("_", " ").toLowerCase()} · by {row.author}{me.role === "ADMIN" ? ` (${row.email})` : ""} · {SECTION_LABELS[q.section as keyof typeof SECTION_LABELS]} · {TOPIC_BY_ID.get(q.topic)?.label} · {q.company}
           {q.year ? ` ${q.year}` : ""} · {q.sourceType.replaceAll("_", " ").toLowerCase()}
         </p>
       </div>
