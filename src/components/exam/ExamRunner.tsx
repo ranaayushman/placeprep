@@ -6,6 +6,7 @@ import type { ExamState, ViolationType } from "@/lib/exam/service";
 import { OPTION_LETTERS, QuestionBody } from "@/components/QuestionBody";
 import { ReportProblem } from "@/components/ReportProblem";
 import { useProctoring } from "./useProctoring";
+import { HEARTBEAT_MS, LEFT_AFTER_MS } from "@/lib/exam/pattern";
 import { FaceProctoringTile } from "./CameraPreview";
 
 type InProgress = Extract<ExamState, { status: "IN_PROGRESS" }>;
@@ -64,6 +65,15 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Tells the server this page is still open. If it goes quiet (tab closed, left the page), the test is scored.
+  useEffect(() => {
+    const t = setInterval(async () => {
+      const res = await api<{ submitted: boolean }>(attemptId, { action: "ping" }).catch(() => null);
+      if (res?.submitted) router.replace(`/results/${attemptId}?auto=1`);
+    }, HEARTBEAT_MS);
+    return () => clearInterval(t);
+  }, [attemptId, router]);
 
   // When the section changes, start from its first question.
   const sectionOrder = state?.current.order;
@@ -209,7 +219,9 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
       {/* Header */}
       <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-2.5">
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium uppercase tracking-wide text-slate-500">{state.title}</p>
+          <p className="truncate text-xs font-medium uppercase tracking-wide text-slate-500" title={`Leaving this page for more than ${LEFT_AFTER_MS / 60_000} minutes submits the test.`}>
+            {state.title} <span className="normal-case tracking-normal">· leave for {LEFT_AFTER_MS / 60_000}+ min and it&apos;s submitted</span>
+          </p>
           <p className="truncate text-base font-semibold text-slate-900">
             {isMock ? state.current.label : "Practice set"}
             {state.sections.length > 1 && (

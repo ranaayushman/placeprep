@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { ExamError, getResult } from "@/lib/exam/service";
-import { PRACTICE_TARGETS } from "@/lib/exam/pattern";
+import { MAX_VIOLATIONS, PRACTICE_TARGETS } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPIC_BY_ID, type QuestionView, type SectionId } from "@/lib/questions";
 import { OPTION_LETTERS, QuestionBody } from "@/components/QuestionBody";
 import { ReportProblem } from "@/components/ReportProblem";
@@ -43,7 +43,9 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
     <div className="space-y-6">
       {auto && attempt.autoSubmitted && (
         <div className="card border-red-300 bg-red-50 text-red-800">
-          This test was submitted automatically after {attempt.violations} proctoring warnings.
+          {attempt.violations >= MAX_VIOLATIONS
+            ? `This test was submitted automatically after ${attempt.violations} proctoring warnings.`
+            : "This test was submitted automatically because you left it. It was scored with the answers you had saved."}
         </div>
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">

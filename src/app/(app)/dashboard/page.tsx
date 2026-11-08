@@ -3,7 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { attempts, db, users } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { getTopicStats, mockHistory, recommend, sectionStats, type TopicStat } from "@/lib/analytics";
-import { wrongRefs } from "@/lib/exam/service";
+import { closeLeftAttempts, wrongRefs } from "@/lib/exam/service";
 import { EXAMS, MAX_VIOLATIONS } from "@/lib/exam/pattern";
 import { ProgressBar, pct } from "@/components/charts";
 import { SECTION_LABELS } from "@/lib/questions";
@@ -36,6 +36,7 @@ const topicTone = (t: TopicStat) =>
 
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await requireUser();
+  await closeLeftAttempts(user.id); // a test they walked away from shows as finished, not "in progress"
   const { error } = await searchParams;
   const [stats, history, wrong, recent, [profile]] = await Promise.all([
     getTopicStats(user.id),

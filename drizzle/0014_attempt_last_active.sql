@@ -1,0 +1,1 @@
+ALTER TABLE "attempts" ADD COLUMN "last_active_at" bigint;

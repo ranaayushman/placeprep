@@ -1,4 +1,5 @@
 import "server-only";
+import { LEFT_AFTER_MS } from "@/lib/exam/pattern";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { SECTION_LABELS, type SectionId } from "@/lib/questions";
@@ -30,7 +31,7 @@ export async function adminOverview() {
     JOIN users u ON u.id = a.user_id
     LEFT JOIN attempt_sections s ON s.attempt_id = a.id AND s."order" = a.current_section
     WHERE a.mode = 'MOCK' AND a.status = 'IN_PROGRESS' AND u.blocked_at IS NULL
-      AND a.started_at >= ${now - 3 * 60 * MIN} -- a full mock is ~2 h; older ones are abandoned
+      AND COALESCE(a.last_active_at, a.started_at) >= ${now - LEFT_AFTER_MS} -- quieter ones were left
     ORDER BY a.violations DESC, a.started_at DESC
     LIMIT 50`);
 
@@ -194,7 +195,7 @@ export function describeEvent(type: string, meta: Record<string, unknown> | null
     case "violation":
       return `Proctoring warning #${meta?.count ?? "?"}: ${String(meta?.type ?? "").replace("-", " ")}`;
     case "mock_submitted":
-      return `Submitted mock: ${meta?.score}/${meta?.maxScore}${meta?.autoSubmitted ? " (auto-submitted after warnings)" : ""}`;
+      return `Submitted mock: ${meta?.score}/${meta?.maxScore}${meta?.autoSubmitted ? " (auto-submitted: warnings or left the test)" : ""}`;
     case "mock_started":
     case "practice_started":
       return `Started ${meta?.title ?? "a test"}`;

@@ -97,6 +97,9 @@ export default function TermsPage() {
                 <strong>Strict Timers:</strong> Sectional clocks run continuously. Once time expires, unfinished questions are submitted automatically.
               </li>
               <li>
+                <strong>Leaving a Test:</strong> If you close or leave a mock test or practice set for more than 3 minutes, it is submitted and scored with the answers you had saved.
+              </li>
+              <li>
                 <strong>Section Locking:</strong> In accordance with real drive patterns, once you submit a section, you cannot return to modify answers.
               </li>
               <li>

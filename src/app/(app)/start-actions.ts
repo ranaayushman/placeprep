@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { attempts, db } from "@/db";
 import { requireUser } from "@/lib/auth";
-import { createMock, createPractice, wrongRefs } from "@/lib/exam/service";
+import { closeLeftAttempts, createMock, createPractice, wrongRefs } from "@/lib/exam/service";
 import { EXAM_BY_ID, type ExamId } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPIC_BY_ID } from "@/lib/questions";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
@@ -43,7 +43,8 @@ export async function startPractice(form: FormData) {
 
 export async function startMock(form: FormData) {
   const user = await requireUser();
-  // Only one mock at a time: resume an unfinished one instead of starting another.
+  // Only one mock at a time: resume an unfinished one instead of starting another (one they left is scored first).
+  await closeLeftAttempts(user.id);
   const [open] = await db
     .select({ id: attempts.id })
     .from(attempts)

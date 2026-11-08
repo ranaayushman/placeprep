@@ -144,6 +144,8 @@ export const attempts = pgTable(
     score: integer("score"),
     maxScore: integer("max_score"),
     startedAt: now("started_at"),
+    /** Last heartbeat from the open test page; silence for LEFT_AFTER_MS means the student left. */
+    lastActiveAt: ms("last_active_at"),
     submittedAt: ms("submitted_at"),
   },
   (t) => [index("attempts_user_idx").on(t.userId, t.mode, t.status), index("attempts_status_idx").on(t.status, t.mode)],

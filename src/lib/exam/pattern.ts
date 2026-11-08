@@ -74,3 +74,10 @@ export const MAX_VIOLATIONS = 3;
 
 /** Grace period for answers that arrive just after a section timer ends (network latency). */
 export const SUBMIT_GRACE_MS = 5000;
+
+/**
+ * The open test page checks in every HEARTBEAT_MS. No check-in for LEFT_AFTER_MS (tab closed, left
+ * the page, phone locked) means the student left: the test is submitted and scored as it stands.
+ */
+export const HEARTBEAT_MS = 30 * 1000;
+export const LEFT_AFTER_MS = 3 * 60 * 1000;

@@ -4,7 +4,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { attemptQuestions, attempts, attemptSections, db, type Attempt, type AttemptSection } from "@/db";
 import { generate, SECTION_LABELS, TOPIC_BY_ID, TOPICS, toView, topicsFor, type SectionId, type Topic } from "@/lib/questions";
 import { RC_GROUP, RC_PASSAGES } from "@/lib/questions/verbal";
-import { EXAM_BY_ID, MAX_VIOLATIONS, SUBMIT_GRACE_MS, type ExamId } from "./pattern";
+import { EXAM_BY_ID, LEFT_AFTER_MS, MAX_VIOLATIONS, SUBMIT_GRACE_MS, type ExamId } from "./pattern";
 import { logEvent } from "@/lib/events";
 import { COMMUNITY_PREFIX, freshCommunityIds, isCommunityRef, loadPublished } from "@/lib/community/serve";
 
@@ -238,6 +238,28 @@ async function finalize(attemptId: string, autoSubmitted: boolean) {
   }
 }
 
+/** True (and the test is scored) when the open test page stopped checking in: the student left. */
+async function closeIfLeft(attempt: Attempt) {
+  if (attempt.status !== "IN_PROGRESS" || Date.now() - (attempt.lastActiveAt ?? attempt.startedAt).getTime() <= LEFT_AFTER_MS) return false;
+  await finalize(attempt.id, true);
+  return true;
+}
+const touch = (attemptId: string) => db.update(attempts).set({ lastActiveAt: new Date() }).where(eq(attempts.id, attemptId));
+
+/** Called by the open test page every HEARTBEAT_MS. */
+export async function heartbeat(attemptId: string, userId: string) {
+  const attempt = await loadOwned(attemptId, userId);
+  if (attempt.status === "SUBMITTED" || (await closeIfLeft(attempt))) return { submitted: true };
+  await touch(attemptId);
+  return { submitted: false };
+}
+
+/** Scores every test this student left (see LEFT_AFTER_MS), so none stays open forever. */
+export async function closeLeftAttempts(userId: string) {
+  const open = await db.select().from(attempts).where(and(eq(attempts.userId, userId), eq(attempts.status, "IN_PROGRESS")));
+  for (const a of open) await closeIfLeft(a);
+}
+
 /**
  * Moves past any timed sections whose clock has run out. The server is the only authority on
  * time: closing the tab or editing the page clock cannot extend a section.
@@ -262,7 +284,8 @@ async function advanceExpired(attempt: Attempt, sections: AttemptSection[]) {
 export async function getExamState(attemptId: string, userId: string) {
   const attempt = await loadOwned(attemptId, userId);
   const sections = await db.select().from(attemptSections).where(eq(attemptSections.attemptId, attemptId)).orderBy(asc(attemptSections.order));
-  if (attempt.status === "SUBMITTED") return { status: "SUBMITTED" as const };
+  if (attempt.status === "SUBMITTED" || (await closeIfLeft(attempt))) return { status: "SUBMITTED" as const };
+  await touch(attempt.id);
 
   const current = await advanceExpired(attempt, sections);
   if (current >= sections.length) return { status: "SUBMITTED" as const };
@@ -312,6 +335,7 @@ export type ExamState = Awaited<ReturnType<typeof getExamState>>;
 
 async function activeSection(attempt: Attempt) {
   if (attempt.status !== "IN_PROGRESS") throw new ExamError("This test has already been submitted", 409);
+  if (await closeIfLeft(attempt)) throw new ExamError("You left this test, so it was submitted", 409);
   const sections = await db.select().from(attemptSections).where(eq(attemptSections.attemptId, attempt.id)).orderBy(asc(attemptSections.order));
   const current = await advanceExpired(attempt, sections);
   if (current >= sections.length) throw new ExamError("Time is up for this test", 409);

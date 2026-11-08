@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { eq } from "drizzle-orm";
-import { attemptQuestions, attemptSections, db, users } from "@/db";
-import { createMock, createPractice, getExamState, recordViolation, saveAnswer, submitSection, getResult } from "@/lib/exam/service";
+import { attemptQuestions, attemptSections, attempts, db, users } from "@/db";
+import { closeLeftAttempts, createMock, createPractice, getExamState, heartbeat, recordViolation, saveAnswer, submitSection, getResult } from "@/lib/exam/service";
 import { getTopicStats, mockHistory, recommend } from "@/lib/analytics";
-import { DELOITTE_NLA_PATTERN, INFOSYS_SE_PATTERN, MAX_VIOLATIONS } from "@/lib/exam/pattern";
+import { DELOITTE_NLA_PATTERN, INFOSYS_SE_PATTERN, LEFT_AFTER_MS, MAX_VIOLATIONS } from "@/lib/exam/pattern";
 
 let userId: string;
 
@@ -203,4 +203,37 @@ it("camera alerts are counted separately and never auto-submit the mock", async 
   expect(res).toEqual({ violations: 0, cameraAlerts: MAX_VIOLATIONS + 2, autoSubmitted: false });
   const state = await getExamState(id, u.id);
   expect(state.status === "IN_PROGRESS" && state.cameraAlerts).toBe(MAX_VIOLATIONS + 2);
+});
+
+describe("leaving a test", () => {
+  const quietFor = (id: string, ms: number) => db.update(attempts).set({ lastActiveAt: new Date(Date.now() - ms) }).where(eq(attempts.id, id));
+  const status = async (id: string) => (await db.select().from(attempts).where(eq(attempts.id, id)))[0];
+
+  it("a practice set left for too long is scored with the saved answers", async () => {
+    const [u] = await db.insert(users).values({ email: `left-${Math.random()}@example.com`, name: "Left", passwordHash: "x" }).returning();
+    const id = await createPractice(u.id, { topicIds: ["z-crypt"], count: 3, timed: false });
+    const s = await getExamState(id, u.id);
+    if (s.status !== "IN_PROGRESS") throw new Error("expected in progress");
+    const [q] = await db.select().from(attemptQuestions).where(eq(attemptQuestions.id, s.current.questions[0].id));
+    await saveAnswer(id, u.id, { questionId: q.id, chosenIndex: q.answerIndex });
+
+    await quietFor(id, LEFT_AFTER_MS - 30_000); // still within the window: a heartbeat keeps it open
+    expect(await heartbeat(id, u.id)).toEqual({ submitted: false });
+
+    await quietFor(id, LEFT_AFTER_MS + 1000);
+    await expect(saveAnswer(id, u.id, { questionId: q.id, chosenIndex: null })).rejects.toThrow(/left this test/);
+    expect(await status(id)).toMatchObject({ status: "SUBMITTED", autoSubmitted: true, score: 1, maxScore: 3 });
+    expect((await getExamState(id, u.id)).status).toBe("SUBMITTED");
+  });
+
+  it("opening the dashboard scores a mock left with the tab closed", async () => {
+    const [u] = await db.insert(users).values({ email: `left2-${Math.random()}@example.com`, name: "Left Two", passwordHash: "x" }).returning();
+    const id = await createMock(u.id, { includeWriting: false });
+    await getExamState(id, u.id);
+    await closeLeftAttempts(u.id);
+    expect((await status(id)).status).toBe("IN_PROGRESS"); // just active
+    await quietFor(id, LEFT_AFTER_MS + 1000);
+    await closeLeftAttempts(u.id);
+    expect(await status(id)).toMatchObject({ status: "SUBMITTED", autoSubmitted: true });
+  });
 });

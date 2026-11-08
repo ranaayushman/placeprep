@@ -5,6 +5,7 @@ import { LIMITS, rateLimit } from "@/lib/rate-limit";
 import {
   ExamError,
   getExamState,
+  heartbeat,
   isViolationType,
   recordViolation,
   saveAnswer,
@@ -25,6 +26,7 @@ const body = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("submit-section"), sectionOrder: z.number().int().nonnegative() }),
   z.object({ action: z.literal("submit") }),
+  z.object({ action: z.literal("ping") }),
   z.object({ action: z.literal("violation"), type: z.string().refine(isViolationType) }),
 ]);
 
@@ -63,6 +65,8 @@ export async function POST(req: Request, { params }: Ctx) {
       }
       case "submit-section":
         return NextResponse.json(await submitSection(id, user.id, input.sectionOrder));
+      case "ping":
+        return NextResponse.json(await heartbeat(id, user.id));
       case "submit":
         await submitAll(id, user.id);
         return NextResponse.json({ finished: true });
