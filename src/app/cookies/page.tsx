@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { AuthLinks } from "@/components/AuthLinks";
 import { CookieSettingsButton } from "@/components/CookieConsent";
 
 export const metadata: Metadata = {
@@ -58,12 +59,7 @@ export default function CookiePolicyPage() {
             <Link href="/" className="text-muted hover:text-deep">
               Home
             </Link>
-            <Link href="/login" className="text-muted hover:text-deep">
-              Log in
-            </Link>
-            <Link href="/register" className="rounded-lg bg-brand-dark px-3.5 py-1.5 font-semibold text-white hover:bg-deep">
-              Sign up free
-            </Link>
+            <AuthLinks />
           </nav>
         </div>
       </header>

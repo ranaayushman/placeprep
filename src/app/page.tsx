@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { AuthLinks } from "@/components/AuthLinks";
 import { CookieSettingsButton } from "@/components/CookieConsent";
 import { INFOSYS_SE_PATTERN, MAX_VIOLATIONS, PRACTICE_TARGETS } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPICS, topicsFor } from "@/lib/questions";
@@ -145,8 +146,7 @@ export default function Home() {
           <nav className="flex items-center gap-1 text-sm font-medium">
             <a href="#test" className="hidden px-3 py-2 text-muted hover:text-deep sm:block">How it works</a>
             <a href="#community" className="hidden px-3 py-2 text-muted hover:text-deep sm:block">Community</a>
-            <Link href="/login" className="px-3 py-2 text-muted hover:text-deep">Log in</Link>
-            <Link href="/register" className="rounded-lg bg-brand-dark px-4 py-2 font-semibold text-white hover:bg-deep">Sign up free</Link>
+            <AuthLinks />
           </nav>
         </div>
       </header>
