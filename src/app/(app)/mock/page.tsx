@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { EXAM_BY_ID, EXAMS, MAX_VIOLATIONS } from "@/lib/exam/pattern";
+import { MAX_VIOLATIONS } from "@/lib/exam/pattern";
+import { listExams } from "@/lib/exam/exams";
 import { SECTION_LABELS } from "@/lib/questions";
 
 export default async function MockPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
-  const exam = EXAM_BY_ID.get((await searchParams).exam ?? "") ?? EXAMS[0];
+  const EXAMS = await listExams();
+  const wanted = (await searchParams).exam;
+  const exam = EXAMS.find((e) => e.id === wanted) ?? EXAMS[0];
   const hasWriting = exam.pattern.some((s) => s.section === "writing");
   const mcqMinutes = exam.pattern.filter((s) => s.section !== "writing").reduce((a, s) => a + s.minutes, 0);
   return (
@@ -21,9 +24,11 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
                 {e.company}
               </Link>
             ))}
-            <span className="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-400" title="A Cognizant GenC mock is coming soon">
-              Cognizant · soon
-            </span>
+            {!EXAMS.some((e) => e.company.toLowerCase() === "cognizant") && (
+              <span className="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-400" title="A Cognizant GenC mock is coming soon">
+                Cognizant · soon
+              </span>
+            )}
           </nav>
         )}
         <h1 className="text-2xl font-bold">{exam.company} · {exam.name}</h1>

@@ -4,7 +4,8 @@ import { attempts, db, users } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { getTopicStats, mockHistory, recommend, sectionStats, type TopicStat } from "@/lib/analytics";
 import { closeLeftAttempts, wrongRefs } from "@/lib/exam/service";
-import { EXAMS, MAX_VIOLATIONS } from "@/lib/exam/pattern";
+import { MAX_VIOLATIONS } from "@/lib/exam/pattern";
+import { listExams } from "@/lib/exam/exams";
 import { ProgressBar, pct } from "@/components/charts";
 import { SECTION_LABELS } from "@/lib/questions";
 import { retryMistakes, startPractice } from "../start-actions";
@@ -37,6 +38,8 @@ const topicTone = (t: TopicStat) =>
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await requireUser();
   await closeLeftAttempts(user.id); // a test they walked away from shows as finished, not "in progress"
+  const EXAMS = await listExams();
+  const hasCognizant = EXAMS.some((e) => e.company.toLowerCase() === "cognizant");
   const { error } = await searchParams;
   const [stats, history, wrong, recent, [profile]] = await Promise.all([
     getTopicStats(user.id),
@@ -153,14 +156,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 </article>
               );
             })}
-            <article className="rounded-2xl border-2 border-dashed border-deep/20 bg-surface p-6">
+            {!hasCognizant && <article className="rounded-2xl border-2 border-dashed border-deep/20 bg-surface p-6">
               <p className="text-xs font-semibold tracking-wider text-muted uppercase">Cognizant · coming soon</p>
               <h3 className="mt-1 text-2xl font-bold">GenC (entry-level role)</h3>
               <p className="mt-1 text-sm text-muted">
                 A full mock in Cognizant&apos;s GenC pattern is on the way. Until then, the quant, reasoning and verbal practice here covers most of what it tests.
               </p>
               <span className="mt-4 inline-block rounded-xl bg-canvas-deep px-5 py-2.5 text-sm font-semibold text-muted" aria-disabled="true">Coming soon</span>
-            </article>
+            </article>}
           </div>
           <div className="rounded-2xl border border-deep/10 bg-surface p-6">
             <p className="text-xs font-semibold tracking-wider text-muted uppercase">Coming soon</p>

@@ -321,3 +321,23 @@ export const rateLimits = pgTable(
   },
   (t) => [index("rate_limits_window_idx").on(t.windowStart)],
 );
+
+/**
+ * Mock exams created in the admin panel (built-in ones live in lib/exam/pattern.ts EXAMS). `pattern`
+ * is the sections, question counts and minutes; questions are drawn from the bank on each attempt.
+ * Moderators create and edit DRAFTs; only an admin publishes.
+ */
+export const mockExams = pgTable("mock_exams", {
+  /** Slug, also stored in attempts.exam. */
+  id: text("id").primaryKey(),
+  company: text("company").notNull(),
+  name: text("name").notNull(),
+  short: text("short").notNull(),
+  note: text("note"),
+  pattern: jsonb("pattern").$type<{ section: string; questions: number; minutes: number }[]>().notNull(),
+  status: text("status", { enum: ["DRAFT", "PUBLISHED"] }).notNull().default("DRAFT"),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  publishedBy: text("published_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: now("created_at"),
+  updatedAt: now("updated_at"),
+});

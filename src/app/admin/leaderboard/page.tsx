@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { leaderboard } from "@/lib/admin";
-import { EXAMS } from "@/lib/exam/pattern";
+import { listExams } from "@/lib/exam/exams";
 import { pct } from "@/components/charts";
 import { fmtDate } from "@/components/admin/when";
 
@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminLeaderboard({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
   await requireAdmin(); // the layout also lets moderators in
   const { exam: raw } = await searchParams;
+  const EXAMS = await listExams();
   const exam = EXAMS.find((e) => e.id === raw);
   const rows = await leaderboard(exam?.id);
   const ranked = rows.filter((r) => r.rank != null).length;

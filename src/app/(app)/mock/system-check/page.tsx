@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { EXAM_BY_ID, EXAMS } from "@/lib/exam/pattern";
+import { getExam, listExams } from "@/lib/exam/exams";
 import { StartMockForm } from "../StartMockForm";
 
 export default async function SystemCheckPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
-  const exam = EXAM_BY_ID.get((await searchParams).exam ?? "") ?? EXAMS[0];
+  const exam = (await getExam((await searchParams).exam ?? "")) ?? (await listExams())[0];
   const hasWriting = exam.pattern.some((s) => s.section === "writing");
   const mcqMinutes = exam.pattern.filter((s) => s.section !== "writing").reduce((total, section) => total + section.minutes, 0);
 

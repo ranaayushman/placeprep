@@ -4,7 +4,8 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { attemptQuestions, attempts, attemptSections, db, type Attempt, type AttemptSection } from "@/db";
 import { generate, SECTION_LABELS, TOPIC_BY_ID, TOPICS, toView, topicsFor, type SectionId, type Topic } from "@/lib/questions";
 import { RC_GROUP, RC_PASSAGES } from "@/lib/questions/verbal";
-import { EXAM_BY_ID, LEFT_AFTER_MS, MAX_VIOLATIONS, SUBMIT_GRACE_MS, type ExamId } from "./pattern";
+import { LEFT_AFTER_MS, MAX_VIOLATIONS, SUBMIT_GRACE_MS } from "./pattern";
+import { getExam } from "./exams";
 import { logEvent } from "@/lib/events";
 import { COMMUNITY_PREFIX, freshCommunityIds, isCommunityRef, loadPublished } from "@/lib/community/serve";
 
@@ -74,7 +75,7 @@ async function insertAttempt(
   userId: string,
   mode: Attempt["mode"],
   title: string,
-  exam: ExamId | null,
+  exam: string | null,
   sections: { section: SectionId; durationSec: number; refs: string[] }[],
   cameraOff = false,
 ) {
@@ -134,8 +135,8 @@ async function insertAttempt(
   return attemptId;
 }
 
-export async function createMock(userId: string, opts: { includeWriting: boolean; exam?: ExamId; cameraOff?: boolean }) {
-  const exam = EXAM_BY_ID.get(opts.exam ?? "infosys-se");
+export async function createMock(userId: string, opts: { includeWriting: boolean; exam?: string; cameraOff?: boolean }) {
+  const exam = await getExam(opts.exam ?? "infosys-se");
   if (!exam) throw new ExamError("Unknown exam");
   const seen = await seenIndices(userId);
   const taken = new Set<string>();

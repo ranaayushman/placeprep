@@ -12,6 +12,7 @@ const NAV = [
   { href: "/admin/activity", label: "Activity" },
   { href: "/admin/blocked", label: "Block list" },
   { href: "/admin/community", label: "Community" },
+  { href: "/admin/mocks", label: "Mocks" },
   { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/campaigns", label: "Campaigns" },
   { href: "/admin/announcements", label: "Updates" },
@@ -21,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const admin = await requireStaff();
   const isMod = admin.role === "MODERATOR";
   // Moderators see only the question tools; each admin-only page also checks requireAdmin itself.
-  const nav = isMod ? [{ href: "/admin", label: "Overview" }, { href: "/admin/community", label: "Review questions" }, { href: "/community/submit", label: "Add a question" }] : NAV;
+  const nav = isMod ? [{ href: "/admin", label: "Overview" }, { href: "/admin/community", label: "Review questions" }, { href: "/community/submit", label: "Add a question" }, { href: "/admin/mocks", label: "Mock exams" }] : NAV;
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-900 text-white">
