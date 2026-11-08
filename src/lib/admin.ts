@@ -209,3 +209,47 @@ export function describeEvent(type: string, meta: Record<string, unknown> | null
       return type.replace("_", " ");
   }
 }
+
+export type LeaderRow = {
+  rank: number | null; id: string; name: string; email: string; college: string | null;
+  mocks: number; avgPct: number | null; bestPct: number | null; lastMockAt: Date | null;
+  practiceAnswered: number; practiceAcc: number | null;
+};
+
+/**
+ * Students who finished at least one test, ranked by average mock score (best mock breaks ties).
+ * Practice-only students come after, unranked. `exam` limits it to one mock pattern's takers.
+ */
+// shortcut: top 500 only, computed on every load; add paging or a cached table past a few thousand students.
+export async function leaderboard(exam?: string): Promise<LeaderRow[]> {
+  const examFilter = exam ? sql`AND exam = ${exam}` : sql``;
+  const rows = await db.execute<{
+    id: string; name: string; email: string; college: string | null; mocks: number | null; avg_pct: number | null; best_pct: number | null;
+    last_at: number | null; answered: number | null; acc: number | null; rnk: number | null;
+  }>(sql`
+    WITH m AS (
+      SELECT user_id, COUNT(*) AS mocks, AVG(score::float / NULLIF(max_score, 0)) AS avg_pct,
+             MAX(score::float / NULLIF(max_score, 0)) AS best_pct, MAX(submitted_at) AS last_at
+      FROM attempts WHERE mode = 'MOCK' AND status = 'SUBMITTED' ${examFilter}
+      GROUP BY user_id
+    ), p AS (
+      SELECT a.user_id, COUNT(*) FILTER (WHERE q.chosen_index IS NOT NULL) AS answered,
+             AVG(CASE WHEN q.is_correct THEN 1.0 ELSE 0 END) FILTER (WHERE q.is_correct IS NOT NULL) AS acc
+      FROM attempts a JOIN attempt_questions q ON q.attempt_id = a.id
+      WHERE a.mode = 'PRACTICE' AND a.status = 'SUBMITTED'
+      GROUP BY a.user_id
+    )
+    SELECT u.id, u.name, u.email, u.college, m.mocks, m.avg_pct, m.best_pct, m.last_at, p.answered, p.acc,
+           CASE WHEN m.user_id IS NOT NULL THEN RANK() OVER (ORDER BY m.user_id IS NULL, m.avg_pct DESC NULLS LAST, m.best_pct DESC NULLS LAST) END AS rnk
+    FROM users u
+    LEFT JOIN m ON m.user_id = u.id
+    LEFT JOIN p ON p.user_id = u.id
+    WHERE u.role = 'STUDENT' AND (m.user_id IS NOT NULL ${exam ? sql`` : sql`OR p.user_id IS NOT NULL`})
+    ORDER BY m.user_id IS NULL, m.avg_pct DESC NULLS LAST, m.best_pct DESC NULLS LAST, p.answered DESC NULLS LAST, u.name
+    LIMIT 500`);
+  return rows.map((r) => ({
+    rank: r.rnk == null ? null : n(r.rnk), id: r.id, name: r.name, email: r.email, college: r.college,
+    mocks: n(r.mocks), avgPct: r.avg_pct == null ? null : Number(r.avg_pct), bestPct: r.best_pct == null ? null : Number(r.best_pct),
+    lastMockAt: r.last_at ? new Date(n(r.last_at)) : null, practiceAnswered: n(r.answered), practiceAcc: r.acc == null ? null : Number(r.acc),
+  }));
+}

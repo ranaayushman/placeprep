@@ -4,9 +4,10 @@
  * useFaceProctor — MediaPipe FaceMesh-based camera proctoring hook.
  *
  * What it detects (all client-side, nothing is recorded or uploaded):
- *   • No face in frame for > GAZE_GRACE_MS
- *   • More than one face in frame
- *   • Gaze consistently off-screen (iris deviation > GAZE_THRESHOLD) for > GAZE_GRACE_MS
+ *   • No face in frame for > NO_FACE_GRACE_MS
+ *   • More than one face in frame for > MULTI_FACE_GRACE_MS
+ *   • Gaze or head turned away from the student's calibrated baseline for > GAZE_GRACE_MS
+ * Each fires once per episode, not repeatedly while it lasts.
  *
  * It plugs into the same onViolation() callback used by useProctoring.ts, so the
  * existing warning counter, auto-submit, and admin event log all work automatically.
@@ -22,16 +23,26 @@ import type { ViolationType } from "@/lib/exam/service";
 
 // ─── Tuning knobs ────────────────────────────────────────────────────────────
 
-/** How long gaze must be off-screen before it counts. */
-const GAZE_GRACE_MS = 2000;
+/** How long gaze must stay off-screen before it counts (reading across a wide line can briefly look "away"). */
+const GAZE_GRACE_MS = 4000;
 /** Longer for no-face: looking down at rough paper often hides the face from the camera. */
 const NO_FACE_GRACE_MS = 5000;
+/** A second face must stay this long: one-frame ghost detections (posters, reflections) are ignored. */
+const MULTI_FACE_GRACE_MS = 1500;
+/** After an alert, things must look normal this long before the same alert can fire again: one alert per episode. */
+const REARM_MS = 2000;
 
 /**
- * Iris deviation threshold (0–1 scale of eye width).
- * Straight ahead measures ~0.05–0.1; 0.2 ≈ a clear sideways glance. Increase to be more lenient.
+ * Iris deviation threshold (fraction of eye width), measured from the student's own calibrated
+ * "looking at the screen" position. 0.2 ≈ a clear sideways glance. Increase to be more lenient.
  */
 const GAZE_THRESHOLD = 0.2;
+/** The first checks with one face set the baseline, so an off-centre camera doesn't read as "away". */
+const CALIBRATION_CHECKS = 6;
+/** A baseline further off than this is a bad calibration (they were looking away), so it is capped. */
+const MAX_BASELINE = 0.15;
+/** Smoothing for the per-check gaze and head readings (0–1; lower = steadier, slower). */
+const SMOOTHING = 0.4;
 
 /** How often (ms) we re-evaluate the last landmark result. */
 const CHECK_INTERVAL_MS = 500;
@@ -82,6 +93,36 @@ function gazeRatio(iris: Landmark, inner: Landmark, outer: Landmark): number {
   return (iris.x - centre) / eyeWidth;
 }
 
+/**
+ * One tracker per alert type: fires once when a bad state lasts `grace` ms, and re-arms only after
+ * REARM_MS of normal, so a long look away is one alert, not one every few seconds.
+ */
+export function createAlertTracker(fire: (type: ViolationType) => void) {
+  let tracks: Record<string, { since: number | null; okSince: number | null; fired: boolean }> = {};
+  return {
+    step(type: ViolationType, bad: boolean, grace: number, now: number) {
+      const t = (tracks[type] ??= { since: null, okSince: null, fired: false });
+      if (bad) {
+        t.okSince = null;
+        t.since ??= now;
+        if (!t.fired && now - t.since >= grace) {
+          t.fired = true;
+          fire(type);
+        }
+      } else {
+        t.since = null;
+        if (t.fired && now - (t.okSince ??= now) >= REARM_MS) {
+          t.fired = false;
+          t.okSince = null;
+        }
+      }
+    },
+    reset() {
+      tracks = {};
+    },
+  };
+}
+
 export type FaceProcState =
   | "idle"          // camera not started
   | "requesting"    // waiting for getUserMedia
@@ -111,16 +152,8 @@ export function useFaceProctor({
   const onViolationRef = useRef(onViolation);
   onViolationRef.current = onViolation;
 
-  const noFaceSince   = useRef<number | null>(null);
-  const gazeAwaySince = useRef<number | null>(null);
-  const lastReport    = useRef<Record<string, number>>({});
-
-  const report = useCallback((type: ViolationType) => {
-    const now = Date.now();
-    if ((now - (lastReport.current[type] ?? 0)) < 8000) return; // debounce 8 s per type
-    lastReport.current[type] = now;
-    onViolationRef.current(type);
-  }, []);
+  const tracker = useRef(createAlertTracker((type) => onViolationRef.current(type)));
+  const step = useCallback((type: ViolationType, bad: boolean, grace: number, now: number) => tracker.current.step(type, bad, grace, now), []);
 
   useEffect(() => {
     if (!enabled) return;
@@ -205,45 +238,51 @@ export function useFaceProctor({
       rafRef.current = requestAnimationFrame(sendFrame);
 
       // ── 4. Evaluate results at CHECK_INTERVAL_MS ───────────────────────────
+      const calib = { gaze: [] as number[], yaw: [] as number[], baseGaze: 0, baseYaw: 0 };
+      const smooth = { gaze: 0, yaw: 0, primed: false };
+      const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+      const cap = (x: number) => Math.max(-MAX_BASELINE, Math.min(MAX_BASELINE, x));
       checkTimer = setInterval(() => {
-        if (cancelled || !lastResults) return;
+        // A hidden tab sends no frames, so the last result is stale (and leaving the tab is its own warning).
+        if (cancelled || !lastResults || document.hidden) return;
         const faces: Landmark[][] = lastResults.multiFaceLandmarks ?? [];
         const now = Date.now();
 
+        step("no-face", faces.length === 0, NO_FACE_GRACE_MS, now);
+        step("multiple-faces", faces.length >= 2, MULTI_FACE_GRACE_MS, now);
         if (faces.length === 0) {
-          // No face in frame
           setSeen("no-face");
-          if (noFaceSince.current === null) noFaceSince.current = now;
-          else if (now - noFaceSince.current > NO_FACE_GRACE_MS) report("no-face");
-          gazeAwaySince.current = null;
+          smooth.primed = false;
           return;
         }
-        noFaceSince.current = null;
 
-        if (faces.length >= 2) {
-          setSeen("multiple");
-          report("multiple-faces");
-        }
-
-        // Gaze check on the first (primary) face
+        // Gaze check on the first (primary) face. Signed values, so the baseline can be subtracted.
         const lm = faces[0];
-        if (lm.length > R_IRIS) {
-          const lRatio = gazeRatio(lm[L_IRIS], lm[L_INNER], lm[L_OUTER]);
-          const rRatio = gazeRatio(lm[R_IRIS], lm[R_INNER], lm[R_OUTER]);
-          const avgRatio = (Math.abs(lRatio) + Math.abs(rRatio)) / 2;
-          // Turning the head keeps the iris centred in the eye, so check head yaw too.
-          const faceW = Math.abs(lm[FACE_R].x - lm[FACE_L].x);
-          const yaw = faceW > 0.001 ? Math.abs(lm[NOSE].x - (lm[FACE_L].x + lm[FACE_R].x) / 2) / faceW : 0;
+        if (lm.length <= R_IRIS) return;
+        const gaze = (gazeRatio(lm[L_IRIS], lm[L_INNER], lm[L_OUTER]) + gazeRatio(lm[R_IRIS], lm[R_INNER], lm[R_OUTER])) / 2;
+        // Turning the head keeps the iris centred in the eye, so check head yaw too.
+        const faceW = Math.abs(lm[FACE_R].x - lm[FACE_L].x);
+        const yaw = faceW > 0.001 ? (lm[NOSE].x - (lm[FACE_L].x + lm[FACE_R].x) / 2) / faceW : 0;
 
-          const away = avgRatio > GAZE_THRESHOLD || yaw > YAW_THRESHOLD;
-          if (faces.length === 1) setSeen(away ? "away" : "ok");
-          if (away) {
-            if (gazeAwaySince.current === null) gazeAwaySince.current = now;
-            else if (now - gazeAwaySince.current > GAZE_GRACE_MS) report("gaze-away");
-          } else {
-            gazeAwaySince.current = null;
+        if (calib.gaze.length < CALIBRATION_CHECKS) {
+          if (faces.length === 1) {
+            calib.gaze.push(gaze);
+            calib.yaw.push(yaw);
+            if (calib.gaze.length === CALIBRATION_CHECKS) {
+              calib.baseGaze = cap(median(calib.gaze));
+              calib.baseYaw = cap(median(calib.yaw));
+            }
           }
+          setSeen(faces.length >= 2 ? "multiple" : "ok");
+          return;
         }
+
+        if (!smooth.primed) Object.assign(smooth, { gaze, yaw, primed: true });
+        smooth.gaze += SMOOTHING * (gaze - smooth.gaze);
+        smooth.yaw += SMOOTHING * (yaw - smooth.yaw);
+        const away = Math.abs(smooth.gaze - calib.baseGaze) > GAZE_THRESHOLD || Math.abs(smooth.yaw - calib.baseYaw) > YAW_THRESHOLD;
+        setSeen(faces.length >= 2 ? "multiple" : away ? "away" : "ok");
+        step("gaze-away", away, GAZE_GRACE_MS, now);
       }, CHECK_INTERVAL_MS);
     }
 
@@ -292,8 +331,9 @@ export function useFaceProctor({
       faceMesh?.close?.();
       setState("idle");
       setSeen(null);
+      tracker.current.reset();
     };
-  }, [enabled, report]);
+  }, [enabled, step]);
 
   return { videoRef, canvasRef, state, errorMessage, seen };
 }

@@ -8,6 +8,7 @@ export const metadata = { title: "Admin", robots: { index: false } };
 const NAV = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/leaderboard", label: "Leaderboard" },
   { href: "/admin/activity", label: "Activity" },
   { href: "/admin/blocked", label: "Block list" },
   { href: "/admin/community", label: "Community" },
