@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { eq, or } from "drizzle-orm";
 import { db, users } from "@/db";
-import { createSession, homeFor, isConfiguredAdmin } from "@/lib/auth";
+import { createSession, homeFor, isConfiguredAdmin, revokeAllSessions } from "@/lib/auth";
 import { logEvent } from "@/lib/events";
 import { finishGoogleAuth, googleEnabled, OAUTH_COOKIE } from "@/lib/google";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
@@ -31,14 +31,16 @@ export async function GET(req: Request) {
       await logEvent("login_blocked", { userId: user.id });
       redirect("/login?error=blocked");
     }
-    // Same verified email as an existing password account: link it to this Google account.
-    // An unverified password account was never proven to belong to this person: Google proves the email
-    // now, and the old password is dropped so whoever set it can't sign in to the linked account.
+    // Same email as a password account: link it to this Google account. Anyone could have made that
+    // account with this email (sign-up doesn't always prove the email), so the password and every
+    // session are dropped: whoever set them can't get into the account the real owner now uses.
+    const linking = !user.googleId;
     const patch = {
-      ...(user.googleId ? {} : { googleId: profile.sub }),
-      ...(user.emailVerifiedAt ? {} : { emailVerifiedAt: new Date(), passwordHash: null }),
+      ...(linking ? { googleId: profile.sub, passwordHash: null } : {}),
+      ...(user.emailVerifiedAt ? {} : { emailVerifiedAt: new Date() }),
       ...(user.role !== "ADMIN" && isConfiguredAdmin(profile.email) ? { role: "ADMIN" as const } : {}),
     };
+    if (linking && user.passwordHash) await revokeAllSessions(user.id);
     if (Object.keys(patch).length) [user] = await db.update(users).set(patch).where(eq(users.id, user.id)).returning();
     await createSession(user.id);
     await logEvent("login", { userId: user.id, meta: { provider: "google" } });
@@ -46,7 +48,7 @@ export async function GET(req: Request) {
   }
 
   const { ip } = await requestInfo();
-  if (!rateLimit(`register:${ip}`, LIMITS.register.limit, LIMITS.register.windowMs).ok) {
+  if (!(await rateLimit(`register:${ip}`, LIMITS.register.limit, LIMITS.register.windowMs)).ok) {
     await logEvent("rate_limited", { meta: { action: "register" } });
     redirect("/login?error=rate");
   }

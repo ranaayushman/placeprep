@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { createHash } from "node:crypto";
 import { adminActions, announcements, db, userDeletions, users } from "@/db";
-import { requireAdmin, revokeAllSessions } from "@/lib/auth";
+import { isConfiguredAdmin, requireAdmin, revokeAllSessions } from "@/lib/auth";
 import { closeOpenAttempts } from "@/lib/exam/service";
 import { sendCampaign } from "@/lib/brevo";
 import { ANNOUNCEMENTS_TAG } from "@/lib/announcements";
@@ -63,6 +63,8 @@ export async function setRole(form: FormData) {
   const { admin, target } = await loadTarget(form);
   const role = z.enum(["STUDENT", "ADMIN"]).parse(form.get("role"));
   if (target.id === admin.id) done(target.id, "You can't change your own role.");
+  // Owner accounts: one leaked admin password must not be enough to lock the owner out.
+  if (isConfiguredAdmin(target.email)) done(target.id, "This is an owner account (ADMIN_EMAILS); its role can't be changed here.");
   if (role === "ADMIN" && target.blockedAt) done(target.id, "Unblock the user before making them an admin.");
   await db.update(users).set({ role }).where(eq(users.id, target.id));
   await db.insert(adminActions).values({ adminId: admin.id, targetUserId: target.id, action: role === "ADMIN" ? "make_admin" : "remove_admin" });

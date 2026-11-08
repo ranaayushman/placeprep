@@ -47,7 +47,7 @@ export async function GET(_req: Request, { params }: Ctx) {
 export async function POST(req: Request, { params }: Ctx) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
-  const limited = rateLimit(`exam:${user.id}`, LIMITS.examApi.limit, LIMITS.examApi.windowMs);
+  const limited = await rateLimit(`exam:${user.id}`, LIMITS.examApi.limit, LIMITS.examApi.windowMs);
   if (!limited.ok) {
     return NextResponse.json({ error: "Too many requests — slow down" }, { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } });
   }

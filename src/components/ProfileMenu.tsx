@@ -53,6 +53,9 @@ export function ProfileMenu({ name, email, admin = false }: { name: string; emai
               Student view
             </Link>
           )}
+          <Link href="/account" className={ITEM} onClick={() => setOpen(false)}>
+            Account &amp; password
+          </Link>
           <button
             type="button"
             className={ITEM}

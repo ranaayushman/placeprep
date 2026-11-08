@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, users } from "@/db";
-import { createSession, destroySession, getCurrentUser, hashPassword, homeFor, isConfiguredAdmin, requireUser, verifyPassword } from "@/lib/auth";
+import { createSession, destroySession, getCurrentUser, hashPassword, homeFor, requireUser, verifyPassword } from "@/lib/auth";
 import { profileSchema } from "@/lib/profile";
 import { logEvent } from "@/lib/events";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
@@ -34,7 +34,7 @@ const otpEnabled = () => process.env.EMAIL_OTP === "on";
 
 export async function register(_: AuthState, form: FormData): Promise<AuthState> {
   const { ip } = await requestInfo();
-  if (!rateLimit(`register:${ip}`, LIMITS.register.limit, LIMITS.register.windowMs).ok) {
+  if (!(await rateLimit(`register:${ip}`, LIMITS.register.limit, LIMITS.register.windowMs)).ok) {
     await logEvent("rate_limited", { meta: { action: "register" } });
     return { error: "Too many sign-ups from this network. Try again later." };
   }
@@ -49,7 +49,7 @@ export async function register(_: AuthState, form: FormData): Promise<AuthState>
 
   const [user] = await db
     .insert(users)
-    .values({ name, email, passwordHash: await hashPassword(password), role: isConfiguredAdmin(email) ? "ADMIN" : "STUDENT", ...(otpEnabled() ? { emailVerifiedAt: null } : {}) })
+    .values({ name, email, passwordHash: await hashPassword(password), ...(otpEnabled() ? { emailVerifiedAt: null } : {}) })
     .returning({ id: users.id });
   await createSession(user.id);
   await logEvent("register", { userId: user.id });
@@ -98,8 +98,10 @@ export async function login(_: AuthState, form: FormData): Promise<AuthState> {
 
   const { ip } = await requestInfo();
   // Limit per IP+email (stops guessing one account) and per IP (stops spraying many accounts).
-  const byPair = rateLimit(`login:${ip}:${email}`, LIMITS.login.limit, LIMITS.login.windowMs);
-  const byIp = rateLimit(`login-ip:${ip}`, LIMITS.login.limit * 5, LIMITS.login.windowMs);
+  const [byPair, byIp] = await Promise.all([
+    rateLimit(`login:${ip}:${email}`, LIMITS.login.limit, LIMITS.login.windowMs),
+    rateLimit(`login-ip:${ip}`, LIMITS.login.limit * 5, LIMITS.login.windowMs),
+  ]);
   if (!byPair.ok || !byIp.ok) {
     await logEvent("rate_limited", { meta: { action: "login", email } });
     return { error: `Too many attempts. Try again in ${Math.ceil(Math.max(byPair.retryAfterSec, byIp.retryAfterSec) / 60)} min.` };
@@ -115,10 +117,6 @@ export async function login(_: AuthState, form: FormData): Promise<AuthState> {
   if (user.blockedAt) {
     await logEvent("login_blocked", { userId: user.id });
     return { error: "This account has been suspended. Contact the PlacePrep team if you think this is a mistake." };
-  }
-  if (user.role !== "ADMIN" && isConfiguredAdmin(email)) {
-    await db.update(users).set({ role: "ADMIN" }).where(eq(users.id, user.id));
-    user.role = "ADMIN";
   }
   await createSession(user.id);
   await logEvent("login", { userId: user.id });

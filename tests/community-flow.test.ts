@@ -140,7 +140,11 @@ describe("publish → practice → monitor", () => {
   });
 
   it("3 reports hide it from practice (NEEDS_REVIEW)", async () => {
-    for (const n of ["R One", "R Two", "R Three"]) await report(await mkUser(n), published, "WRONG_ANSWER");
+    for (const n of ["R One", "R Two", "R Three"]) {
+      const u = await mkUser(n);
+      await practise(u, MIN_ANSWERED_TO_UPLOAD);
+      await report(u, published, "WRONG_ANSWER");
+    }
     const [q] = await db.select().from(communityQuestions).where(eq(communityQuestions.id, published));
     expect(q.status).toBe("NEEDS_REVIEW");
     const student = await mkUser("After Reports");
@@ -169,7 +173,10 @@ describe("publish → practice → monitor", () => {
   it("reporting twice counts once", async () => {
     const q = await submitQuestion(author, { ...novel(7), topic: "t-os", stem: "Which state is a process in while it waits for disk I/O to finish?", options: ["Blocked", "Running", "Ready", "Terminated"] });
     await approve(admin, q.id);
+    const newbie = await mkUser("New Reporter");
+    await expect(report(newbie, q.id, "UNCLEAR")).rejects.toThrow(/more practice/);
     const u = await mkUser("Twice Reporter");
+    await practise(u, MIN_ANSWERED_TO_UPLOAD);
     await report(u, q.id, "UNCLEAR");
     expect((await report(u, q.id, "UNCLEAR")).open).toBe(1);
   });

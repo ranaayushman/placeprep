@@ -9,6 +9,7 @@ export type EventType =
   | "login_failed"
   | "login_blocked"
   | "logout"
+  | "password_changed"
   | "mock_started"
   | "mock_submitted"
   | "practice_started"

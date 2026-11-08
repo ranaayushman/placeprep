@@ -19,7 +19,8 @@ export async function GET() {
   } catch (err) {
     console.error("[health] DB ping failed:", err);
     return Response.json(
-      { ok: false, error: err instanceof Error ? err.message : "unknown" },
+      // The real error is in the server log; don't show database details to the public.
+      { ok: false, error: "database unavailable" },
       { status: 503 },
     );
   }

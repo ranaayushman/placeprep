@@ -307,3 +307,14 @@ export type Attempt = typeof attempts.$inferSelect;
 export type AttemptSection = typeof attemptSections.$inferSelect;
 export type AttemptQuestion = typeof attemptQuestions.$inferSelect;
 export type Event = typeof events.$inferSelect;
+
+/** Rate-limit counters, shared by every server instance (one fixed window per key). */
+export const rateLimits = pgTable(
+  "rate_limits",
+  {
+    key: text("key").primaryKey(),
+    hits: integer("hits").notNull(),
+    windowStart: ms("window_start").notNull(),
+  },
+  (t) => [index("rate_limits_window_idx").on(t.windowStart)],
+);

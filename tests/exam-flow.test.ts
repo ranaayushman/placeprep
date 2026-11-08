@@ -173,8 +173,17 @@ describe("rate limiter", () => {
   it("blocks after the limit within the window", async () => {
     const { rateLimit } = await import("@/lib/rate-limit");
     const key = `test:${Math.random()}`;
-    for (let i = 0; i < 3; i++) expect(rateLimit(key, 3, 60_000).ok).toBe(true);
-    expect(rateLimit(key, 3, 60_000).ok).toBe(false);
+    for (let i = 0; i < 3; i++) expect((await rateLimit(key, 3, 60_000)).ok).toBe(true);
+    expect(await rateLimit(key, 3, 60_000)).toMatchObject({ ok: false });
+  });
+
+  it("starts a fresh window once the old one is over", async () => {
+    const { rateLimit } = await import("@/lib/rate-limit");
+    const key = `test:${Math.random()}`;
+    expect((await rateLimit(key, 1, 50)).ok).toBe(true);
+    expect((await rateLimit(key, 1, 50)).ok).toBe(false);
+    await new Promise((r) => setTimeout(r, 60));
+    expect((await rateLimit(key, 1, 50)).ok).toBe(true);
   });
 });
 

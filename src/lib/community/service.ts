@@ -153,9 +153,12 @@ export async function markDuplicate(adminId: string, id: string, duplicateOfRef:
 
 export const REPORT_REASONS = ["WRONG_ANSWER", "UNCLEAR", "COPIED", "OTHER"] as const;
 
-/** One report per student per question; REPORTS_TO_HIDE open reports hide it from practice. */
+/** One report per student per question, from students who have practised; REPORTS_TO_HIDE open reports hide it from practice. */
 export async function report(userId: string, questionId: string, reason: (typeof REPORT_REASONS)[number], details?: string) {
   if (!REPORT_REASONS.includes(reason)) throw new CommunityError("Choose a reason.");
+  // Same bar as uploading, so a few throwaway accounts can't hide good questions.
+  const { needMore } = await uploadEligibility(userId);
+  if (needMore > 0) throw new CommunityError(`Answer ${needMore} more practice question${needMore === 1 ? "" : "s"} before reporting.`);
   const [q] = await db.select({ id: communityQuestions.id, status: communityQuestions.status }).from(communityQuestions).where(eq(communityQuestions.id, questionId));
   if (!q || (q.status !== "PUBLISHED" && q.status !== "NEEDS_REVIEW")) throw new CommunityError("Question not found.");
   await db.insert(questionReports).values({ questionId, userId, reason, details: details?.trim().slice(0, 1000) || null }).onConflictDoNothing();

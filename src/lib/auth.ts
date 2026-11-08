@@ -21,7 +21,10 @@ export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
-/** Emails listed in ADMIN_EMAILS (comma-separated) are made admins when they register or log in. */
+/**
+ * Emails listed in ADMIN_EMAILS (comma-separated) become admins, but only through Google sign-in,
+ * where Google has proven the email. Password sign-up doesn't, so it never grants admin.
+ */
 export function isConfiguredAdmin(email: string) {
   return (process.env.ADMIN_EMAILS ?? "")
     .split(",")

@@ -10,8 +10,8 @@ import { EXAM_BY_ID, type ExamId } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPIC_BY_ID } from "@/lib/questions";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
 
-function guardStart(userId: string) {
-  if (!rateLimit(`start:${userId}`, LIMITS.startTest.limit, LIMITS.startTest.windowMs).ok) {
+async function guardStart(userId: string) {
+  if (!(await rateLimit(`start:${userId}`, LIMITS.startTest.limit, LIMITS.startTest.windowMs)).ok) {
     redirect(`/dashboard?error=${encodeURIComponent("You are starting tests too quickly. Try again later.")}`);
   }
 }
@@ -24,7 +24,7 @@ const practiceSchema = z.object({
 
 export async function startPractice(form: FormData) {
   const user = await requireUser();
-  guardStart(user.id);
+  await guardStart(user.id);
   const parsed = practiceSchema.safeParse({
     topics: form.getAll("topic").map(String).filter((t) => TOPIC_BY_ID.has(t)),
     count: form.get("count") ?? 10,
@@ -50,7 +50,7 @@ export async function startMock(form: FormData) {
     .where(and(eq(attempts.userId, user.id), eq(attempts.mode, "MOCK"), eq(attempts.status, "IN_PROGRESS")))
     .limit(1);
   if (open) redirect(`/attempt/${open.id}`);
-  guardStart(user.id);
+  await guardStart(user.id);
   const examId = String(form.get("exam") ?? "infosys-se");
   if (!EXAM_BY_ID.has(examId)) redirect("/dashboard");
   const id = await createMock(user.id, { exam: examId as ExamId, includeWriting: form.get("writing") === "on", cameraOff: form.get("camera") !== "on" });
