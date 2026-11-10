@@ -32,6 +32,8 @@ export const LIMITS = {
   /** Answer saves etc. A real candidate needs far fewer than this. */
   examApi: { limit: 240, windowMs: 60 * 1000 },
   startTest: { limit: 20, windowMs: 60 * 60 * 1000 },
+  /** Question reports: plenty for a real student, stops flooding the queue. */
+  report: { limit: 30, windowMs: 60 * 60 * 1000 },
   /** Password changes: stops guessing the current password from a stolen session. */
   password: { limit: 5, windowMs: 15 * 60 * 1000 },
 };

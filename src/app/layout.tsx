@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { CookieConsent } from "@/components/CookieConsent";
+import { ErrorReporter } from "@/components/ErrorReporter";
 import "./globals.css";
 
 // Inter is the logo's typeface; the mono is only for exam timers and question numbers.
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <CookieConsent />
+        <ErrorReporter />
       </body>
     </html>
   );

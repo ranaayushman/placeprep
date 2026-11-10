@@ -3,7 +3,9 @@
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireUser } from "@/lib/auth";
-import { CommunityError, REPORT_REASONS, report, submitQuestion } from "@/lib/community/service";
+import { CommunityError, submitQuestion } from "@/lib/community/service";
+import { reportQuestion, ReportError } from "@/lib/bank-reports";
+import { LIMITS, rateLimit } from "@/lib/rate-limit";
 
 export type SubmitState = { error?: string; values?: Record<string, string> } | undefined;
 
@@ -38,15 +40,14 @@ export async function submitAction(_: SubmitState, form: FormData): Promise<Subm
 
 export type ReportState = { ok?: boolean; error?: string } | undefined;
 
-/** "Report a problem" on a community question (practice feedback and results). */
+/** "Report a problem" on any question the student has seen the answer to (practice feedback and results). */
 export async function reportAction(_: ReportState, form: FormData): Promise<ReportState> {
   const user = await requireUser();
-  const id = String(form.get("questionId") ?? "");
-  const reason = String(form.get("reason") ?? "") as (typeof REPORT_REASONS)[number];
+  if (!(await rateLimit(`report:${user.id}`, LIMITS.report.limit, LIMITS.report.windowMs)).ok) return { error: "You've sent a lot of reports. Try again in an hour." };
   try {
-    await report(user.id, id, reason, String(form.get("details") ?? ""));
+    await reportQuestion(user.id, String(form.get("attemptQuestionId") ?? ""), String(form.get("reason") ?? ""), String(form.get("details") ?? ""));
   } catch (e) {
-    if (e instanceof CommunityError) return { error: e.message };
+    if (e instanceof ReportError) return { error: e.message };
     throw e;
   }
   return { ok: true };

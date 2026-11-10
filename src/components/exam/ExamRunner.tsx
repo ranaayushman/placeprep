@@ -372,7 +372,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
                         : `Incorrect — the answer is ${OPTION_LETTERS[current.feedback.answerIndex]}`}
                     </p>
                     <p className="mt-1 text-slate-700">{current.feedback.explanation}</p>
-                    {current.view.community && <ReportProblem questionId={current.view.community.id} />}
+                    <ReportProblem attemptQuestionId={current.id} community={!!current.view.community} />
                   </div>
                 )}
               </div>

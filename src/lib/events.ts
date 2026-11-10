@@ -10,6 +10,7 @@ export type EventType =
   | "login_blocked"
   | "logout"
   | "password_changed"
+  | "deletion_requested"
   | "mock_started"
   | "mock_submitted"
   | "practice_started"

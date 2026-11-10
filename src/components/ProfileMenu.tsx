@@ -68,7 +68,7 @@ export function ProfileMenu({ name, email, admin = false }: { name: string; emai
           </button>
           {/* Deletion is done by an admin on request, as the Privacy Policy says. */}
           {!admin && (
-            <a href="mailto:support@placeprep.me?subject=Delete%20my%20PlacePrep%20account" className={ITEM}>
+            <a href="/account#delete" className={ITEM} onClick={() => setOpen(false)}>
               Request account deletion
             </a>
           )}

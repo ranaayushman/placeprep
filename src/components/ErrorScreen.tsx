@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { PRIMARY, SECONDARY, StatusPage } from "./StatusPage";
+import { reportClientError } from "./ErrorReporter";
 
 /**
  * Errors that mean "this tab is running an older deploy": its code files or server actions no longer
@@ -14,6 +15,7 @@ export function ErrorScreen({ error, reset }: { error: Error & { digest?: string
   const stale = STALE.test(`${error.name} ${error.message}`);
   useEffect(() => {
     console.error(error);
+    reportClientError(error);
     // Reload once for a stale tab; the time check stops a reload loop if the error is something else.
     const last = Number(sessionStorage.getItem(RELOADED_AT) ?? 0);
     if (stale && Date.now() - last > 30_000) {

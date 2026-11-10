@@ -341,3 +341,45 @@ export const mockExams = pgTable("mock_exams", {
   createdAt: now("created_at"),
   updatedAt: now("updated_at"),
 });
+
+/** Reports on built-in bank questions (community questions use question_reports). `ref` is "topic:seed". */
+export const bankReports = pgTable(
+  "bank_reports",
+  {
+    id: id(),
+    ref: text("ref").notNull(),
+    topic: text("topic").notNull(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    reason: text("reason", { enum: ["WRONG_ANSWER", "UNCLEAR", "OTHER"] }).notNull(),
+    details: text("details"),
+    status: text("status", { enum: ["OPEN", "RESOLVED", "DISMISSED"] }).notNull().default("OPEN"),
+    resolvedBy: text("resolved_by").references(() => users.id, { onDelete: "set null" }),
+    resolvedAt: ms("resolved_at"),
+    createdAt: now("created_at"),
+  },
+  (t) => [uniqueIndex("bank_reports_once_uq").on(t.ref, t.userId), index("bank_reports_status_idx").on(t.status, t.topic)],
+);
+
+/** A student asked for their account to be deleted (Privacy Policy: within 30 days). Gone with the user. */
+export const deletionRequests = pgTable("deletion_requests", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  reason: text("reason"),
+  createdAt: now("created_at"),
+});
+
+/** Crashes reported by browsers (error screen, uncaught errors) and by the server (onRequestError). */
+export const appErrors = pgTable(
+  "app_errors",
+  {
+    id: id(),
+    source: text("source", { enum: ["client", "server"] }).notNull(),
+    message: text("message").notNull(),
+    stack: text("stack"),
+    digest: text("digest"),
+    path: text("path"),
+    userAgent: text("user_agent"),
+    userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: now("created_at"),
+  },
+  (t) => [index("app_errors_created_idx").on(t.createdAt)],
+);

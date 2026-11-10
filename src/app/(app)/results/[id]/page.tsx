@@ -127,7 +127,7 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
                   ))}
                 </ul>
                 <p className="mt-3 rounded-md bg-slate-50 p-3 text-sm text-slate-700"><b>Explanation: </b>{q.explanation}</p>
-                {view.community && <ReportProblem questionId={view.community.id} />}
+                <ReportProblem attemptQuestionId={q.id} community={!!view.community} />
               </li>
             );
           })}

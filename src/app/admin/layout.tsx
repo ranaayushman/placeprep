@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
+import { pendingDeletionCount } from "@/lib/deletion-requests";
 import { Logo } from "@/components/Logo";
 import { ProfileMenu } from "@/components/ProfileMenu";
 
@@ -9,10 +10,13 @@ const NAV = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/leaderboard", label: "Leaderboard" },
+  { href: "/admin/growth", label: "Growth" },
   { href: "/admin/activity", label: "Activity" },
+  { href: "/admin/errors", label: "Errors" },
   { href: "/admin/blocked", label: "Block list" },
   { href: "/admin/community", label: "Community" },
   { href: "/admin/mocks", label: "Mocks" },
+  { href: "/admin/reports", label: "Reports" },
   { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/campaigns", label: "Campaigns" },
   { href: "/admin/announcements", label: "Updates" },
@@ -22,7 +26,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const admin = await requireStaff();
   const isMod = admin.role === "MODERATOR";
   // Moderators see only the question tools; each admin-only page also checks requireAdmin itself.
-  const nav = isMod ? [{ href: "/admin", label: "Overview" }, { href: "/admin/community", label: "Review questions" }, { href: "/community/submit", label: "Add a question" }, { href: "/admin/mocks", label: "Mock exams" }] : NAV;
+  // The deletion count sits in the nav so a legal deadline is never out of sight.
+  const deletions = isMod ? 0 : await pendingDeletionCount();
+  const adminNav = deletions ? [...NAV, { href: "/admin/deletions", label: `Deletions (${deletions})` }] : [...NAV, { href: "/admin/deletions", label: "Deletions" }];
+  const nav = isMod ? [{ href: "/admin", label: "Overview" }, { href: "/admin/community", label: "Review questions" }, { href: "/community/submit", label: "Add a question" }, { href: "/admin/mocks", label: "Mock exams" }, { href: "/admin/reports", label: "Question reports" }] : adminNav;
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-900 text-white">

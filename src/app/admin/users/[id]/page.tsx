@@ -1,3 +1,4 @@
+import { deletionDue, myDeletionRequest } from "@/lib/deletion-requests";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
@@ -27,11 +28,17 @@ export default async function AdminUserDetail({ params, searchParams }: { params
   const sections = sectionStats(await getTopicStats(id));
   const isSelf = user.id === admin.id;
   const violationEvents = events.filter((e) => e.type === "violation");
+  const deletionRequest = await myDeletionRequest(id);
 
   return (
     <div className="space-y-6">
       <Link href="/admin/users" className="text-sm text-slate-500 hover:text-slate-900">← All users</Link>
       {msg && <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-900">{msg}</div>}
+      {deletionRequest && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-900">
+          Asked for account deletion on {fmtDate(deletionRequest.createdAt)}{deletionRequest.reason ? ` (“${deletionRequest.reason}”)` : ""}. Delete by <b>{fmtDate(deletionDue(deletionRequest.createdAt))}</b>, using Delete account below.
+        </div>
+      )}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>

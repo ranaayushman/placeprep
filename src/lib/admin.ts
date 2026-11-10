@@ -175,7 +175,7 @@ export async function blockedList() {
   return rows.map((r) => ({ ...r, blockedAt: new Date(n(r.blocked_at)) }));
 }
 
-export const EVENT_TYPES = ["login", "login_failed", "login_blocked", "register", "email_verified", "logout", "password_changed", "mock_started", "mock_submitted", "practice_started", "violation", "rate_limited", "question_submitted", "question_flagged", "question_approved", "question_rejected", "question_reported"] as const;
+export const EVENT_TYPES = ["login", "login_failed", "login_blocked", "register", "email_verified", "logout", "password_changed", "deletion_requested", "mock_started", "mock_submitted", "practice_started", "violation", "rate_limited", "question_submitted", "question_flagged", "question_approved", "question_rejected", "question_reported"] as const;
 
 export async function activityFeed({ type, page = 1 }: { type?: string; page?: number }) {
   const where = type && (EVENT_TYPES as readonly string[]).includes(type) ? sql`e.type = ${type}` : sql`1 = 1`;
@@ -252,4 +252,68 @@ export async function leaderboard(exam?: string): Promise<LeaderRow[]> {
     mocks: n(r.mocks), avgPct: r.avg_pct == null ? null : Number(r.avg_pct), bestPct: r.best_pct == null ? null : Number(r.best_pct),
     lastMockAt: r.last_at ? new Date(n(r.last_at)) : null, practiceAnswered: n(r.answered), practiceAcc: r.acc == null ? null : Number(r.acc),
   }));
+}
+
+export type FunnelStep = { label: string; n: number };
+
+/**
+ * Where students drop off, for students who signed up since `since` (0 = all time). Steps 2–5 each
+ * require the step before, so the numbers never go up. "Came back" (seen on a later day) is separate.
+ */
+export async function signupFunnel(since: number): Promise<FunnelStep[]> {
+  const [r] = await db.execute<{ signed: number; onboarded: number; practised: number; finished: number; mocked: number; returned: number }>(sql`
+    WITH s AS (
+      SELECT u.onboarded_at IS NOT NULL AS ob,
+             EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = u.id) AS started,
+             EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = u.id AND a.status = 'SUBMITTED') AS finished,
+             EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = u.id AND a.mode = 'MOCK' AND a.status = 'SUBMITTED') AS mocked,
+             u.last_seen_at >= u.created_at + ${DAY} AS returned
+      FROM users u WHERE u.role = 'STUDENT' AND u.created_at >= ${since}
+    )
+    SELECT COUNT(*) AS signed,
+           COUNT(*) FILTER (WHERE ob) AS onboarded,
+           COUNT(*) FILTER (WHERE ob AND started) AS practised,
+           COUNT(*) FILTER (WHERE ob AND started AND finished) AS finished,
+           COUNT(*) FILTER (WHERE ob AND started AND finished AND mocked) AS mocked,
+           COUNT(*) FILTER (WHERE returned) AS returned
+    FROM s`);
+  return [
+    { label: "Signed up", n: n(r.signed) },
+    { label: "Finished onboarding", n: n(r.onboarded) },
+    { label: "Started a test", n: n(r.practised) },
+    { label: "Finished a test", n: n(r.finished) },
+    { label: "Finished a mock", n: n(r.mocked) },
+    { label: "Came back another day", n: n(r.returned) },
+  ];
+}
+
+export type Cohort = { weekStart: Date; size: number; weeks: (number | null)[] };
+
+/**
+ * Weekly sign-up cohorts (IST weeks, Monday start) for the last `count` weeks. weeks[k] = students
+ * who started any test in their (k+1)th week after signing up; null while that week isn't over for everyone.
+ */
+export async function retentionCohorts(count = 8, followWeeks = 4): Promise<Cohort[]> {
+  const WEEK = 7 * DAY;
+  const now = Date.now();
+  const rows = await db.execute<{ wk: number; size: number; w1: number; w2: number; w3: number; w4: number }>(sql`
+    WITH s AS (
+      SELECT id, created_at,
+             (extract(epoch from date_trunc('week', to_timestamp(created_at / 1000) AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata') * 1000)::bigint AS wk
+      FROM users WHERE role = 'STUDENT' AND created_at >= ${now - (count + 1) * WEEK}
+    ), act AS (
+      SELECT DISTINCT s.id, floor((a.started_at - s.created_at)::float / ${WEEK})::int AS w
+      FROM s JOIN attempts a ON a.user_id = s.id AND a.started_at >= s.created_at
+    )
+    SELECT s.wk, COUNT(DISTINCT s.id) AS size,
+           COUNT(DISTINCT act.id) FILTER (WHERE act.w = 1) AS w1, COUNT(DISTINCT act.id) FILTER (WHERE act.w = 2) AS w2,
+           COUNT(DISTINCT act.id) FILTER (WHERE act.w = 3) AS w3, COUNT(DISTINCT act.id) FILTER (WHERE act.w = 4) AS w4
+    FROM s LEFT JOIN act ON act.id = s.id
+    GROUP BY s.wk ORDER BY s.wk DESC LIMIT ${count}`);
+  return rows.map((r) => {
+    const weekStart = n(r.wk);
+    // Week k is over for the whole cohort once its last sign-up (end of the cohort week) is k+1 weeks old.
+    const weeks = [r.w1, r.w2, r.w3, r.w4].slice(0, followWeeks).map((v, k) => (now >= weekStart + WEEK + (k + 2) * WEEK ? n(v) : null));
+    return { weekStart: new Date(weekStart), size: n(r.size), weeks };
+  });
 }

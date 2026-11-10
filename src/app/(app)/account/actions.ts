@@ -6,6 +6,8 @@ import { db, users } from "@/db";
 import { createSession, hashPassword, requireUser, revokeAllSessions, verifyPassword } from "@/lib/auth";
 import { logEvent } from "@/lib/events";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
+import { revalidatePath } from "next/cache";
+import { cancelDeletionRequest, requestDeletion } from "@/lib/deletion-requests";
 
 export type PasswordState = { error?: string; ok?: boolean } | undefined;
 
@@ -30,4 +32,23 @@ export async function changePassword(_: PasswordState, form: FormData): Promise<
   await createSession(user.id);
   await logEvent("password_changed", { userId: user.id });
   return { ok: true };
+}
+
+export type DeletionState = { error?: string } | undefined;
+
+/** The student asks for deletion; an admin carries it out (Admin → Deletion requests) within 30 days. */
+export async function requestDeletionAction(_: DeletionState, form: FormData): Promise<DeletionState> {
+  const user = await requireUser();
+  if (user.role === "ADMIN") return { error: "Admins can't request deletion here. Ask another admin to remove your admin rights first." };
+  if (form.get("confirm") !== "on") return { error: "Tick the box to confirm." };
+  await requestDeletion(user.id, String(form.get("reason") ?? ""));
+  await logEvent("deletion_requested", { userId: user.id });
+  revalidatePath("/account");
+  return undefined;
+}
+
+export async function cancelDeletionAction() {
+  const user = await requireUser();
+  await cancelDeletionRequest(user.id);
+  revalidatePath("/account");
 }
