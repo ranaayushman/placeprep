@@ -328,6 +328,10 @@ export async function getExamState(attemptId: string, userId: string) {
         marked: q.marked,
         // Practice mode reveals feedback once a question has been answered; mocks never do.
         feedback: isPractice && q.chosenIndex != null ? { answerIndex: q.answerIndex, explanation: q.explanation } : null,
+        // Practice only: the answer travels with the question so "right or wrong" shows the moment the
+        // student clicks, without a round trip. A student could read it early, but that only inflates
+        // their own practice score; grading still happens on the server. Mocks never send it.
+        key: isPractice && q.answerIndex >= 0 ? { answerIndex: q.answerIndex, explanation: q.explanation } : null,
       })),
     },
   };

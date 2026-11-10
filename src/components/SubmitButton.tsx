@@ -9,8 +9,10 @@ import { useFormStatus } from "react-dom";
 export function SubmitButton({ children, className, disabled }: { children: React.ReactNode; className?: string; disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={disabled || pending} aria-busy={pending} className={`${className ?? ""} inline-flex items-center justify-center gap-2`}>
-      {pending && <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />}
+    // The caller's className is used as-is (rows on the dashboard are full-width flex buttons); adding
+    // layout classes here would override theirs. Pending only dims the button and adds a spinner.
+    <button type="submit" disabled={disabled || pending} aria-busy={pending} className={`${className ?? ""}${pending ? " cursor-wait opacity-70" : ""}`}>
+      {pending && <span className="mr-2 inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent align-[-2px]" aria-hidden />}
       {children}
     </button>
   );

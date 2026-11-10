@@ -16,7 +16,7 @@ export default async function AdminOverview() {
   const tiles = [
     { label: "Students", value: counts.students, sub: `+${counts.new7d} this week` },
     { label: "Online now", value: counts.online, sub: `${counts.active24h} active in 24 h`, tone: "text-emerald-600" },
-    { label: "Mocks submitted (24 h)", value: counts.mocks24h, sub: `${counts.answers24h} answers saved` },
+    { label: "Mocks submitted (24 h)", value: counts.mocks24h, sub: `${counts.answers24h} answers saved · see all`, href: "/admin/submissions?window=24h" },
     { label: "Warnings (24 h)", value: counts.violations24h, sub: `${counts.failedLogins24h} failed logins`, tone: counts.violations24h ? "text-amber-600" : "" },
     { label: "Blocked", value: counts.blocked, sub: "on the block list", tone: counts.blocked ? "text-red-600" : "" },
     {

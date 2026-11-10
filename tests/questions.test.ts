@@ -92,3 +92,22 @@ it("data sufficiency is generated and uses every answer", () => {
   expect([...answers].sort()).toEqual([0, 1, 2, 3, 4]);
   expect(prompts.size).toBeGreaterThan(300); // no longer a 10-question bank
 });
+
+it("grid row puzzles have one answer: no simple rule fits the example rows with a different result", () => {
+  // Independent of the generator's own list: the rules a student would reasonably try.
+  const tryRules: ((a: number, b: number) => number)[] = [
+    (a, b) => a + b, (a, b) => a - b, (a, b) => a * b, (a, b) => a + b + 1, (a, b) => a + b - 1, (a, b) => a * b + 1, (a, b) => a * b - 1,
+    (a, b) => 2 * a + b, (a, b) => a + 2 * b, (a, b) => a * a - b * b, (a, b) => a * a + b, (a, b) => a * a - b, (a, b) => (a + b) * 2,
+    (a, b) => a * b + b, (a, b) => a * b - a, (a, b) => a * a + b * b, (a, b) => (a - b) * (a + b) + 1,
+  ];
+  for (let seed = 1; seed <= 3000; seed++) {
+    const q = generate(`z-rowrule:${seed}`);
+    const [r1, r2, r3] = q.grid as number[][];
+    const answer = Number(q.options[q.answer]);
+    for (const g of tryRules) {
+      if (g(r1[0], r1[1]) === r1[2] && g(r2[0], r2[1]) === r2[2]) expect(g(r3[0], r3[1]), `z-rowrule:${seed} ${JSON.stringify(q.grid)}`).toBe(answer);
+    }
+  }
+  // The reported puzzle (3 2 5 / 4 3 7 / 5 3 ?: 8 by adding, 16 by squares) no longer comes out.
+  expect(generate("z-rowrule:649195439").grid).not.toEqual([[3, 2, 5], [4, 3, 7], [5, 3, null]]);
+});

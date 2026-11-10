@@ -51,6 +51,8 @@ describe("mock exam", () => {
     expect(s0.current.section).toBe("reasoning");
     expect(s0.current.questions).toHaveLength(15);
     expect(s0.current.questions[0].feedback).toBeNull();
+    // Mocks never send the answer key to the browser (practice does, for instant feedback).
+    expect(s0.current.questions.every((q) => q.key === null)).toBe(true);
 
     const first = s0.current.questions[0];
     await saveAnswer(id, userId, { questionId: first.id, chosenIndex: 0, timeDeltaMs: 4000 });
@@ -119,8 +121,10 @@ describe("practice", () => {
     if (s.status !== "IN_PROGRESS") throw new Error();
     expect(s.current.questions).toHaveLength(4);
     const q = s.current.questions[0];
+    // The key sent for instant feedback matches what the server grades with.
+    expect(q.key).not.toBeNull();
     const res = await saveAnswer(id, userId, { questionId: q.id, chosenIndex: 0 });
-    expect(res.feedback).not.toBeNull();
+    expect(res.feedback).toEqual(q.key);
     await expect(saveAnswer(id, userId, { questionId: q.id, chosenIndex: 1 })).rejects.toThrow(/locked/);
     // Mixed practice stores each question under its own section.
     const rows = await db.select().from(attemptQuestions).where(eq(attemptQuestions.attemptId, id));

@@ -325,3 +325,32 @@ export async function retentionCohorts(count = 8, followWeeks = 4): Promise<Coho
     return { weekStart: new Date(weekStart), size: n(r.size), weeks };
   });
 }
+
+export const SUBMISSION_WINDOWS = { "24h": DAY, "7d": 7 * DAY, "30d": 30 * DAY, all: 0 } as const;
+export type SubmissionWindow = keyof typeof SUBMISSION_WINDOWS;
+
+/** Every finished mock, newest first: who, which exam, score, warnings, how it ended. */
+export async function submittedMocks({ window = "all", exam, page = 1 }: { window?: SubmissionWindow; exam?: string; page?: number }) {
+  const span = SUBMISSION_WINDOWS[window];
+  const where = sql`a.mode = 'MOCK' AND a.status = 'SUBMITTED'
+    ${span ? sql`AND a.submitted_at >= ${Date.now() - span}` : sql``}
+    ${exam ? sql`AND a.exam = ${exam}` : sql``}`;
+  const [rows, [{ total }]] = await Promise.all([
+    db.execute<{ id: string; user_id: string; name: string; email: string; title: string; exam: string | null; score: number | null; max_score: number | null; violations: number; camera_alerts: number; auto_submitted: boolean; started_at: number; submitted_at: number }>(sql`
+      SELECT a.id, a.user_id, u.name, u.email, a.title, a.exam, a.score, a.max_score, a.violations, a.camera_alerts, a.auto_submitted, a.started_at, a.submitted_at
+      FROM attempts a JOIN users u ON u.id = a.user_id
+      WHERE ${where}
+      ORDER BY a.submitted_at DESC
+      LIMIT ${PAGE_SIZE} OFFSET ${(Math.max(1, page) - 1) * PAGE_SIZE}`),
+    db.execute<{ total: number }>(sql`SELECT COUNT(*) AS total FROM attempts a WHERE ${where}`),
+  ]);
+  return {
+    total: n(total),
+    pages: Math.max(1, Math.ceil(n(total) / PAGE_SIZE)),
+    rows: rows.map((r) => ({
+      id: r.id, userId: r.user_id, name: r.name, email: r.email, title: r.title, exam: r.exam,
+      score: n(r.score), maxScore: n(r.max_score), violations: n(r.violations), cameraAlerts: n(r.camera_alerts), autoSubmitted: !!r.auto_submitted,
+      startedAt: new Date(n(r.started_at)), submittedAt: new Date(n(r.submitted_at)),
+    })),
+  };
+}

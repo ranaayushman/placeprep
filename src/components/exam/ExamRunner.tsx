@@ -136,7 +136,14 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
     if (!current || current.feedback || checking === current.id) return;
     update({ chosenIndex: i });
     if (isMock) return void send(current, { chosenIndex: i }, takeDelta());
-    // Practice: one answer per question, so lock the options until the server says right or wrong.
+    // Practice: show right or wrong at once from the key sent with the question; save in the background.
+    // If saving fails for good, send() reloads from the server, which clears the answer so it can be retried.
+    if (current.key) {
+      const { id, key } = current;
+      setQuestions((qs) => qs.map((x) => (x.id === id ? { ...x, feedback: key } : x)));
+      return void send(current, { chosenIndex: i }, takeDelta());
+    }
+    // No key (older tab): lock the options until the server says right or wrong.
     setChecking(current.id);
     try {
       await send(current, { chosenIndex: i }, takeDelta());

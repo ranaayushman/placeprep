@@ -2,6 +2,14 @@
 import { mcq, rng } from "./rng";
 import type { Question, Topic } from "./types";
 
+/** Rules a student is likely to try on a row puzzle; none may fit unless it gives the same answer. */
+const OBVIOUS_RULES: ((a: number, b: number) => number)[] = [
+  (a, b) => a + b, (a, b) => a - b, (a, b) => a * b, (a, b) => a + b + 1, (a, b) => a + b - 1,
+  (a, b) => a * b + 1, (a, b) => a * b - 1, (a, b) => 2 * a + b, (a, b) => a + 2 * b, (a, b) => 2 * (a - b),
+  (a, b) => a * a, (a, b) => a * a - b, (a, b) => a * a + b * b, (a, b) => (a + b) ** 2, (a, b) => (a - b) ** 2,
+  (a, b) => a * b - b, (a, b) => a * b + a, (a, b) => a * (a - b), (a, b) => b * b + a, (a, b) => a * a - b * b - 1,
+];
+
 function rowRule(seed: number): Question {
   const r = rng(seed);
   const rules: [string, (a: number, b: number) => number, string][] = [
@@ -19,10 +27,11 @@ function rowRule(seed: number): Question {
     const b = r.int(2, a - 1);
     if (!rows.some((row) => row[0] === a && row[1] === b)) rows.push([a, b, f(a, b)]);
   }
-  // Reject grids where a different rule from the list also explains the two visible rows
-  // but gives another answer — the puzzle must have one defensible answer.
-  const ambiguous = rules.some(
-    ([, g]) => g !== f && g(rows[0][0], rows[0][1]) === rows[0][2] && g(rows[1][0], rows[1][1]) === rows[1][2] && g(rows[2][0], rows[2][1]) !== rows[2][2],
+  // Reject grids where another rule also explains the two visible rows but gives a different
+  // answer: the puzzle must have one defensible answer. Checked against the puzzle rules and the
+  // simple rules students try first (a² − b² equals a + b whenever b = a − 1, for example).
+  const ambiguous = [...rules.map(([, g]) => g), ...OBVIOUS_RULES].some(
+    (g) => g !== f && g(rows[0][0], rows[0][1]) === rows[0][2] && g(rows[1][0], rows[1][1]) === rows[1][2] && g(rows[2][0], rows[2][1]) !== rows[2][2],
   );
   if (ambiguous) return rowRule(seed + 7919);
   const ans = rows[2][2];
