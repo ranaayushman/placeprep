@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { attempts, db, users } from "@/db";
@@ -23,7 +24,7 @@ function QuizButton({ topics, count = 10, timed = false, children, className = Q
       {topics.map((t) => <input key={t} type="hidden" name="topic" value={t} />)}
       <input type="hidden" name="count" value={count} />
       {timed && <input type="hidden" name="timed" value="on" />}
-      <button className={className}>{children}</button>
+      <SubmitButton className={className}>{children}</SubmitButton>
     </form>
   );
 }
@@ -267,7 +268,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 ) : r.topicId ? (
                   <QuizButton topics={[r.topicId]} timed={r.kind === "speed"}>Start 10</QuizButton>
                 ) : r.kind === "mistakes" ? (
-                  <form action={retryMistakes}><button className={QUIZ_BTN}>Retry</button></form>
+                  <form action={retryMistakes}><SubmitButton className={QUIZ_BTN}>Retry</SubmitButton></form>
                 ) : (
                   <Link href="/mock" className={QUIZ_BTN}>Open</Link>
                 )}
@@ -281,7 +282,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <p className="mt-1 text-sm text-muted">
               {wrong.length ? `${wrong.length} question${wrong.length === 1 ? "" : "s"} you got wrong recently.` : "Nothing to retry yet. Wrong answers collect here."}
             </p>
-            {wrong.length > 0 && <form action={retryMistakes} className="mt-3"><button className={QUIZ_BTN}>Retry now</button></form>}
+            {wrong.length > 0 && <form action={retryMistakes} className="mt-3"><SubmitButton className={QUIZ_BTN}>Retry now</SubmitButton></form>}
           </div>
           <div className="rounded-2xl border border-deep/10 bg-surface p-6">
             <h2 className="font-bold">Timed speed drill</h2>

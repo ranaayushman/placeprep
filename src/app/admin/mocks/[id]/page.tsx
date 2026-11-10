@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
@@ -30,7 +31,7 @@ export default async function MockExamPage({ params, searchParams }: { params: P
           <form action={publishMockAction}>
             <input type="hidden" name="id" value={m.id} />
             {!live && <input type="hidden" name="publish" value="on" />}
-            <button className={live ? "btn-secondary" : "btn-primary"}>{live ? "Unpublish" : "Publish for students"}</button>
+            <SubmitButton className={live ? "btn-secondary" : "btn-primary"}>{live ? "Unpublish" : "Publish for students"}</SubmitButton>
           </form>
         )}
       </div>
@@ -51,7 +52,7 @@ export default async function MockExamPage({ params, searchParams }: { params: P
           <MockExamForm initial={m} sections={MOCK_SECTIONS.map((sid) => ({ id: sid, label: SECTION_LABELS[sid] }))} maxSections={MAX_MOCK_SECTIONS} />
           <form action={deleteMockAction}>
             <input type="hidden" name="id" value={m.id} />
-            <button className="text-sm text-red-700 hover:underline">Delete this draft</button>
+            <SubmitButton className="text-sm text-red-700 hover:underline">Delete this draft</SubmitButton>
           </form>
         </>
       )}

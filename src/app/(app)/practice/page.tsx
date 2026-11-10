@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import { requireUser } from "@/lib/auth";
 import { getTopicStats } from "@/lib/analytics";
 import { SECTION_LABELS, type SectionId } from "@/lib/questions";
@@ -32,7 +33,7 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="timed" /> Timed (exam pace)
           </label>
-          <button className="btn-primary">Start practice</button>
+          <SubmitButton className="btn-primary">Start practice</SubmitButton>
         </div>
       </div>
       {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

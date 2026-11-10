@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import { requireAdmin } from "@/lib/auth";
 import { brevoEnabled, campaignOverview } from "@/lib/brevo";
 import { fmtDateTime } from "@/components/admin/when";
@@ -41,7 +42,7 @@ export default async function Campaigns({ searchParams }: { searchParams: Promis
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="confirm" required /> Send now to every subscriber. This can&apos;t be undone.
         </label>
-        <button className="btn-primary">Send campaign</button>
+        <SubmitButton className="btn-primary">Send campaign</SubmitButton>
       </form>
 
       {!(data instanceof Error) && (

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export type CookiePreferences = {
   necessary: true; // Always true
@@ -29,6 +30,24 @@ export function CookieConsent() {
   const [preferences, setPreferences] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [advertising, setAdvertising] = useState(false);
+  const bannerRef = useRef<HTMLElement>(null);
+  // Never over a running test: the banner covered "Save & Next". Tests set no optional cookies, so it can wait.
+  const inTest = usePathname()?.startsWith("/attempt") ?? false;
+  const bannerVisible = showBanner && !showModal && !inTest;
+
+  // While the banner shows, pad the page by its height so buttons at the bottom can scroll above it.
+  useEffect(() => {
+    if (!bannerVisible || !bannerRef.current) return;
+    const el = bannerRef.current;
+    const pad = () => (document.body.style.paddingBottom = `${el.offsetHeight + 32}px`);
+    pad();
+    const ro = new ResizeObserver(pad);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      document.body.style.paddingBottom = "";
+    };
+  }, [bannerVisible]);
 
   // Load existing preferences on mount
   useEffect(() => {
@@ -118,8 +137,9 @@ export function CookieConsent() {
   return (
     <>
       {/* ── Floating Cookie Banner (bottom) ─────────────────────────── */}
-      {showBanner && !showModal && (
+      {bannerVisible && (
         <aside
+          ref={bannerRef}
           role="region"
           aria-label="Cookie preferences"
           className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-2xl border border-deep/15 bg-white p-5 shadow-2xl shadow-deep/20 sm:p-6"

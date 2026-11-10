@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import { requireStaff } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -132,13 +133,13 @@ export default async function ReviewPage({ params, searchParams }: { params: Pro
           <input type="hidden" name="id" value={q.id} />
           <h2 className="font-semibold">Approve</h2>
           <p className="text-sm text-slate-500">Publish as it is.</p>
-          <button className="btn-primary">Approve and publish</button>
+          <SubmitButton className="btn-primary">Approve and publish</SubmitButton>
         </form>
         <form action={rejectAction} className="card space-y-2">
           <input type="hidden" name="id" value={q.id} />
           <h2 className="font-semibold">Reject</h2>
           <input name="reason" required minLength={3} maxLength={300} placeholder="Reason, shown to the uploader" className="input" />
-          <button className="btn-danger">Reject</button>
+          <SubmitButton className="btn-danger">Reject</SubmitButton>
         </form>
         <form action={duplicateAction} className="card space-y-2">
           <input type="hidden" name="id" value={q.id} />
@@ -147,7 +148,7 @@ export default async function ReviewPage({ params, searchParams }: { params: Pro
             <option value="" disabled>Choose the original</option>
             {matches.map((m) => <option key={m.matchedRef} value={m.matchedRef}>{m.matchedRef} ({Math.round(m.score * 100)}%)</option>)}
           </select>
-          <button className="btn-secondary" disabled={!matches.length}>Reject as duplicate</button>
+          <SubmitButton className="btn-secondary" disabled={!matches.length}>Reject as duplicate</SubmitButton>
         </form>
       </section>
 
@@ -183,7 +184,7 @@ export default async function ReviewPage({ params, searchParams }: { params: Pro
           ))}
           <label className="block text-sm">Explanation<textarea name="explanation" defaultValue={q.explanation} rows={3} className="input mt-1" /></label>
           <input type="hidden" name="year" value={q.year ?? ""} />
-          <button className="btn-primary">Save and publish</button>
+          <SubmitButton className="btn-primary">Save and publish</SubmitButton>
         </form>
       </details>
     </div>

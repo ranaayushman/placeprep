@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
@@ -98,7 +99,7 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
           <form action={startPractice}>
             {weakTopics.slice(0, 6).map((t) => <input key={t} type="hidden" name="topic" value={t} />)}
             <input type="hidden" name="count" value="10" />
-            <button className="btn-primary">10 new questions on these</button>
+            <SubmitButton className="btn-primary">10 new questions on these</SubmitButton>
           </form>
         </div>
       )}

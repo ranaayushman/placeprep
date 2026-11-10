@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import { deletionDue, myDeletionRequest } from "@/lib/deletion-requests";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -77,18 +78,18 @@ export default async function AdminUserDetail({ params, searchParams }: { params
               <form action={unblockUser} className="flex gap-2">
                 <input type="hidden" name="userId" value={user.id} />
                 <input name="reason" placeholder="Note (optional)" className="input w-64" />
-                <button className="btn-primary">Unblock</button>
+                <SubmitButton className="btn-primary">Unblock</SubmitButton>
               </form>
             ) : user.role !== "ADMIN" ? (
               <form action={blockUser} className="flex gap-2">
                 <input type="hidden" name="userId" value={user.id} />
                 <input name="reason" required minLength={3} maxLength={300} placeholder="Reason, e.g. repeated tab switching" className="input w-80" />
-                <button className="btn-danger">Block user</button>
+                <SubmitButton className="btn-danger">Block user</SubmitButton>
               </form>
             ) : null}
             <form action={revokeSessions}>
               <input type="hidden" name="userId" value={user.id} />
-              <button className="btn-secondary" disabled={user.sessions === 0}>Sign out everywhere</button>
+              <SubmitButton className="btn-secondary" disabled={user.sessions === 0}>Sign out everywhere</SubmitButton>
             </form>
             {!user.blockedAt && (
               <form action={setRole} className="flex gap-2">
@@ -99,7 +100,7 @@ export default async function AdminUserDetail({ params, searchParams }: { params
                   <option value="MODERATOR">Moderator (questions only)</option>
                   <option value="ADMIN">Admin (everything)</option>
                 </select>
-                <button className="btn-secondary">Change role</button>
+                <SubmitButton className="btn-secondary">Change role</SubmitButton>
               </form>
             )}
           </div>
@@ -117,7 +118,7 @@ export default async function AdminUserDetail({ params, searchParams }: { params
             <input type="hidden" name="userId" value={user.id} />
             <input name="confirmEmail" required autoComplete="off" placeholder={`Type ${user.email} to confirm`} aria-label="Type the user's email to confirm" className="input w-72" />
             <input name="reason" required minLength={3} maxLength={300} placeholder="Reason, e.g. user asked for deletion" aria-label="Reason" className="input w-72" />
-            <button className="btn-danger">Delete permanently</button>
+            <SubmitButton className="btn-danger">Delete permanently</SubmitButton>
           </form>
         </section>
       )}

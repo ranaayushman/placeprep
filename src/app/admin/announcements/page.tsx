@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import { requireAdmin } from "@/lib/auth";
 import { desc } from "drizzle-orm";
 import { announcements, db } from "@/db";
@@ -27,7 +28,7 @@ export default async function Announcements({ searchParams }: { searchParams: Pr
           <span className="font-medium">Details</span>
           <textarea name="body" required minLength={3} maxLength={1000} rows={4} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
         </label>
-        <button className="btn-primary">Post update</button>
+        <SubmitButton className="btn-primary">Post update</SubmitButton>
       </form>
 
       <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
@@ -40,7 +41,7 @@ export default async function Announcements({ searchParams }: { searchParams: Pr
             </div>
             <form action={deleteAnnouncement}>
               <input type="hidden" name="id" value={a.id} />
-              <button className="btn-secondary">Delete</button>
+              <SubmitButton className="btn-secondary">Delete</SubmitButton>
             </form>
           </li>
         ))}

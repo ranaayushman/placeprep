@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import { requireStaff } from "@/lib/auth";
 import { openBankReports, openReportsByTopic } from "@/lib/bank-reports";
 import { OPTION_LETTERS, QuestionBody } from "@/components/QuestionBody";
@@ -78,7 +79,7 @@ export default async function BankReportsPage({ searchParams }: { searchParams: 
                   <form key={s} action={closeReportsAction}>
                     <input type="hidden" name="ref" value={g.ref} />
                     <input type="hidden" name="status" value={s} />
-                    <button className={s === "RESOLVED" ? "btn-primary" : "btn-secondary"}>{s === "RESOLVED" ? "Fixed" : "Not a problem"}</button>
+                    <SubmitButton className={s === "RESOLVED" ? "btn-primary" : "btn-secondary"}>{s === "RESOLVED" ? "Fixed" : "Not a problem"}</SubmitButton>
                   </form>
                 ))}
               </div>

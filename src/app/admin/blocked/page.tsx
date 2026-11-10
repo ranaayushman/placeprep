@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { blockedList } from "@/lib/admin";
@@ -37,7 +38,7 @@ export default async function BlockList() {
                   <form action={unblockUser}>
                     <input type="hidden" name="userId" value={r.id} />
                     <input type="hidden" name="from" value="blocked" />
-                    <button className="btn-secondary">Unblock</button>
+                    <SubmitButton className="btn-secondary">Unblock</SubmitButton>
                   </form>
                 </td>
               </tr>

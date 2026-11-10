@@ -43,6 +43,8 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  /** Practice question whose answer is being checked by the server (options locked, "Checking…" shown). */
+  const [checking, setChecking] = useState<string | null>(null);
   const shownAt = useRef(Date.now());
   const essayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMock = state?.mode === "MOCK";
@@ -101,13 +103,25 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
 
   const send = useCallback(
     async (q: Q, patch: { chosenIndex?: number | null; textAnswer?: string; marked?: boolean }, timeDeltaMs: number) => {
-      try {
-        const res = await api<{ feedback: Q["feedback"] }>(attemptId, { action: "answer", questionId: q.id, timeDeltaMs, ...patch });
-        if (res.feedback) setQuestions((qs) => qs.map((x) => (x.id === q.id ? { ...x, feedback: res.feedback } : x)));
-      } catch (e) {
-        const err = e as Error & { status?: number };
-        if (err.status === 409) load(); // section closed / time up — resync with the server
-        else setError(err.message);
+      const body = { action: "answer", questionId: q.id, timeDeltaMs, ...patch };
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const res = await api<{ feedback: Q["feedback"] }>(attemptId, body);
+          if (res.feedback) setQuestions((qs) => qs.map((x) => (x.id === q.id ? { ...x, feedback: res.feedback } : x)));
+          return;
+        } catch (e) {
+          const err = e as Error & { status?: number };
+          // Network blips and server errors get one quiet retry; 4xx answers won't change on retry.
+          if (attempt === 0 && (err.status === undefined || err.status >= 500)) {
+            await new Promise((r) => setTimeout(r, 800));
+            continue;
+          }
+          // 409: section closed, time up, or already answered. Resync: the server's copy has any saved answer and feedback.
+          if (err.status === 409) return load();
+          setError(patch.chosenIndex !== undefined ? "Your answer didn't reach the server. Check your connection and tap it again." : err.message);
+          if (patch.chosenIndex !== undefined) await load(); // show what the server actually saved
+          return;
+        }
       }
     },
     [attemptId, load],
@@ -118,10 +132,17 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
     setQuestions((qs) => qs.map((x) => (x.id === current.id ? { ...x, ...patch } : x)));
   };
 
-  const choose = (i: number) => {
-    if (!current || current.feedback) return;
+  const choose = async (i: number) => {
+    if (!current || current.feedback || checking === current.id) return;
     update({ chosenIndex: i });
-    send(current, { chosenIndex: i }, takeDelta());
+    if (isMock) return void send(current, { chosenIndex: i }, takeDelta());
+    // Practice: one answer per question, so lock the options until the server says right or wrong.
+    setChecking(current.id);
+    try {
+      await send(current, { chosenIndex: i }, takeDelta());
+    } finally {
+      setChecking(null);
+    }
   };
 
   const clear = () => {
@@ -146,8 +167,10 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
 
   const go = (i: number) => {
     if (!current || i === idx) return;
-    // Persist time spent on the question we're leaving.
-    send(current, {}, takeDelta());
+    // Persist time spent on the question we're leaving. In practice, the clock stops at the answer:
+    // reading the explanation (or waiting for it) is not time spent solving.
+    const delta = takeDelta();
+    if (isMock || current.chosenIndex == null) send(current, {}, delta);
     setIdx(i);
   };
 
@@ -208,7 +231,13 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   }, [questions]);
 
   if (error && !state) return <div className="mx-auto max-w-lg p-10 text-center text-red-600">{error}</div>;
-  if (!state || !current) return <div className="p-10 text-center text-slate-500">Loading test…</div>;
+  if (!state || !current)
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-3 bg-slate-100 text-slate-600" aria-busy="true">
+        <span className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-indigo-600" aria-hidden />
+        <p className="text-sm">Loading your test…</p>
+      </div>
+    );
 
   const isLastSection = state.current.order === state.sections.length - 1;
   const lowTime = remaining !== null && remaining < 60_000;
@@ -328,7 +357,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
                           role="radio"
                           aria-checked={chosen}
                           onClick={() => choose(i)}
-                          disabled={!!fb}
+                          disabled={!!fb || checking === current.id}
                           className={`flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left text-[15px] transition ${tone}`}
                         >
                           <span
@@ -360,6 +389,12 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
                   </div>
                 )}
 
+                {checking === current.id && !current.feedback && (
+                  <p role="status" className="mt-5 flex items-center gap-2 text-sm text-slate-600">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" aria-hidden />
+                    Checking your answer…
+                  </p>
+                )}
                 {current.feedback && (
                   <div
                     className={`mt-5 rounded-lg border p-4 text-sm ${

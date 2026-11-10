@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import type { Metadata } from "next";
 import { eq } from "drizzle-orm";
 import { db, users } from "@/db";
@@ -32,7 +33,7 @@ export default async function AccountPage() {
               You asked for deletion on {fmtDate(request.createdAt)}. We&apos;ll delete your account and all its data by <b>{fmtDate(deletionDue(request.createdAt))}</b>. You can keep using PlacePrep until then.
             </p>
             <form action={cancelDeletionAction}>
-              <button className="btn-secondary">Cancel my request</button>
+              <SubmitButton className="btn-secondary">Cancel my request</SubmitButton>
             </form>
           </>
         ) : (

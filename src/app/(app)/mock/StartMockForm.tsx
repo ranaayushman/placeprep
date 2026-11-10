@@ -1,5 +1,6 @@
 "use client";
 
+import { SubmitButton } from "@/components/SubmitButton";
 import { useState } from "react";
 import { startMock } from "../start-actions";
 import { SystemCheck } from "./SystemCheck";
@@ -41,9 +42,9 @@ export function StartMockForm({
         ) : (
           <span className="text-sm text-slate-500">{questionCount} questions · {minutes} min</span>
         )}
-        <button disabled={!ready} className="btn-primary px-6 py-3 disabled:cursor-not-allowed disabled:opacity-50">
+        <SubmitButton disabled={!ready} className="btn-primary px-6 py-3 disabled:cursor-not-allowed disabled:opacity-50">
           {ready ? "I understand — start the test" : "Complete system check first"}
-        </button>
+        </SubmitButton>
       </form>
     </>
   );

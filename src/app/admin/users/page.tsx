@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { listUsers, type UserFilter } from "@/lib/admin";
@@ -36,7 +37,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
         <form className="flex gap-2">
           <input type="hidden" name="filter" value={filter} />
           <input name="q" defaultValue={q} placeholder="Search name or email" className="input w-64" />
-          <button className="btn-secondary">Search</button>
+          <SubmitButton className="btn-secondary">Search</SubmitButton>
         </form>
       </div>
 
