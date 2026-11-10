@@ -3,8 +3,12 @@
  * can be stored as "<topic>:<seed>" and regenerated exactly for review.
  * Numbers are chosen so answers come out clean — the real test favours clean answers too.
  */
-import { fmt, fraction, gcd, lcm, mcq, rng, type Rng } from "./rng";
+import { dpNote, fmt, fraction, gcd, lcm, mcq, rng, type Rng } from "./rng";
 import type { Question, Topic } from "./types";
+import {
+  algebraGens, fromGens, interestExtras, mensurationExtras, numberExtras, pncExtras, percentExtras,
+  probExtras, profitExtras, progressionGens, ratioExtras, speedExtras, withExtras, workExtras,
+} from "./math-extra";
 
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 const pct = (n: number) => `${fmt(n)}%`;
@@ -394,7 +398,7 @@ function dataInterpretation(seed: number): Question {
     const change = ((to - from) / from) * 100;
     const say = (x: number) => `${fmt(Math.abs(x))}% ${x >= 0 ? "increase" : "decrease"}`;
     return mcq(r, {
-      prompt: `Based on ${where}, what is the percentage change for ${s} from ${set.labels[j]} to ${set.labels[j + 1]}?`,
+      prompt: `Based on ${where}, what is the percentage change for ${s} from ${set.labels[j]} to ${set.labels[j + 1]}?${dpNote(2, change)}`,
       ...show,
       correct: say(change),
       distractors: [say(((to - from) / to) * 100), say(-change), say(change + 5), say(change - 4)],
@@ -404,7 +408,7 @@ function dataInterpretation(seed: number): Question {
   if (variant === 1) {
     const total = data[si].reduce((a, b) => a + b, 0);
     return mcq(r, {
-      prompt: `Based on ${where}, what is the average for ${s} across ${set.labels[0]}–${set.labels[n - 1]} (in ${set.unit})?`,
+      prompt: `Based on ${where}, what is the average for ${s} across ${set.labels[0]}–${set.labels[n - 1]} (in ${set.unit})?${dpNote(2, total / n)}`,
       ...show,
       correct: fmt(total / n),
       distractors: [fmt(total / (n - 1)), fmt(total / n + set.step), fmt(total / n - set.step / 2), fmt(total / (n + 1))],
@@ -453,7 +457,7 @@ function dataInterpretation(seed: number): Question {
     const share = (data[si][j] / totals[j]) * 100;
     const pc = (x: number) => `${fmt(x, 1)}%`;
     return mcq(r, {
-      prompt: `Based on ${where}, what percentage of the combined total in ${set.labels[j]} came from ${s}?`,
+      prompt: `Based on ${where}, what percentage of the combined total in ${set.labels[j]} came from ${s}?${dpNote(1, share)}`,
       ...show,
       correct: pc(share),
       distractors: [pc(100 - share), pc(share + 5), pc(share - 5), pc((data[si][j] / (totals[j] + data[si][j])) * 100)],
@@ -526,17 +530,19 @@ function pieQuestion(r: Rng): Question {
 }
 
 export const mathTopics: Topic[] = [
-  { id: "m-percent", section: "math", label: "Percentages", weight: 3, targetSec: 150, generate: percentages },
-  { id: "m-profit", section: "math", label: "Profit, Loss & Discount", weight: 2, targetSec: 180, generate: profitLoss },
-  { id: "m-timework", section: "math", label: "Time & Work", weight: 2, targetSec: 180, generate: timeWork },
-  { id: "m-speed", section: "math", label: "Speed, Time & Distance", weight: 3, targetSec: 180, generate: speedDistance },
+  { id: "m-percent", section: "math", label: "Percentages", weight: 3, targetSec: 150, generate: withExtras(percentages, percentExtras) },
+  { id: "m-profit", section: "math", label: "Profit, Loss & Discount", weight: 2, targetSec: 180, generate: withExtras(profitLoss, profitExtras) },
+  { id: "m-timework", section: "math", label: "Time & Work", weight: 2, targetSec: 180, generate: withExtras(timeWork, workExtras) },
+  { id: "m-speed", section: "math", label: "Speed, Time & Distance", weight: 3, targetSec: 180, generate: withExtras(speedDistance, speedExtras) },
   { id: "m-boats", section: "math", label: "Boats & Streams", weight: 1, targetSec: 150, generate: boatsStreams },
-  { id: "m-pnc", section: "math", label: "Permutation & Combination", weight: 3, targetSec: 210, generate: permutations },
-  { id: "m-prob", section: "math", label: "Probability", weight: 3, targetSec: 180, generate: probability },
-  { id: "m-ratio", section: "math", label: "Ratio, Ages & Mixtures", weight: 2, targetSec: 180, generate: ratioMixture },
-  { id: "m-interest", section: "math", label: "Simple & Compound Interest", weight: 1, targetSec: 150, generate: interest },
-  { id: "m-number", section: "math", label: "Number System & LCM/HCF", weight: 2, targetSec: 150, generate: numberSystem },
+  { id: "m-pnc", section: "math", label: "Permutation & Combination", weight: 3, targetSec: 210, generate: withExtras(permutations, pncExtras) },
+  { id: "m-prob", section: "math", label: "Probability", weight: 3, targetSec: 180, generate: withExtras(probability, probExtras) },
+  { id: "m-ratio", section: "math", label: "Ratio, Ages & Mixtures", weight: 2, targetSec: 180, generate: withExtras(ratioMixture, ratioExtras) },
+  { id: "m-interest", section: "math", label: "Simple & Compound Interest", weight: 1, targetSec: 150, generate: withExtras(interest, interestExtras) },
+  { id: "m-number", section: "math", label: "Number System & LCM/HCF", weight: 2, targetSec: 150, generate: withExtras(numberSystem, numberExtras) },
   { id: "m-average", section: "math", label: "Averages", weight: 1, targetSec: 120, generate: averages },
-  { id: "m-mensuration", section: "math", label: "Areas & Mensuration", weight: 1, targetSec: 150, generate: mensuration },
+  { id: "m-mensuration", section: "math", label: "Areas & Mensuration", weight: 1, targetSec: 150, generate: withExtras(mensuration, mensurationExtras) },
+  { id: "m-algebra", section: "math", label: "Algebra & Equations", weight: 2, targetSec: 120, generate: fromGens(algebraGens) },
+  { id: "m-progression", section: "math", label: "Progressions & Series", weight: 1, targetSec: 120, generate: fromGens(progressionGens) },
   { id: "m-di", section: "math", label: "Data Interpretation", weight: 4, targetSec: 210, generate: dataInterpretation },
 ];

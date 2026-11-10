@@ -102,3 +102,13 @@ export function staticMcq(
     explanation: item.explanation,
   };
 }
+
+/**
+ * " (to 2 decimal places)" when any value can't be shown exactly at that precision, else "". Appended
+ * to a question so a rounded answer is never presented as exact.
+ */
+export function dpNote(digits: number, ...values: number[]) {
+  const scale = 10 ** digits;
+  const exact = values.every((v) => Math.abs(v * scale - Math.round(v * scale)) < 1e-6);
+  return exact ? "" : ` Give the answer to ${digits} decimal place${digits === 1 ? "" : "s"}.`;
+}
