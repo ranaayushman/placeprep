@@ -61,3 +61,34 @@ it("cryptarithmetic: the solver finds SEND + MORE = MONEY, and every generated a
     expect([...values], `z-crypt:${seed}`).toEqual([Number(q.options[q.answer])]);
   }
 });
+
+it("data interpretation uses tables, bar, line and pie charts, and its answers match the data shown", () => {
+  const kinds = new Set<string>();
+  for (let seed = 1; seed <= 400; seed++) {
+    const q = generate(`m-di:${seed}`);
+    kinds.add(q.table ? "table" : q.chart!.kind);
+    const answer = q.options[q.answer];
+    const pie = q.chart?.kind === "pie" ? q.chart : null;
+    const angle = /central angle of the (.+) sector/.exec(q.prompt);
+    if (pie && angle) expect(answer).toBe(`${Number((pie.series[0].values[pie.labels.indexOf(angle[1])] * 3.6).toFixed(2))}°`);
+    if (pie) expect(pie.series[0].values.reduce((a, b) => a + b, 0)).toBe(100);
+    const total = /combined total of (.+) in (\w+) \(in/.exec(q.prompt);
+    if (total && q.chart && q.chart.kind !== "pie") {
+      const j = q.chart.labels.indexOf(total[2]);
+      expect(Number(answer)).toBe(q.chart.series.reduce((a, s) => a + s.values[j], 0));
+    }
+  }
+  expect([...kinds].sort()).toEqual(["bar", "line", "pie", "table"]);
+});
+
+it("data sufficiency is generated and uses every answer", () => {
+  const answers = new Set<number>();
+  const prompts = new Set<string>();
+  for (let seed = 1; seed <= 400; seed++) {
+    const q = generate(`r-ds:${seed}`);
+    answers.add(q.answer);
+    prompts.add(q.prompt);
+  }
+  expect([...answers].sort()).toEqual([0, 1, 2, 3, 4]);
+  expect(prompts.size).toBeGreaterThan(300); // no longer a 10-question bank
+});

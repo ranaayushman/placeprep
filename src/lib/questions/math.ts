@@ -3,7 +3,7 @@
  * can be stored as "<topic>:<seed>" and regenerated exactly for review.
  * Numbers are chosen so answers come out clean — the real test favours clean answers too.
  */
-import { fmt, fraction, gcd, lcm, mcq, rng } from "./rng";
+import { fmt, fraction, gcd, lcm, mcq, rng, type Rng } from "./rng";
 import type { Question, Topic } from "./types";
 
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
@@ -349,48 +349,179 @@ function mensuration(seed: number): Question {
   });
 }
 
+/** Data sets for DI: each series has one value per label. Values are multiples of `step`, so answers stay clean. */
+const DI_SETS = [
+  { title: "Units sold by product", unit: "units", step: 25, range: [4, 24], period: "year", labels: ["2020", "2021", "2022", "2023", "2024"], series: ["Laptops", "Tablets", "Phones"] },
+  { title: "Students placed, by department", unit: "students", step: 5, range: [6, 30], period: "year", labels: ["2021", "2022", "2023", "2024", "2025"], series: ["CSE", "ECE", "Mechanical"] },
+  { title: "Monthly production of two plants", unit: "tonnes", step: 10, range: [8, 40], period: "month", labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"], series: ["Plant A", "Plant B"] },
+  { title: "Revenue and expenses of a company", unit: "₹ crore", step: 10, range: [10, 60], period: "year", labels: ["2020", "2021", "2022", "2023", "2024"], series: ["Revenue", "Expenses"] },
+  { title: "Visitors to a museum", unit: "thousand", step: 5, range: [4, 30], period: "day", labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], series: ["Adults", "Children"] },
+] as const;
+
+const PIE_SETS = [
+  { title: "A family's monthly expenses", total: [40, 90], scale: 1000, money: true, parts: ["Food", "Rent", "Education", "Transport", "Savings"] },
+  { title: "A company's yearly budget", total: [20, 60], scale: 10, money: true, unit: "₹ crore", parts: ["Salaries", "Marketing", "R&D", "Operations", "Other"] },
+  { title: "Students of a college by stream", total: [24, 60], scale: 100, money: false, parts: ["Engineering", "Science", "Commerce", "Arts", "Law"] },
+] as const;
+
+const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+
+/**
+ * Data interpretation: a table, bar chart, line chart or pie chart, with a calculation on it.
+ * About a quarter are pie charts (share of a total), the rest series data.
+ */
 function dataInterpretation(seed: number): Question {
   const r = rng(seed);
-  const years = [2020, 2021, 2022, 2023, 2024];
-  const products = ["Laptops", "Tablets", "Phones"];
-  const data = products.map(() => years.map(() => r.int(4, 24) * 25));
-  const table = [["Product (units)", ...years.map(String)], ...products.map((p, i) => [p, ...data[i].map(String)])];
-  const pi = r.int(0, 2);
-  const variant = r.int(0, 2);
+  if (r.int(0, 3) === 0) return pieQuestion(r);
+  const set = DI_SETS[r.int(0, DI_SETS.length - 1)];
+  const data = set.series.map(() => set.labels.map(() => r.int(set.range[0], set.range[1]) * set.step));
+  // Line charts only for two series: three crossing lines get too cluttered to read values off.
+  const view = r.pick(set.series.length === 2 ? (["table", "bar", "line"] as const) : (["table", "bar"] as const));
+  const show =
+    view === "table"
+      ? { table: [[`${set.title} (${set.unit})`, ...set.labels], ...set.series.map((name, i) => [name, ...data[i].map(String)])] }
+      : { chart: { kind: view, title: set.title, unit: set.unit, labels: [...set.labels], series: set.series.map((name, i) => ({ name, values: data[i] })) } };
+  const where = view === "table" ? "the table" : `the ${view} chart`;
+  const si = r.int(0, set.series.length - 1);
+  const s = set.series[si];
+  const n = set.labels.length;
+  const totals = set.labels.map((_, j) => data.reduce((a, row) => a + row[j], 0));
+  const variant = r.int(0, 5);
+
   if (variant === 0) {
-    const [y1, y2] = [r.int(0, 3), 0];
-    const from = data[pi][y1];
-    const to = data[pi][y1 + 1 + y2];
+    const j = r.int(0, n - 2);
+    const [from, to] = [data[si][j], data[si][j + 1]];
     const change = ((to - from) / from) * 100;
-    const say = (n: number) => `${fmt(Math.abs(n))}% ${n >= 0 ? "increase" : "decrease"}`;
+    const say = (x: number) => `${fmt(Math.abs(x))}% ${x >= 0 ? "increase" : "decrease"}`;
     return mcq(r, {
-      prompt: `What is the percentage change in ${products[pi]} sales from ${years[y1]} to ${years[y1 + 1]}?`,
-      table,
+      prompt: `Based on ${where}, what is the percentage change for ${s} from ${set.labels[j]} to ${set.labels[j + 1]}?`,
+      ...show,
       correct: say(change),
       distractors: [say(((to - from) / to) * 100), say(-change), say(change + 5), say(change - 4)],
-      explanation: `(${to} − ${from}) / ${from} × 100 = ${fmt(change)}%. Always divide by the earlier year's value.`,
+      explanation: `(${to} − ${from}) ÷ ${from} × 100 = ${fmt(change)}%. Always divide by the earlier value.`,
     });
   }
   if (variant === 1) {
-    const total = data[pi].reduce((a, b) => a + b, 0);
+    const total = data[si].reduce((a, b) => a + b, 0);
     return mcq(r, {
-      prompt: `What is the average yearly sales of ${products[pi]} over the five years?`,
-      table,
-      correct: fmt(total / 5),
-      distractors: [fmt(total / 4), fmt(total / 5 + 25), fmt(total / 5 - 15), fmt(total / 6)],
-      explanation: `Sum = ${data[pi].join(" + ")} = ${total}. Average = ${total} / 5 = ${fmt(total / 5)}.`,
+      prompt: `Based on ${where}, what is the average for ${s} across ${set.labels[0]}–${set.labels[n - 1]} (in ${set.unit})?`,
+      ...show,
+      correct: fmt(total / n),
+      distractors: [fmt(total / (n - 1)), fmt(total / n + set.step), fmt(total / n - set.step / 2), fmt(total / (n + 1))],
+      explanation: `Sum = ${data[si].join(" + ")} = ${total}. Average = ${total} ÷ ${n} = ${fmt(total / n)}.`,
     });
   }
-  const yi = r.int(0, 4);
-  const a = data[0][yi];
-  const b = data[1][yi];
-  const g = gcd(a, b);
+  if (variant === 2) {
+    const j = r.int(0, n - 1);
+    const [a, b] = [data[0][j], data[1][j]];
+    const g = gcd(a, b);
+    return mcq(r, {
+      prompt: `Based on ${where}, what is the ratio of ${set.series[0]} to ${set.series[1]} in ${set.labels[j]}?`,
+      ...show,
+      correct: `${a / g}:${b / g}`,
+      distractors: [`${b / g}:${a / g}`, `${a / g + 1}:${b / g}`, `${a / g}:${b / g + 1}`, `${a / g + 2}:${b / g + 1}`],
+      explanation: `${a} : ${b}. Divide both by ${g} → ${a / g}:${b / g}.`,
+    });
+  }
+  if (variant === 3) {
+    const j = r.int(0, n - 1);
+    return mcq(r, {
+      prompt: `Based on ${where}, what is the combined total of ${set.series.join(", ")} in ${set.labels[j]} (in ${set.unit})?`,
+      ...show,
+      correct: String(totals[j]),
+      distractors: [String(totals[j] + set.step), String(totals[j] - set.step), String(totals[(j + 1) % n]), String(totals[j] + 2 * set.step)],
+      explanation: `${data.map((row) => row[j]).join(" + ")} = ${totals[j]}.`,
+    });
+  }
+  if (variant === 4) {
+    const best = Math.max(...totals);
+    // A tie has no single answer, so fall back to the difference question.
+    if (totals.filter((t) => t === best).length === 1) {
+      const j = totals.indexOf(best);
+      const others = r.shuffle(set.labels.filter((_, k) => k !== j)).slice(0, 3);
+      return mcq(r, {
+        prompt: `Based on ${where}, in which ${set.period} was the combined total of ${set.series.join(" and ")} the highest?`,
+        ...show,
+        correct: set.labels[j],
+        distractors: others,
+        explanation: `Totals: ${set.labels.map((l, k) => `${l} ${totals[k]}`).join(", ")}. The highest is ${set.labels[j]} (${best}).`,
+      });
+    }
+  }
+  if (variant === 5) {
+    const j = r.int(0, n - 1);
+    const share = (data[si][j] / totals[j]) * 100;
+    const pc = (x: number) => `${fmt(x, 1)}%`;
+    return mcq(r, {
+      prompt: `Based on ${where}, what percentage of the combined total in ${set.labels[j]} came from ${s}?`,
+      ...show,
+      correct: pc(share),
+      distractors: [pc(100 - share), pc(share + 5), pc(share - 5), pc((data[si][j] / (totals[j] + data[si][j])) * 100)],
+      explanation: `${s} = ${data[si][j]}, total = ${totals[j]}. ${data[si][j]} ÷ ${totals[j]} × 100 = ${fmt(share, 1)}%.`,
+    });
+  }
+  // Difference of two series over all labels (also the tie fallback above).
+  const sum = (row: readonly number[]) => row.reduce((a, b) => a + b, 0);
+  const diff = Math.abs(sum(data[0]) - sum(data[1]));
   return mcq(r, {
-    prompt: `In ${years[yi]}, what is the ratio of Laptops sold to Tablets sold?`,
-    table,
-    correct: `${a / g}:${b / g}`,
-    distractors: [`${b / g}:${a / g}`, `${a / g + 1}:${b / g}`, `${a / g}:${b / g + 1}`, `${Math.round(a / 25)}:${Math.round(b / 25) + 2}`],
-    explanation: `${a} : ${b} — divide both by ${g} → ${a / g}:${b / g}.`,
+    prompt: `Based on ${where}, by how much does the total of ${set.series[0]} differ from the total of ${set.series[1]} across all ${n} periods (in ${set.unit})?`,
+    ...show,
+    correct: String(diff),
+    distractors: [String(diff + set.step), String(Math.abs(diff - set.step) || set.step * 3), String(diff + 2 * set.step), String(diff * 2 || set.step * 2)],
+    explanation: `${set.series[0]}: ${data[0].join(" + ")} = ${sum(data[0])}. ${set.series[1]}: ${data[1].join(" + ")} = ${sum(data[1])}. Difference = ${diff}.`,
+  });
+}
+
+/** Pie charts: shares of a total, in steps of 5%, every share at least 5%. */
+function pieQuestion(r: Rng): Question {
+  const set = PIE_SETS[r.int(0, PIE_SETS.length - 1)];
+  const pct = set.parts.map(() => 5);
+  for (let left = 75; left > 0; left -= 5) pct[r.int(0, pct.length - 1)] += 5;
+  const total = r.int(set.total[0], set.total[1]) * set.scale;
+  const amount = (p: number) => (total * p) / 100;
+  const unit = "unit" in set ? set.unit : undefined;
+  const show = (n: number) => (set.money ? (unit ? `₹${fmt(n)} crore` : inr(n)) : String(n));
+  const totalText = set.money ? (unit ? `₹${total} crore` : inr(total)) : `${total} students`;
+  const chart = { kind: "pie" as const, title: `${set.title} (total ${totalText})`, unit: "%", labels: [...set.parts], series: [{ name: "Share", values: pct }] };
+  const [i, k] = r.shuffle(set.parts.map((_, x) => x)).slice(0, 2);
+  const variant = r.int(0, 3);
+  if (variant === 0) {
+    return mcq(r, {
+      prompt: set.money ? `Based on the pie chart, how much goes to ${set.parts[i]}?` : `Based on the pie chart, how many students are in ${set.parts[i]}?`,
+      chart,
+      correct: show(amount(pct[i])),
+      distractors: [show(amount(pct[i] + 5)), show(amount(Math.max(pct[i] - 5, 1))), show(amount(pct[k])), show(amount(pct[i]) * 2)],
+      explanation: `${pct[i]}% of ${totalText} = ${total} × ${pct[i]} ÷ 100 = ${show(amount(pct[i]))}.`,
+    });
+  }
+  if (variant === 1) {
+    const deg = pct[i] * 3.6;
+    return mcq(r, {
+      prompt: `Based on the pie chart, what is the central angle of the ${set.parts[i]} sector?`,
+      chart,
+      correct: `${fmt(deg)}°`,
+      distractors: [`${fmt(deg + 18)}°`, `${fmt(Math.abs(deg - 18) || 9)}°`, `${pct[i]}°`, `${fmt(deg * 2)}°`],
+      explanation: `A full circle is 360°, so 1% = 3.6°. ${pct[i]}% × 3.6 = ${fmt(deg)}°.`,
+    });
+  }
+  if (variant === 2 && pct[i] !== pct[k]) {
+    const [hi, lo] = pct[i] > pct[k] ? [i, k] : [k, i];
+    const d = amount(pct[hi] - pct[lo]);
+    return mcq(r, {
+      prompt: set.money ? `Based on the pie chart, how much more goes to ${set.parts[hi]} than to ${set.parts[lo]}?` : `Based on the pie chart, how many more students are in ${set.parts[hi]} than in ${set.parts[lo]}?`,
+      chart,
+      correct: show(d),
+      distractors: [show(d + amount(5)), show(amount(pct[hi])), show(d * 2), show(Math.abs(d - amount(5)) || amount(10))],
+      explanation: `${pct[hi]}% − ${pct[lo]}% = ${pct[hi] - pct[lo]}% of ${totalText} = ${show(d)}.`,
+    });
+  }
+  const g = gcd(pct[i], pct[k]);
+  return mcq(r, {
+    prompt: `Based on the pie chart, what is the ratio of ${set.parts[i]} to ${set.parts[k]}?`,
+    chart,
+    correct: `${pct[i] / g}:${pct[k] / g}`,
+    distractors: [`${pct[k] / g}:${pct[i] / g}`, `${pct[i] / g + 1}:${pct[k] / g}`, `${pct[i] / g}:${pct[k] / g + 1}`, `${pct[i]}:${pct[k] + 5}`],
+    explanation: `The ratio of amounts equals the ratio of shares: ${pct[i]}% : ${pct[k]}% → ${pct[i] / g}:${pct[k] / g}.`,
   });
 }
 
@@ -407,5 +538,5 @@ export const mathTopics: Topic[] = [
   { id: "m-number", section: "math", label: "Number System & LCM/HCF", weight: 2, targetSec: 150, generate: numberSystem },
   { id: "m-average", section: "math", label: "Averages", weight: 1, targetSec: 120, generate: averages },
   { id: "m-mensuration", section: "math", label: "Areas & Mensuration", weight: 1, targetSec: 150, generate: mensuration },
-  { id: "m-di", section: "math", label: "Data Interpretation", weight: 2, targetSec: 210, generate: dataInterpretation },
+  { id: "m-di", section: "math", label: "Data Interpretation", weight: 4, targetSec: 210, generate: dataInterpretation },
 ];

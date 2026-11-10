@@ -2,7 +2,8 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { PRACTICE_TARGETS } from "@/lib/exam/pattern";
-import { SECTION_LABELS, TOPICS, topicsFor, type SectionId } from "@/lib/questions";
+import { SECTION_LABELS, TOPIC_BY_ID, TOPICS, topicsFor, type SectionId } from "@/lib/questions";
+import type { Speed } from "@/lib/exam/speed";
 
 const MCQ_SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "technical"];
 const TOPIC_SECTION = new Map(TOPICS.map((t) => [t.id, t.section]));
@@ -134,16 +135,20 @@ export async function mockHistory(userId: string) {
   // One grouped query instead of one query per mock.
   const rows = await db.execute<{
     id: string; title: string; exam: string | null; submitted_at: number; score: number; max_score: number; violations: number; auto_submitted: boolean;
-    section: string; correct: number; total: number;
+    section: string; topic: string; correct: number; total: number; answered: number; time_ms: number;
   }>(sql`
     SELECT a.id, a.title, a.exam, a.submitted_at, a.score, a.max_score, a.violations, a.auto_submitted,
-           q.section AS section,
+           q.section AS section, q.topic AS topic,
            SUM(CASE WHEN q.is_correct THEN 1 ELSE 0 END) AS correct,
-           COUNT(*) AS total
+           COUNT(*) AS total,
+           COUNT(*) FILTER (WHERE q.chosen_index IS NOT NULL AND q.time_spent_ms > 0) AS answered,
+           COALESCE(SUM(q.time_spent_ms) FILTER (WHERE q.chosen_index IS NOT NULL AND q.time_spent_ms > 0), 0) AS time_ms
     FROM attempts a JOIN attempt_questions q ON q.attempt_id = a.id AND q.answer_index >= 0
     WHERE a.user_id = ${userId} AND a.mode = 'MOCK' AND a.status = 'SUBMITTED'
-    GROUP BY a.id, q.section
+    GROUP BY a.id, q.section, q.topic
     ORDER BY a.submitted_at ASC`);
+  // Per mock: seconds and target seconds summed over answered questions (target depends on the topic).
+  const pace = new Map<string, { answered: number; timeMs: number; targetSec: number }>();
   const byId = new Map<string, MockSummary>();
   for (const r of rows) {
     let m = byId.get(r.id);
@@ -155,9 +160,16 @@ export async function mockHistory(userId: string) {
       };
       byId.set(r.id, m);
     }
-    m.bySection[r.section as SectionId] = { correct: Number(r.correct), total: Number(r.total) };
+    const sec = m.bySection[r.section as SectionId];
+    m.bySection[r.section as SectionId] = { correct: sec.correct + Number(r.correct), total: sec.total + Number(r.total) };
+    const p = pace.get(r.id) ?? { answered: 0, timeMs: 0, targetSec: 0 };
+    const answered = Number(r.answered);
+    pace.set(r.id, { answered: p.answered + answered, timeMs: p.timeMs + Number(r.time_ms), targetSec: p.targetSec + answered * (TOPIC_BY_ID.get(r.topic)?.targetSec ?? 60) });
   }
-  return [...byId.values()];
+  return [...byId.values()].map((m) => {
+    const p = pace.get(m.id);
+    return { ...m, speed: p?.answered ? { avgSec: p.timeMs / 1000 / p.answered, targetSec: p.targetSec / p.answered, answered: p.answered } : null };
+  });
 }
 
 export interface MockSummary {
@@ -170,6 +182,20 @@ export interface MockSummary {
   violations: number;
   autoSubmitted: boolean;
   bySection: Record<SectionId, { correct: number; total: number }>;
+  /** Average seconds per answered question vs the target pace; null if nothing was answered. */
+  speed?: Speed | null;
+}
+
+/** Overall speed from topic stats: answered-weighted average time and target, across every topic. */
+export function overallSpeed(stats: TopicStat[]): Speed | null {
+  const timed = stats.filter((t) => t.avgSec != null && t.attempted > 0);
+  const n = timed.reduce((a, t) => a + t.attempted, 0);
+  if (!n) return null;
+  return {
+    avgSec: timed.reduce((a, t) => a + t.avgSec! * t.attempted, 0) / n,
+    targetSec: timed.reduce((a, t) => a + t.targetSec * t.attempted, 0) / n,
+    answered: n,
+  };
 }
 
 export interface Recommendation {

@@ -48,7 +48,7 @@ export function fmt(x: number, digits = 2) {
 export function mcq(
   r: Rng,
   q: { prompt: string; correct: string; distractors: string[]; explanation: string } & Partial<
-    Pick<Question, "code" | "passage" | "table" | "grid">
+    Pick<Question, "code" | "passage" | "table" | "grid" | "chart">
   >,
   fallback?: (i: number) => string,
 ): Question {
@@ -69,8 +69,8 @@ export function mcq(
     }
   }
   const options = r.shuffle([q.correct, ...wrong]);
-  const { prompt, explanation, code, passage, table, grid } = q;
-  return { kind: "mcq", prompt, explanation, code, passage, table, grid, options, answer: options.indexOf(q.correct) };
+  const { prompt, explanation, code, passage, table, grid, chart } = q;
+  return { kind: "mcq", prompt, explanation, code, passage, table, grid, chart, options, answer: options.indexOf(q.correct) };
 }
 
 /**

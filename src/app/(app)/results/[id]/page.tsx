@@ -7,6 +7,7 @@ import { SECTION_LABELS, TOPIC_BY_ID, type QuestionView, type SectionId } from "
 import { OPTION_LETTERS, QuestionBody } from "@/components/QuestionBody";
 import { ReportProblem } from "@/components/ReportProblem";
 import { ProgressBar, pct } from "@/components/charts";
+import { fmtSec, PACE_TONE, paceOf, speedOf } from "@/lib/exam/speed";
 import { startPractice } from "../../start-actions";
 import { hasFeedback } from "@/lib/feedback";
 import { FeedbackForm } from "./FeedbackForm";
@@ -31,8 +32,9 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
     const qs = mcqs.filter((q) => q.section === s);
     const correct = qs.filter((q) => q.isCorrect).length;
     const time = questions.filter((q) => q.section === s).reduce((a, q) => a + q.timeSpentMs, 0);
-    return { s, total: qs.length, correct, skipped: qs.filter((q) => q.chosenIndex == null).length, time };
+    return { s, total: qs.length, correct, skipped: qs.filter((q) => q.chosenIndex == null).length, time, speed: speedOf(qs) };
   });
+  const speed = speedOf(mcqs);
   const weakTopics = [...new Set(mcqs.filter((q) => !q.isCorrect).map((q) => q.topic))];
   const shown = questions.filter((q) =>
     filter === "wrong" ? q.answerIndex >= 0 && q.isCorrect === false : filter === "skipped" ? q.answerIndex >= 0 && q.chosenIndex == null : true,
@@ -56,6 +58,11 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
         <div className="text-right">
           <p className="text-4xl font-bold tabular-nums">{attempt.score}<span className="text-xl text-slate-400">/{attempt.maxScore}</span></p>
           <p className="text-sm text-slate-500">{pct(attempt.maxScore ? (attempt.score ?? 0) / attempt.maxScore : null)} correct{attempt.mode === "MOCK" ? ` · ${attempt.violations} warnings${attempt.cameraOff ? " · camera off" : ` · ${attempt.cameraAlerts} camera alerts`}` : ""}</p>
+          {speed && (
+            <p className="text-sm text-slate-500">
+              Avg speed <b className={PACE_TONE[paceOf(speed)]}>{fmtSec(speed.avgSec)}</b> per question · target {fmtSec(speed.targetSec)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -73,7 +80,10 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
               </div>
               <p className="mt-1 text-2xl font-bold tabular-nums">{b.correct}/{b.total}</p>
               <div className="mt-2"><ProgressBar value={acc} target={attempt.mode === "MOCK" ? target : undefined} /></div>
-              <p className="mt-2 text-xs text-slate-500">{b.skipped} skipped · {Math.round(b.time / 60000)} min spent</p>
+              <p className="mt-2 text-xs text-slate-500">
+                {b.skipped} skipped · {Math.round(b.time / 60000)} min spent
+                {b.speed && <> · <span className={PACE_TONE[paceOf(b.speed)]}>{fmtSec(b.speed.avgSec)}/question</span> (target {fmtSec(b.speed.targetSec)})</>}
+              </p>
             </div>
           );
         })}

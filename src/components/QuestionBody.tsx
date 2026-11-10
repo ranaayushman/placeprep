@@ -1,4 +1,5 @@
 import type { QuestionView } from "@/lib/questions/types";
+import { QuestionChart } from "./QuestionChart";
 
 /** Renders the stem of a question (prompt, code, table, grid). Works in server and client components. */
 export function QuestionBody({ q, showPassage = true }: { q: QuestionView; showPassage?: boolean }) {
@@ -44,6 +45,7 @@ export function QuestionBody({ q, showPassage = true }: { q: QuestionView; showP
           </table>
         </div>
       )}
+      {q.chart && <QuestionChart chart={q.chart} />}
       {q.grid && (
         <div className="flex flex-col items-center gap-1.5 py-2">
           {q.grid.map((row, r) => (

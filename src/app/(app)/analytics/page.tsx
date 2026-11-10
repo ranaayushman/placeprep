@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { activityByDay, getTopicStats, mockHistory, sectionStats } from "@/lib/analytics";
+import { activityByDay, getTopicStats, mockHistory, overallSpeed, sectionStats } from "@/lib/analytics";
+import { fmtSec, PACE_TONE, paceOf } from "@/lib/exam/speed";
 import { SECTION_LABELS, type SectionId } from "@/lib/questions";
 import { LineChart, ProgressBar, pct } from "@/components/charts";
 
@@ -12,6 +13,9 @@ export default async function AnalyticsPage() {
   const sections = sectionStats(stats);
 
   const maxDay = Math.max(1, ...activity.map((d) => d.n));
+  const speed = overallSpeed(stats);
+  const mockSpeeds = history.map((h) => h.speed).filter((s) => s != null);
+  const mockAvg = mockSpeeds.length ? mockSpeeds.reduce((a, s) => a + s.avgSec * s.answered, 0) / mockSpeeds.reduce((a, s) => a + s.answered, 0) : null;
 
   return (
     <div className="space-y-8">
@@ -19,6 +23,32 @@ export default async function AnalyticsPage() {
         <h1 className="text-2xl font-bold">Analytics</h1>
         <p className="text-slate-500">Accuracy, speed and progress across every section and topic.</p>
       </div>
+
+      {speed && (
+        <section className="card">
+          <h2 className="font-semibold">Your speed</h2>
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-sm text-slate-500">Average per question</p>
+              <p className={`text-3xl font-bold tabular-nums ${PACE_TONE[paceOf(speed)]}`}>{fmtSec(speed.avgSec)}</p>
+              <p className="text-xs text-slate-500">across {speed.answered} answered questions</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Target pace</p>
+              <p className="text-3xl font-bold tabular-nums">{fmtSec(speed.targetSec)}</p>
+              <p className="text-xs text-slate-500">real-test pace for the topics you practised</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">In mocks</p>
+              <p className="text-3xl font-bold tabular-nums">{mockAvg != null ? fmtSec(mockAvg) : "—"}</p>
+              <p className="text-xs text-slate-500">{mockAvg != null ? "average per question, all mocks" : "take a mock to see it"}</p>
+            </div>
+          </div>
+          <p className={`mt-3 text-sm ${PACE_TONE[paceOf(speed)]}`}>
+            {paceOf(speed) === "fast" ? "You're within the target pace." : paceOf(speed) === "steady" ? "A little slower than the target pace. Timed sets will help." : "Well behind the target pace. Practise with timed sets and skip questions that stall you."}
+          </p>
+        </section>
+      )}
 
       <section className="card">
         <h2 className="font-semibold">Mock score trend</h2>
@@ -30,7 +60,7 @@ export default async function AnalyticsPage() {
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-left text-slate-500">
-                  <tr><th className="py-2">Mock</th>{SECTIONS.map((s) => <th key={s} className="py-2">{SECTION_LABELS[s].split(" ")[0]}</th>)}<th className="py-2">Total</th><th className="py-2">Warnings</th></tr>
+                  <tr><th className="py-2">Mock</th>{SECTIONS.map((s) => <th key={s} className="py-2">{SECTION_LABELS[s].split(" ")[0]}</th>)}<th className="py-2">Total</th><th className="py-2">Speed</th><th className="py-2">Warnings</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {history.slice().reverse().map((h) => (
@@ -38,6 +68,7 @@ export default async function AnalyticsPage() {
                       <td className="py-2"><Link href={`/results/${h.id}`} className="text-indigo-600 hover:underline">{h.title}</Link></td>
                       {SECTIONS.map((s) => <td key={s} className="py-2 tabular-nums">{h.bySection[s].total ? `${h.bySection[s].correct}/${h.bySection[s].total}` : "—"}</td>)}
                       <td className="py-2 font-semibold tabular-nums">{h.score}/{h.maxScore}</td>
+                      <td className={`py-2 tabular-nums ${h.speed ? PACE_TONE[paceOf(h.speed)] : ""}`}>{h.speed ? `${fmtSec(h.speed.avgSec)}/q` : "—"}</td>
                       <td className={`py-2 tabular-nums ${h.violations ? "text-red-600" : ""}`}>{h.violations}{h.autoSubmitted ? " (auto)" : ""}</td>
                     </tr>
                   ))}

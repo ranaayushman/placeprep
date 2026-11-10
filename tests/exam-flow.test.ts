@@ -139,9 +139,11 @@ describe("practice", () => {
   });
 
   it("avoids repeating finite-bank items until the bank is exhausted", async () => {
-    const id = await createPractice(userId, { topicIds: ["r-ds"], count: 10, timed: false });
+    const { TOPIC_BY_ID } = await import("@/lib/questions");
+    const pool = TOPIC_BY_ID.get("v-jumble")!.poolSize!;
+    const id = await createPractice(userId, { topicIds: ["v-jumble"], count: 10, timed: false });
     const rows = await db.select().from(attemptQuestions).where(eq(attemptQuestions.attemptId, id));
-    const items = rows.map((r) => Number(r.ref.split(":")[1]) % 10);
+    const items = rows.map((r) => Number(r.ref.split(":")[1]) % pool);
     expect(new Set(items).size).toBe(10);
   });
 });

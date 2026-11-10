@@ -4,6 +4,7 @@ import { leaderboard } from "@/lib/admin";
 import { listExams } from "@/lib/exam/exams";
 import { pct } from "@/components/charts";
 import { fmtDate } from "@/components/admin/when";
+import { fmtSec } from "@/lib/exam/speed";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,7 @@ export default async function AdminLeaderboard({ searchParams }: { searchParams:
                 <th className="px-3 py-2 text-right">Mocks</th>
                 <th className="px-3 py-2 text-right">Avg</th>
                 <th className="px-3 py-2 text-right">Best</th>
+                <th className="px-3 py-2 text-right" title="Average seconds per answered mock question">Mock speed</th>
                 <th className="px-3 py-2">Last mock</th>
                 <th className="px-3 py-2 text-right">Practice answered</th>
                 <th className="px-3 py-2 text-right">Practice accuracy</th>
@@ -69,6 +71,7 @@ export default async function AdminLeaderboard({ searchParams }: { searchParams:
                   <td className="px-3 py-2 text-right tabular-nums">{r.mocks || "—"}</td>
                   <td className="px-3 py-2 text-right font-semibold tabular-nums">{pct(r.avgPct)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{pct(r.bestPct)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{r.mockSecPerQ != null ? `${fmtSec(r.mockSecPerQ)}/q` : "—"}</td>
                   <td className="px-3 py-2 text-slate-600">{r.lastMockAt ? fmtDate(r.lastMockAt) : "—"}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{r.practiceAnswered || "—"}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{pct(r.practiceAcc)}</td>

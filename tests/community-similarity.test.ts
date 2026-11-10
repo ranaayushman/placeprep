@@ -57,11 +57,4 @@ describe("similarity against the banks (measured: see README 'Community question
     const q = generate("v-fill:0");
     expect(await findMatches({ section: "technical", normStem: normStem(q.prompt), normOptions: normOptions(q.options) })).toEqual([]);
   });
-
-  it("known limitation: short template stems (data sufficiency) over-match", async () => {
-    // A genuinely new DS question still scores 0.64 against r-ds:0 because "what is the value of x/y"
-    // shares most trigrams. Recorded so a change in behaviour is noticed; the admin decides.
-    const m = await best("reasoning", "What is the value of y?\nI. 2y = 8\nII. y² = 16", generate("r-ds:0").options);
-    expect(m.score).toBeGreaterThanOrEqual(DUPLICATE_POSSIBLE);
-  });
 });

@@ -10,6 +10,8 @@ export interface QuestionView {
   passage?: string;
   /** Optional data table (DI questions). First row is the header. */
   table?: string[][];
+  /** Optional chart (DI questions). Values are printed on the chart, as in real papers. */
+  chart?: Chart;
   /** Optional number grid for puzzles; null renders as "?", strings render as labels (A, B…). */
   grid?: (number | string | null)[][];
   options: string[];
@@ -17,6 +19,15 @@ export interface QuestionView {
   minWords?: number;
   /** Set on community-contributed questions (shown as a badge; `author` is "First L."). */
   community?: { id: string; author: string };
+}
+
+/** Bar and line: one value per label for each series. Pie: one series of percentages (summing to 100). */
+export interface Chart {
+  kind: "bar" | "line" | "pie";
+  title: string;
+  unit?: string;
+  labels: string[];
+  series: { name: string; values: number[] }[];
 }
 
 /** Full question including the answer. Server-side only. */

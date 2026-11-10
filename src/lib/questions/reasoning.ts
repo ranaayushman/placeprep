@@ -332,18 +332,6 @@ function syllogism(seed: number): Question {
   };
 }
 
-const DATA_SUFF = [
-  { q: "What is the value of x?", s1: "x + y = 10", s2: "x − y = 4", answer: 2, why: "Neither alone fixes x, but together they give x = 7." },
-  { q: "Is the integer n even?", s1: "3n is even.", s2: "n + 2 is odd.", answer: 3, why: "If 3n is even, n is even (3 is odd). If n + 2 is odd, n is odd — that also answers the question. Each alone is sufficient." },
-  { q: "How old is Riya?", s1: "Riya is 5 years older than Sam.", s2: "Sam is half of Riya's age.", answer: 2, why: "Together: R = S + 5 and S = R/2 → R = 10. Neither alone is enough." },
-  { q: "What is the area of the rectangle?", s1: "Its perimeter is 20 cm.", s2: "Its diagonal is √50 cm.", answer: 2, why: "l + w = 10 and l² + w² = 50 → lw = 25. Both are needed." },
-  { q: "On which day of the week was Tara born?", s1: "Her brother was born on a Monday, two days after her.", s2: "Tara is older than her brother.", answer: 0, why: "Statement I alone gives Saturday. Statement II alone gives nothing." },
-  { q: "Is x > y?", s1: "x = 2y", s2: "y > 0", answer: 2, why: "x = 2y alone fails for negative y. With y > 0, x = 2y > y. Both are required." },
-  { q: "What is the price of one pen?", s1: "3 pens and 2 pencils cost ₹40.", s2: "A pencil costs ₹5.", answer: 2, why: "Together: 3p + 10 = 40 → p = 10. Neither alone suffices." },
-  { q: "How many students are in the class?", s1: "Asha is 12th from the top.", s2: "Asha is 19th from the bottom.", answer: 2, why: "Together: 12 + 19 − 1 = 30. Neither alone tells the total." },
-  { q: "Is the number N divisible by 6?", s1: "N is divisible by 3.", s2: "N is divisible by 4.", answer: 2, why: "Divisible by 3 and by 4 → divisible by 12, hence by 6. Divisible by only one of them is not enough." },
-  { q: "What is the speed of the train?", s1: "It crosses a 200 m platform in 20 s.", s2: "It crosses a pole in 10 s.", answer: 2, why: "Let length L, speed v: L = 10v and L + 200 = 20v → v = 20 m/s. Both needed." },
-];
 const DS_OPTIONS = [
   "Statement I alone is sufficient",
   "Statement II alone is sufficient",
@@ -351,15 +339,90 @@ const DS_OPTIONS = [
   "Each statement alone is sufficient",
   "Both together are not sufficient",
 ];
+const [I_ALONE, II_ALONE, BOTH, EACH, NEITHER] = [0, 1, 2, 3, 4];
+
+type DsItem = { q: string; s1: string; s2: string; answer: number; why: string };
+
+/**
+ * Data-sufficiency families. Each builds its numbers so the answer is known by construction;
+ * statements I and II are then swapped at random (swapping "I alone" and "II alone").
+ */
+const DS_FAMILIES: ((r: Rng) => DsItem)[] = [
+  (r) => {
+    const [x, y] = [r.int(3, 15), r.int(1, 9)];
+    return { q: "What is the value of x?", s1: `x + y = ${x + y}`, s2: `x − y = ${x - y}`, answer: BOTH, why: `Neither alone fixes x. Adding them: 2x = ${2 * x}, so x = ${x}.` };
+  },
+  (r) => {
+    const a = r.int(6, 20);
+    return { q: "What is the value of x?", s1: `x + y = ${a}`, s2: `2x + 2y = ${2 * a}`, answer: NEITHER, why: `Statement II is Statement I multiplied by 2, so together they are still one equation in two unknowns.` };
+  },
+  (r) => {
+    const [age, k] = [r.int(18, 40), r.int(2, 9)];
+    return { q: "How old is Priya?", s1: `Priya is ${k} years older than Karan.`, s2: `Karan is ${age - k} years old.`, answer: BOTH, why: `I alone gives only the difference; II alone says nothing about Priya. Together: ${age - k} + ${k} = ${age}.` };
+  },
+  (r) => {
+    const [age, k] = [r.int(15, 40), r.int(2, 8)];
+    return { q: "How old is Rahul?", s1: `In ${k} years, Rahul will be ${age + k} years old.`, s2: `Rahul's sister is ${r.int(2, 6)} years younger than him.`, answer: I_ALONE, why: `I alone: ${age + k} − ${k} = ${age}. II gives only a difference with an unknown age.` };
+  },
+  (r) => {
+    const [k, j] = [r.pick([3, 5, 7]), r.pick([1, 3, 5])];
+    return { q: "Is the integer n odd?", s1: `${k}n is odd.`, s2: `n + ${j} is even.`, answer: EACH, why: `I: an odd number times n is odd only when n is odd. II: n + ${j} even with ${j} odd means n is odd. Each alone answers it.` };
+  },
+  (r) => {
+    const [top, bottom] = [r.int(5, 25), r.int(5, 25)];
+    return { q: "How many students are in the row?", s1: `Asha is ${ordinal(top)} from the left.`, s2: `Asha is ${ordinal(bottom)} from the right.`, answer: BOTH, why: `Together: ${top} + ${bottom} − 1 = ${top + bottom - 1}. Neither alone gives the total.` };
+  },
+  (r) => {
+    const [pen, pencil, a, b] = [r.int(8, 20), r.int(2, 6), r.int(2, 5), r.int(2, 5)];
+    return { q: "What is the price of one pen?", s1: `${a} pens and ${b} pencils cost ₹${a * pen + b * pencil}.`, s2: `One pencil costs ₹${pencil}.`, answer: BOTH, why: `Together: ${a}p + ${b * pencil} = ${a * pen + b * pencil} → p = ₹${pen}. Neither alone is enough.` };
+  },
+  (r) => {
+    const [pen, a] = [r.int(8, 25), r.int(3, 8)];
+    return { q: "What is the price of one pen?", s1: `${a} pens cost ₹${a * pen}.`, s2: `A pen costs ₹${r.int(2, 6)} more than a pencil.`, answer: I_ALONE, why: `I alone: ₹${a * pen} ÷ ${a} = ₹${pen}. II only relates two unknown prices.` };
+  },
+  (r) => {
+    const [v, len, plat] = [r.pick([10, 15, 20, 25]), r.int(10, 30) * 10, r.int(10, 30) * 10];
+    return { q: "What is the speed of the train?", s1: `It crosses a ${plat} m platform in ${(len + plat) / v} seconds.`, s2: `It crosses a pole in ${len / v} seconds.`, answer: BOTH, why: `Let length L and speed v: L = ${len / v}v and L + ${plat} = ${(len + plat) / v}v → v = ${v} m/s. Neither alone fixes both unknowns.` };
+  },
+  (r) => {
+    const h = r.int(2, 6);
+    return { q: "What is the average speed of the car?", s1: `It drove for ${h} hours.`, s2: `It covered more than ${r.int(8, 20) * 10} km.`, answer: NEITHER, why: `Speed needs the exact distance; "more than" only gives a lower limit, so even together they aren't enough.` };
+  },
+  (r) => {
+    const [p, q] = r.pick([[3, 4], [4, 5], [3, 5], [2, 7]] as const);
+    return { q: `Is the number N divisible by ${p * q}?`, s1: `N is divisible by ${p}.`, s2: `N is divisible by ${q}.`, answer: BOTH, why: `${p} and ${q} share no factor, so divisible by both means divisible by ${p * q}. One alone isn't enough: ${p} itself is divisible by ${p} but not by ${p * q}.` };
+  },
+  (r) => {
+    const [l, w] = [r.int(6, 15), r.int(2, 5)];
+    return { q: "What is the area of the rectangle?", s1: `Its perimeter is ${2 * (l + w)} cm.`, s2: `Its length is ${l - w} cm more than its breadth.`, answer: BOTH, why: `l + w = ${l + w} and l − w = ${l - w} → l = ${l}, w = ${w}, area = ${l * w} cm². Neither alone is enough.` };
+  },
+  (r) => {
+    const d = r.int(3, 12) * 2;
+    return { q: "What is the area of the circle?", s1: `Its circumference is ${d}π cm.`, s2: `Its diameter is ${d} cm.`, answer: EACH, why: `Either gives the radius, ${d / 2} cm, so area = ${(d / 2) ** 2}π cm². Each alone is sufficient.` };
+  },
+  (r) => {
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const [b, k] = [r.int(0, 6), r.int(1, 3)];
+    return { q: "On which day was Tara born?", s1: `Her brother was born on a ${days[b]}, ${k} day${k > 1 ? "s" : ""} after her.`, s2: `Tara is older than her brother.`, answer: I_ALONE, why: `I alone: ${k} day${k > 1 ? "s" : ""} before ${days[b]} is ${days[(b - k + 7) % 7]}. II adds nothing new.` };
+  },
+  (r) => {
+    const [x, y] = [r.int(2, 9), r.int(2, 9)];
+    return { q: "Is x greater than y?", s1: `x = ${x === y ? x + 1 : x} and y is a positive integer.`, s2: `y = ${y}.`, answer: BOTH, why: `I alone leaves y unknown; II alone leaves x unknown. Together it is a direct comparison.` };
+  },
+];
 
 function dataSufficiency(seed: number): Question {
-  const item = DATA_SUFF[seed % DATA_SUFF.length];
+  const r = rng(seed);
+  const item = DS_FAMILIES[r.int(0, DS_FAMILIES.length - 1)](r);
+  const swap = r.int(0, 1) === 1;
+  const [s1, s2] = swap ? [item.s2, item.s1] : [item.s1, item.s2];
+  const answer = swap && item.answer <= II_ALONE ? 1 - item.answer : item.answer;
   return {
     kind: "mcq",
-    prompt: `${item.q}\nI. ${item.s1}\nII. ${item.s2}`,
+    prompt: `${item.q}\nI. ${s1}\nII. ${s2}\nWhich statement(s) are sufficient to answer the question?`,
     options: DS_OPTIONS,
-    answer: item.answer,
-    explanation: item.why,
+    answer,
+    explanation: swap ? item.why.replace(/\b(I|II)\b/g, (m) => (m === "I" ? "II" : "I")) : item.why,
   };
 }
 
@@ -374,5 +437,5 @@ export const reasoningTopics: Topic[] = [
   { id: "r-calendar", section: "reasoning", label: "Calendars", weight: 1, targetSec: 90, generate: calendar },
   { id: "r-ranking", section: "reasoning", label: "Ranking & Order", weight: 1, targetSec: 45, generate: ranking },
   { id: "r-odd", section: "reasoning", label: "Odd One Out", weight: 1, targetSec: 45, generate: oddOneOut },
-  { id: "r-ds", section: "reasoning", label: "Data Sufficiency", weight: 2, targetSec: 90, poolSize: DATA_SUFF.length, generate: dataSufficiency },
+  { id: "r-ds", section: "reasoning", label: "Data Sufficiency", weight: 3, targetSec: 90, generate: dataSufficiency },
 ];
