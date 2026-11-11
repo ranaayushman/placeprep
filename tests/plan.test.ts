@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { fingerprint, pickFresh, planTopics, type History, type MocksAgo } from "@/lib/exam/plan";
-import { INFOSYS_SE_PATTERN } from "@/lib/exam/pattern";
-import { TOPIC_BY_ID, toView, topicsFor } from "@/lib/questions";
+import { fingerprint, hardSlots, pickFresh, planTopics, type History, type MocksAgo } from "@/lib/exam/plan";
+import { EXAMS, HARD_SHARE_BY_LEVEL, INFOSYS_SE_PATTERN } from "@/lib/exam/pattern";
+import { generate, TOPIC_BY_ID, toView, topicsFor } from "@/lib/questions";
 import type { SectionId } from "@/lib/questions/types";
 
 // Pure logic: no DB needed (runs under the normal config too).
@@ -85,7 +85,7 @@ describe("pickFresh: no repeated questions", () => {
     const shown = new Set<string>();
     let repeats = 0;
     for (let i = 0; i < 40; i++) {
-      const fp = fingerprint(toView(topic.generate(pickFresh(topic, history, new Set()))));
+      const fp = fingerprint(toView(generate(pickFresh(topic, history, new Set()))));
       if (shown.has(fp)) repeats++;
       shown.add(fp);
     }
@@ -99,7 +99,48 @@ describe("pickFresh: no repeated questions", () => {
     for (let s = 1; s <= 30; s++) before.add(fingerprint(toView(topic.generate(s))));
     history.prints.set(topic.id, new Set(before));
     for (let i = 0; i < 20; i++) {
-      expect(before.has(fingerprint(toView(topic.generate(pickFresh(topic, history, new Set())))))).toBe(false);
+      expect(before.has(fingerprint(toView(generate(pickFresh(topic, history, new Set())))))).toBe(false);
+    }
+  });
+});
+
+describe("hard tier", () => {
+  it("about 70% of a section's slots are hard where the topics have a hard tier", () => {
+    const math = topicsFor("math");
+    let hard = 0;
+    let total = 0;
+    for (let i = 0; i < 200; i++) {
+      const ts = planTopics(math, 10);
+      const hs = hardSlots(ts);
+      hs.forEach((h, k) => expect(!h || !!ts[k].hard).toBe(true)); // never hard without a hard tier
+      hard += hs.filter(Boolean).length;
+      total += ts.filter((t) => t.hard).length;
+    }
+    expect(hard).toBeGreaterThan(0);
+    expect(hard).toBeLessThanOrEqual(total);
+  });
+
+  it("pickFresh tags hard refs and they regenerate as the hard question", () => {
+    const topic = TOPIC_BY_ID.get("m-prob")!;
+    const ref = pickFresh(topic, { seen: new Map(), prints: new Map(), mocksAgo: new Map() }, new Set(), true);
+    expect(ref).toMatch(/^m-prob:\d+:h$/);
+    const seed = Number(ref.split(":")[1]);
+    expect(JSON.stringify(generate(ref))).toBe(JSON.stringify(topic.hard!(seed)));
+    expect(JSON.stringify(generate(`m-prob:${seed}`))).toBe(JSON.stringify(topic.generate(seed)));
+  });
+});
+
+describe("mock levels", () => {
+  it("Infosys has a normal Mock 1 and a hard Mock 2", () => {
+    expect(EXAMS.find((e) => e.id === "infosys-se")?.level).toBe("normal");
+    expect(EXAMS.find((e) => e.id === "infosys-se-hard")?.level).toBe("hard");
+  });
+
+  it("normal mocks serve no hard questions; hard mocks serve every topic that has a hard tier as hard", () => {
+    for (const section of ["math", "reasoning", "pseudocode"] as const) {
+      const ts = planTopics(topicsFor(section), 10);
+      expect(hardSlots(ts, HARD_SHARE_BY_LEVEL.normal).some(Boolean)).toBe(false);
+      expect(hardSlots(ts, HARD_SHARE_BY_LEVEL.hard)).toEqual(ts.map((t) => !!t.hard));
     }
   });
 });

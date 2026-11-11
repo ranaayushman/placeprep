@@ -4,9 +4,9 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { attemptQuestions, attempts, attemptSections, db, type Attempt, type AttemptSection } from "@/db";
 import { generate, SECTION_LABELS, TOPIC_BY_ID, toView, topicsFor, type SectionId, type Topic } from "@/lib/questions";
 import { RC_GROUP, RC_PASSAGES } from "@/lib/questions/verbal";
-import { LEFT_AFTER_MS, MAX_VIOLATIONS, SUBMIT_GRACE_MS } from "./pattern";
+import { HARD_SHARE_BY_LEVEL, LEFT_AFTER_MS, MAX_VIOLATIONS, SUBMIT_GRACE_MS } from "./pattern";
 import { getExam } from "./exams";
-import { fingerprint, pickFresh, planTopics, shuffle, type History, type MocksAgo } from "./plan";
+import { fingerprint, hardSlots, pickFresh, planTopics, shuffle, type History, type MocksAgo } from "./plan";
 import { logEvent } from "@/lib/events";
 import { COMMUNITY_PREFIX, freshCommunityIds, isCommunityRef, loadPublished } from "@/lib/community/serve";
 
@@ -125,6 +125,7 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
   if (!exam) throw new ExamError("Unknown exam");
   const history = await loadHistory(userId);
   const seen = history.seen;
+  const hardShare = HARD_SHARE_BY_LEVEL[exam.level];
   const taken = new Set<string>();
   const plan = exam.pattern.filter((s) => opts.includeWriting || s.section !== "writing").map((spec) => {
     const refs: string[] = [];
@@ -138,10 +139,15 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
       for (let k = 0; k < RC_GROUP; k++) refs.push(`${rc.id}:${p * RC_GROUP + k + rc.poolSize! * randomInt(0, 10_000)}`);
       // The passage block stays together; the other verbal questions are mixed.
       const others = topicsFor("verbal").filter((t) => t.id !== "v-rc");
-      for (const t of planTopics(others, spec.questions - RC_GROUP, history.mocksAgo)) refs.push(`${t.id}:${pickFresh(t, history, taken)}`);
+      const vt = planTopics(others, spec.questions - RC_GROUP, history.mocksAgo);
+      const vh = hardSlots(vt, hardShare);
+      vt.forEach((t, i) => refs.push(pickFresh(t, history, taken, vh[i])));
     } else {
       // Mixed topics, every topic covered (or rotated in when there are fewer slots than topics), no repeats.
-      for (const t of planTopics(topicsFor(spec.section), spec.questions, history.mocksAgo)) refs.push(`${t.id}:${pickFresh(t, history, taken)}`);
+      // Normal mock: standard questions. Hard mock: the hard tier wherever a topic has one.
+      const ts = planTopics(topicsFor(spec.section), spec.questions, history.mocksAgo);
+      const hs = hardSlots(ts, hardShare);
+      ts.forEach((t, i) => refs.push(pickFresh(t, history, taken, hs[i])));
     }
     return { section: spec.section, durationSec: spec.minutes * 60, refs };
   });
@@ -168,12 +174,9 @@ export async function createPractice(
     const topics = opts.topicIds.map((id) => TOPIC_BY_ID.get(id)).filter((t): t is Topic => !!t && t.section !== "writing");
     if (!topics.length) throw new ExamError("Choose at least one topic");
     // Round-robin keeps every chosen topic covered; shuffling mixes them instead of A, B, C, A, B, C.
-    planned = shuffle(
-      Array.from({ length: opts.count }, (_, i) => {
-        const t = topics[i % topics.length];
-        return { section: t.section, ref: `${t.id}:${pickFresh(t, history, taken)}` };
-      }),
-    );
+    const chosen = Array.from({ length: opts.count }, (_, i) => topics[i % topics.length]);
+    const hard = hardSlots(chosen);
+    planned = shuffle(chosen.map((t, i) => ({ section: t.section, ref: pickFresh(t, history, taken, hard[i]) })));
     // Opted-in topics: up to half of their slots become unseen published community questions.
     for (const t of topics.filter((tp) => opts.communityTopics?.includes(tp.id))) {
       const slots = planned.map((p, i) => (p.ref.startsWith(`${t.id}:`) ? i : -1)).filter((i) => i >= 0);

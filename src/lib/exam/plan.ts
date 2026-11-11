@@ -96,22 +96,39 @@ export function pickSeed(topic: Topic, seen: Map<string, Set<number>>, taken: Se
 const FRESH_TRIES = 40;
 
 /**
- * A seed whose question this student has not seen in any earlier attempt, or earlier in this one.
- * Generators can render the same question from different seeds (small parameter spaces), so this
- * compares what is shown, not the seed. Falls back to a repeat only when the topic is exhausted.
+ * A question ref ("<topic>:<seed>", or "<topic>:<seed>:h" for the hard tier) whose question this
+ * student has not seen in any earlier attempt, or earlier in this one. Generators can render the same
+ * question from different seeds (small parameter spaces), so this compares what is shown, not the
+ * seed. Falls back to a repeat only when the topic is exhausted.
  */
-export function pickFresh(topic: Topic, history: History, taken: Set<string>): number {
+export function pickFresh(topic: Topic, history: History, taken: Set<string>, hard = false): string {
+  const tier = hard && topic.hard ? ":h" : "";
+  const gen = tier ? topic.hard! : topic.generate;
   const prints = history.prints.get(topic.id) ?? new Set<string>();
   history.prints.set(topic.id, prints);
   let seed = pickSeed(topic, history.seen, taken);
   for (let i = 1; i < FRESH_TRIES; i++) {
-    const fp = fingerprint(toView(topic.generate(seed)));
+    const fp = fingerprint(toView(gen(seed)));
     if (!prints.has(fp)) {
       prints.add(fp);
-      return seed;
+      return `${topic.id}:${seed}${tier}`;
     }
     seed = pickSeed(topic, history.seen, taken);
   }
-  prints.add(fingerprint(toView(topic.generate(seed))));
-  return seed;
+  prints.add(fingerprint(toView(gen(seed))));
+  return `${topic.id}:${seed}${tier}`;
+}
+
+/** Share of questions served from the hard tier, where a topic has one. */
+export const HARD_SHARE = 0.7;
+
+/**
+ * Which slots get a hard question: round(HARD_SHARE × slots) of them, chosen at random among the
+ * slots whose topic has a hard tier (topics without one stay standard).
+ */
+export function hardSlots(topics: Topic[], share = HARD_SHARE, rand: () => number = Math.random): boolean[] {
+  const eligible = topics.map((t, i) => (t.hard ? i : -1)).filter((i) => i >= 0);
+  const want = Math.min(eligible.length, Math.round(share * topics.length));
+  const chosen = new Set(shuffle(eligible, rand).slice(0, want));
+  return topics.map((_, i) => chosen.has(i));
 }

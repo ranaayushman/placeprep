@@ -74,7 +74,7 @@ function pseudoToJs(code: string): string {
     const s = raw.trim();
     if (!s) continue;
     let m: RegExpMatchArray | null;
-    if ((m = s.match(/^Integer\s+(\w+)\s*\(([^)]*)\)$/))) {
+    if ((m = s.match(/^(?:Integer|function)\s+(\w+)\s*\(([^)]*)\)$/))) {
       const params = m[2].split(",").map((p) => p.trim().replace(/^Integer\s+/, "")).filter(Boolean).join(",");
       out.push(`function ${m[1]}(${params}){`);
     } else if (/^End function/i.test(s)) out.push("}");
@@ -90,11 +90,13 @@ function pseudoToJs(code: string): string {
     else if (/^end if$/i.test(s)) out.push("}");
     else if ((m = s.match(/^while\s*\((.+)\)$/))) out.push(`while(${fixExpr(m[1])}){`);
     else if (/^end while$/i.test(s)) out.push("}");
+    else if (/^(break|continue)$/.test(s)) out.push(`${s};`);
     else if ((m = s.match(/^return\s+(.+)$/))) out.push(`return ${fixExpr(m[1])};`);
     else if ((m = s.match(/^Print\s+(.+)$/))) {
       const args = splitTop(m[1]);
-      if (args.length > 1) out.push(`__out = [${args.map(fixExpr).join(",")}].join(" ");`);
-      else out.push(`__out = String(${fixExpr(m[1])});`);
+      // Several Print statements (e.g. inside a recursive function) print in order, space-separated.
+      if (args.length > 1) out.push(`__out.push([${args.map(fixExpr).join(",")}].join(" "));`);
+      else out.push(`__out.push(String(${fixExpr(m[1])}));`);
     } else if (/^\w+\s*\(.*\)$/.test(s)) out.push(fixExpr(s) + ";"); // bare call e.g. change(a, b)
     else if (s.includes("=")) {
       const i = s.indexOf("=");
@@ -104,7 +106,7 @@ function pseudoToJs(code: string): string {
   return out.join("\n");
 }
 function runPseudo(code: string): string {
-  const src = `"use strict"; const _d=(a,b)=>Math.trunc(a/b); let __out=undefined;\n${pseudoToJs(code)}\nreturn __out;`;
+  const src = `"use strict"; const _d=(a,b)=>Math.trunc(a/b); const __out=[];\n${pseudoToJs(code)}\nreturn __out.join(" ");`;
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
   return new Function(src)() as string;
 }
@@ -124,10 +126,11 @@ describe("pseudocode: rendered code re-executed independently", () => {
     }
     expect(checked).toBeGreaterThan(0);
   });
-  it.each(PSEUDO_TOPICS)("%s matches shipped answer", (id) => {
+  it.each([...PSEUDO_TOPICS, ...PSEUDO_TOPICS.filter((id) => TOPICS.find((t) => t.id === id)?.hard).map((id) => `${id}:h`)])("%s matches shipped answer", (topicTier) => {
+    const [id, tier] = topicTier.split(":");
     const bad: string[] = [];
     for (let s = 1; s <= SEEDS; s++) {
-      const q = generate(`${id}:${s}`);
+      const q = generate(`${id}:${s}${tier ? ":h" : ""}`);
       let got: string;
       try {
         got = runPseudo(q.code!);

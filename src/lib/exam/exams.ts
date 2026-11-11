@@ -4,13 +4,13 @@ import { z } from "zod";
 import { attempts, db, mockExams } from "@/db";
 import type { SectionId } from "@/lib/questions/types";
 import { RC_GROUP } from "@/lib/questions/verbal";
-import { EXAMS, type SectionSpec } from "./pattern";
+import { EXAMS, type ExamLevel, type SectionSpec } from "./pattern";
 
-export type Exam = { id: string; company: string; name: string; short: string; pattern: readonly SectionSpec[]; note: string | null; builtIn: boolean };
+export type Exam = { id: string; company: string; name: string; short: string; pattern: readonly SectionSpec[]; note: string | null; level: ExamLevel; builtIn: boolean };
 export type MockExamRow = typeof mockExams.$inferSelect;
 
 const BUILT_IN: Exam[] = EXAMS.map((e) => ({ ...e, builtIn: true }));
-const fromRow = (r: MockExamRow): Exam => ({ id: r.id, company: r.company, name: r.name, short: r.short, note: r.note, pattern: r.pattern as SectionSpec[], builtIn: false });
+const fromRow = (r: MockExamRow): Exam => ({ id: r.id, company: r.company, name: r.name, short: r.short, note: r.note, pattern: r.pattern as SectionSpec[], level: "normal", builtIn: false });
 
 /** Every exam students can take: the built-in ones, then published ones from the admin panel. */
 export async function listExams(): Promise<Exam[]> {

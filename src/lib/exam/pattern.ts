@@ -41,15 +41,32 @@ export const DELOITTE_NLA_PATTERN: SectionSpec[] = [
   { section: "technical", questions: 30, minutes: 30 },
 ];
 
+/**
+ * Difficulty of a mock. "normal": standard questions only. "hard": every topic that has a hard tier
+ * (see lib/questions/hard.ts) is served from it; topics without one stay standard.
+ */
+export type ExamLevel = "normal" | "hard";
+export const HARD_SHARE_BY_LEVEL: Record<ExamLevel, number> = { normal: 0, hard: 1 };
+
 /** Exams students can take as full mocks. Add an entry when a new company's pattern exists. */
 export const EXAMS = [
-  { id: "infosys-se", company: "Infosys", name: "Systems Engineer (SE) online test", short: "Infosys SE", pattern: INFOSYS_SE_PATTERN, note: null },
+  { id: "infosys-se", company: "Infosys", name: "Systems Engineer (SE) online test · Mock 1", short: "Infosys SE 1", pattern: INFOSYS_SE_PATTERN, level: "normal" as ExamLevel, note: null },
+  {
+    id: "infosys-se-hard",
+    company: "Infosys",
+    name: "Systems Engineer (SE) online test · Mock 2 (Hard)",
+    short: "Infosys SE 2 Hard",
+    pattern: INFOSYS_SE_PATTERN,
+    level: "hard" as ExamLevel,
+    note: "Hard mode: same pattern and timers, but multi-step questions designed with traps. Expect a lower score than in Mock 1 — that's the point.",
+  },
   {
     id: "deloitte-nla",
     company: "Deloitte",
     name: "Cyber Gurukul · Analyst Trainee (NLA)",
     short: "Deloitte NLA",
     pattern: DELOITTE_NLA_PATTERN,
+    level: "normal" as ExamLevel,
     note: "The real test also has a coding round (2 problems). It is not simulated here yet, so practise coding separately.",
   },
 ] as const;

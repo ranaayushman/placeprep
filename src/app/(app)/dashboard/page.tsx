@@ -10,6 +10,7 @@ import { listExams } from "@/lib/exam/exams";
 import { AdSlot } from "@/components/AdSlot";
 import { ProgressBar, pct } from "@/components/charts";
 import { SECTION_LABELS } from "@/lib/questions";
+import { LevelBadge } from "@/components/LevelBadge";
 import { retryMistakes, startPractice } from "../start-actions";
 
 /** Recruiters students ask for most that have no mock yet (see EXAMS in lib/exam/pattern.ts). */
@@ -122,7 +123,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                       <p className="text-xs font-semibold tracking-wider text-sun uppercase">
                         {exam.company} · available{isDream ? " · your dream company" : ""}
                       </p>
-                      <h3 className="mt-1 text-2xl font-bold">{exam.name}</h3>
+                      <h3 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-bold">
+                        {exam.name}
+                        <LevelBadge level={exam.level} />
+                      </h3>
                       <p className="mt-1 text-white/70">{q} questions · {min} min · {exam.pattern.length} timed sections · no negative marking</p>
                     </div>
                     {mine.length > 0 && (

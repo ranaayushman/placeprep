@@ -122,8 +122,8 @@ function clocks(seed: number): Question {
   });
 }
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+export const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 function calendar(seed: number): Question {
   const r = rng(seed);
@@ -332,7 +332,7 @@ function syllogism(seed: number): Question {
   };
 }
 
-const DS_OPTIONS = [
+export const DS_OPTIONS = [
   "Statement I alone is sufficient",
   "Statement II alone is sufficient",
   "Both statements together are needed",

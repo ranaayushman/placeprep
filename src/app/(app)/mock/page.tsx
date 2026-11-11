@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MAX_VIOLATIONS } from "@/lib/exam/pattern";
 import { listExams } from "@/lib/exam/exams";
 import { SECTION_LABELS } from "@/lib/questions";
+import { LevelBadge } from "@/components/LevelBadge";
 
 export default async function MockPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
   const EXAMS = await listExams();
@@ -21,7 +22,7 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
                 aria-current={e.id === exam.id ? "page" : undefined}
                 className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${e.id === exam.id ? "border-brand bg-brand-soft text-brand-dark" : "border-slate-200 bg-white text-slate-600 hover:border-brand"}`}
               >
-                {e.company}
+                {e.short}
               </Link>
             ))}
             {!EXAMS.some((e) => e.company.toLowerCase() === "cognizant") && (
@@ -31,7 +32,10 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
             )}
           </nav>
         )}
-        <h1 className="text-2xl font-bold">{exam.company} · {exam.name}</h1>
+        <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold">
+          {exam.company} · {exam.name}
+          <LevelBadge level={exam.level} />
+        </h1>
         <p className="text-slate-500">A complete mock in the reported pattern, with the real exam rules. Set aside about {mcqMinutes + (hasWriting ? 20 : 0)} minutes.</p>
         {exam.note && <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">{exam.note}</p>}
       </div>

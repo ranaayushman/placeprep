@@ -50,4 +50,6 @@ export interface Topic {
   /** Static banks have a finite pool; generators are effectively unlimited. */
   poolSize?: number;
   generate: (seed: number) => Question;
+  /** Hard tier (multi-step, trap distractors), referenced as "<topic>:<seed>:h". Optional per topic. */
+  hard?: (seed: number) => Question;
 }

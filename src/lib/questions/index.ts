@@ -5,6 +5,7 @@ import { reasoningTopics } from "./reasoning";
 import { technicalTopics } from "./technical";
 import type { Question, QuestionView, SectionId, Topic } from "./types";
 import { ESSAY_PROMPTS, verbalTopics } from "./verbal";
+import { HARD } from "./hard";
 
 const essayTopic: Topic = {
   id: "w-essay",
@@ -24,7 +25,9 @@ const essayTopic: Topic = {
   }),
 };
 
-export const TOPICS: Topic[] = [...reasoningTopics, ...mathTopics, ...verbalTopics, ...pseudocodeTopics, ...puzzleTopics, ...technicalTopics, essayTopic];
+export const TOPICS: Topic[] = [...reasoningTopics, ...mathTopics, ...verbalTopics, ...pseudocodeTopics, ...puzzleTopics, ...technicalTopics, essayTopic].map((t) =>
+  HARD[t.id] ? { ...t, hard: HARD[t.id] } : t,
+);
 export const TOPIC_BY_ID = new Map(TOPICS.map((t) => [t.id, t]));
 
 export const SECTION_LABELS: Record<SectionId, string> = {
@@ -39,12 +42,15 @@ export const SECTION_LABELS: Record<SectionId, string> = {
 
 export const topicsFor = (section: SectionId) => TOPICS.filter((t) => t.section === section);
 
+/** "<topic>:<seed>" is a standard question, "<topic>:<seed>:h" its hard-tier counterpart. */
 export function generate(ref: string): Question {
-  const [topicId, seedStr] = ref.split(":");
+  const [topicId, seedStr, tier] = ref.split(":");
   const topic = TOPIC_BY_ID.get(topicId);
   if (!topic) throw new Error(`Unknown topic ${topicId}`);
-  return topic.generate(Number(seedStr));
+  return tier === "h" && topic.hard ? topic.hard(Number(seedStr)) : topic.generate(Number(seedStr));
 }
+
+export const isHardRef = (ref: string) => ref.split(":")[2] === "h";
 
 /** Strips answer and explanation before anything is sent to the browser. */
 export function toView(q: Question): QuestionView {
