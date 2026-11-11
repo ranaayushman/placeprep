@@ -299,7 +299,7 @@ export function CookieConsent() {
                   <div>
                     <h4 className="font-semibold text-slate-900">Advertising</h4>
                     <p className="mt-1 text-xs text-slate-500">
-                      Allows limited advertising in non-exam areas if advertising is introduced. Ads are currently inactive and never access camera or assessment data.
+                      Lets Google AdSense show ads in a few places outside tests to keep PlacePrep free. Never during a test, and never with access to your camera, answers or scores.
                     </p>
                   </div>
                   <label className="relative inline-flex shrink-0 cursor-pointer items-center">

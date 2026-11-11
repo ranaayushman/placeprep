@@ -40,11 +40,11 @@ const COOKIE_INVENTORY = [
     expiry: "Until you clear site data",
   },
   {
-    name: "Advertising cookies (future)",
-    provider: "To be disclosed before activation",
+    name: "Google AdSense cookies (e.g. __gads, __gpi, IDE)",
+    provider: "Google",
     category: "Advertising",
-    purpose: "Not currently active. If advertising is introduced, these would support limited ads in non-exam areas only after the required consent.",
-    expiry: "To be disclosed before activation",
+    purpose: "Set only if you allow advertising cookies. Used by Google to show and measure ads in a few places outside tests, and may be used to personalise them.",
+    expiry: "Up to 13 months (set by Google)",
   },
 ];
 
@@ -81,9 +81,9 @@ export default function CookiePolicyPage() {
           <h2 className="text-xl font-bold text-deep">Summary for Students</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-700">
             PlacePrep is built to help students crack campus placement drives without paying predatory fees. We do{" "}
-            <strong>not</strong> sell student data or use advertising cookies at present. If limited advertising is
-            introduced in non-exam areas, the provider, cookie purposes, and consent choices will be disclosed before
-            activation. We will not use advertising tools in a way that accesses camera feeds, answers, or assessment records.
+            <strong>not</strong> sell student data. To keep PlacePrep free, we show Google AdSense ads in a few places
+            outside tests, and only if you allow advertising cookies. Ads never appear during a test, and no advertiser
+            receives camera feeds, answers, or assessment records.
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <CookieSettingsButton className="inline-flex items-center gap-2 rounded-xl bg-brand-dark px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-deep">
@@ -121,11 +121,12 @@ export default function CookiePolicyPage() {
           <section className="space-y-3">
             <h2 className="text-2xl font-bold text-deep">Advertising Cookies</h2>
             <p className="leading-relaxed text-slate-700">
-              Advertising is not currently active on PlacePrep. We may add small advertising placements outside timed
-              mock exams to help keep the platform free. Any non-essential advertising cookies or similar technologies
-              will be disabled unless you provide the required consent, and you can withdraw that choice through{" "}
+              PlacePrep shows ads from Google AdSense in a few places outside tests (for example, the dashboard) to help keep
+              the platform free. Google&apos;s ad code and its cookies load only if you allow advertising cookies; if you
+              don&apos;t, no ads are shown and no advertising cookies are set. You can change this any time in{" "}
               <CookieSettingsButton className="font-medium text-brand underline">Cookie Settings</CookieSettingsButton>.
-              Ads will never be shown inside an active mock question or used to access camera footage and face-check data.
+              Google may use these cookies to personalise ads; see <a href="https://policies.google.com/technologies/ads" className="font-medium text-brand underline" target="_blank" rel="noopener noreferrer">how Google uses advertising cookies</a>.
+              Ads are never shown during a test, and advertisers never receive camera footage, face-check data, answers or scores.
             </p>
           </section>
 

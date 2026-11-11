@@ -7,6 +7,7 @@ import { getTopicStats, mockHistory, recommend, sectionStats, type TopicStat } f
 import { closeLeftAttempts, wrongRefs } from "@/lib/exam/service";
 import { MAX_VIOLATIONS } from "@/lib/exam/pattern";
 import { listExams } from "@/lib/exam/exams";
+import { AdSlot } from "@/components/AdSlot";
 import { ProgressBar, pct } from "@/components/charts";
 import { SECTION_LABELS } from "@/lib/questions";
 import { retryMistakes, startPractice } from "../start-actions";
@@ -181,6 +182,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               ))}
             </ul>
             <p className="mt-3 text-xs text-muted">Until then, the aptitude, reasoning and verbal practice here carries over to most service-company tests.</p>
+            <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_DASHBOARD} className="mt-6 border-t border-deep/10 pt-4" />
           </div>
         </div>
       </section>

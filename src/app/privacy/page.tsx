@@ -163,7 +163,7 @@ export default function PrivacyPolicyPage() {
               <li>Generating recommendations to help you focus on your lowest-accuracy topics.</li>
               <li>Enforcing test integrity rules during simulated mock exams.</li>
               <li>Detecting platform abuse, automated bots, and unauthorized access attempts.</li>
-              <li>Keeping the free platform available, including displaying limited advertising in designated non-exam areas if we introduce ads in the future.</li>
+              <li>Keeping the free platform available, including showing Google AdSense ads in a few places outside tests, with your consent.</li>
             </ul>
           </section>
 
@@ -172,7 +172,7 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-2xl font-bold text-deep">5. Cookies &amp; Local Storage</h2>
             <p className="leading-relaxed text-slate-700">
               PlacePrep currently uses three cookies: one that keeps you signed in, one that secures Google sign-in while it is in progress, and one that remembers your cookie consent choice. Your browser&apos;s local storage also remembers which product updates you have already seen.
-              We do not currently run advertising cookies or personalized ad tracking. If advertising is introduced, we will identify the provider and cookie purposes, request any required consent before setting non-essential advertising cookies, and provide a way to withdraw that consent. For an itemized list of all cookies and to customize your choices, please review our{" "}
+              If you allow advertising cookies, Google AdSense sets its own cookies to show ads in a few places outside tests (and may personalise them). Without that consent, no ad code loads and no advertising cookies are set, and you can withdraw consent any time in Cookie Settings. For an itemized list of all cookies and to customize your choices, please review our{" "}
               <Link href="/cookies" className="font-medium text-brand underline">
                 Cookie Policy
               </Link>
@@ -200,7 +200,7 @@ export default function PrivacyPolicyPage() {
                 <strong>Brevo:</strong> Sends our marketing emails. Only students who opted in are shared with Brevo, and only their first name and email address.
               </li>
               <li>
-                <strong>Advertising providers (future):</strong> We may use a carefully selected advertising provider in limited, non-exam areas to help fund free access. No advertising provider will receive camera frames, face landmarks, answers, or assessment records. The provider and its data practices will be disclosed before activation.
+                <strong>Google AdSense:</strong> Shows ads in a few places outside tests, only if you allow advertising cookies. Google receives what any ad provider does (your IP address, browser details, the page and its cookies) and may personalise ads; see <a href="https://policies.google.com/technologies/ads" className="font-medium text-brand underline" target="_blank" rel="noopener noreferrer">how Google uses advertising cookies</a>. It never receives camera frames, face landmarks, answers or assessment records, and ads never appear during a test.
               </li>
               <li>
                 <strong>Vercel:</strong> Hosts the website and serves it over encrypted HTTPS (TLS) with HSTS security headers.

@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   description:
     "Free aptitude and MCQ practice, proctored mock tests, topic drills, and worked explanations for campus placement drives.",
   applicationName: "PlacePrep",
+  // AdSense site verification. A meta tag only: Google's ad script loads later, with consent (AdSlot).
+  other: { "google-adsense-account": "ca-pub-1010726208873742" },
   keywords: [
     "placement aptitude practice",
     "placement MCQ practice",
