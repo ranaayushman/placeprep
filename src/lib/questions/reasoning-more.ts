@@ -3,6 +3,7 @@
  * relations, ranking, direction and odd one out. Every answer is found by an exhaustive solver:
  * seating checks every arrangement, syllogisms every Venn diagram, blood relations walk the family tree.
  */
+import { FAMILY_HARD, FAMILY_STANDARD } from "./family";
 import { solveChain, type Step } from "./logic";
 import { SYLL_OPTIONS, SYLL_TERMS } from "./reasoning";
 import { mcq, rng, type Rng } from "./rng";
@@ -425,7 +426,8 @@ const oddHard: Gen = (r) => {
 export const REASONING_VARIETY: Record<string, Gen[]> = {
   "r-seating": [(r) => circular(r, r.pick([6, 6, 8]), false), linearSix],
   "r-syllogism": [(r) => syllogismQ(r, 3, 0.5)],
-  "r-blood": [bloodCoded],
+  // Coded symbols are one format among six (plus the original generator), not most of the set.
+  "r-blood": [...FAMILY_STANDARD, bloodCoded],
   "r-ranking": rankExtras,
 };
 
@@ -437,7 +439,7 @@ const pickGen = (gens: Gen[]) => (seed: number) => {
 export const REASONING_HARD: Record<string, (seed: number) => Question> = {
   "r-seating": pickGen([(r) => circular(r, 8, true), (r) => circular(r, 6, true)]),
   "r-syllogism": pickGen([(r) => syllogismQ(r, 4, 0.5), (r) => syllogismQ(r, 4, 0)]),
-  "r-blood": pickGen([bloodCoded, bloodWhichExpr, bloodWhichExpr]),
+  "r-blood": pickGen([...FAMILY_HARD, bloodWhichExpr]),
   "r-ranking": pickGen(rankHard),
   "r-direction": pickGen([directionHard]),
   "r-odd": pickGen([oddHard]),

@@ -259,6 +259,9 @@ describe("blood relations: generated chains cross-checked independently", () => 
       const steps = sentences.map((m) => WORD_STEP[m[2]]);
       const firstMale = WORD_MALE[sentences[0][2]];
       const rel = solveChainI(steps, firstMale);
+      // This solver has one parent per person, so it cannot model couples ("M is the father of N. N is the
+      // son of O" → M is O's husband). Those chains are checked by tests/family.test.ts instead.
+      if (!rel) continue;
       const want = rel ? rel[0].toUpperCase() + rel.slice(1) : null;
       if (want !== correctOf(q)) bad.push(`r-blood:${s} shipped=${correctOf(q)} mine=${want}\n${q.prompt}`);
     }

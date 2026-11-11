@@ -97,7 +97,7 @@ const ratioHard: Gen[] = [
       const mean = r.int(p1 + 1, p2 - 1);
       const [x, y] = [p2 - mean, mean - p1];
       const g = gcd(x, y);
-      return x / g <= 12 && y / g <= 12 ? { p1, p2, mean, x: x / g, y: y / g } : null;
+      return p2 - p1 >= 12 && x !== y && x / g <= 12 && y / g <= 12 ? { p1, p2, mean, x: x / g, y: y / g } : null;
     });
     return mcq(r, {
       prompt: `In what ratio must tea costing ₹${v.p1}/kg be mixed with tea costing ₹${v.p2}/kg so that the mixture costs ₹${v.mean}/kg?`,
@@ -696,7 +696,8 @@ const cryptHard: Gen = (r) => {
     const word = (n: number) => [...`${n}`].map((d) => letterOf[d]).join("");
     const words: [string, string, string] = [word(a), word(b), word(sum)];
     const truth: Record<string, number> = Object.fromEntries(digits.map((d) => [letterOf[d], Number(d)]));
-    const target = r.pick(letters);
+    // Not the leading carry letter of the sum: that one is always 1.
+    const target = r.pick(letters.filter((l) => !(words[2].length > 4 && l === words[2][0])));
     const given: Record<string, number> = {};
     const hidden = r.shuffle(letters.filter((l) => l !== target));
     let ok = false;
