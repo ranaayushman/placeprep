@@ -24,7 +24,7 @@ describe("hard tier: structure", () => {
       if (q.options.some((o) => /^−?-/.test(o))) bad.push(`${ref} negative option ${q.options.join(" | ")}`);
     }
     expect(bad.slice(0, 8)).toEqual([]);
-  });
+  }, 120_000); // exhaustive puzzle solvers are slower
 
   it("hard questions differ from standard ones for the same seed", () => {
     const show = (q: { prompt: string; code?: string; options: string[] }) => q.prompt + (q.code ?? "") + [...q.options].sort().join("|");

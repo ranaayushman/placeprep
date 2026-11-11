@@ -6,6 +6,7 @@
  */
 import { codingHard } from "./coding";
 import { REASONING_HARD } from "./reasoning-more";
+import { HARD_MORE } from "./hard-more";
 import { DAYS, DS_OPTIONS, MONTHS } from "./reasoning";
 import { fraction, gcd, lcm, mcq, rng, type Rng } from "./rng";
 import type { Question } from "./types";
@@ -759,6 +760,7 @@ export const HARD: Record<string, (seed: number) => Question> = {
   "r-series": fromHard(seriesHard),
   "r-coding": codingHard,
   ...REASONING_HARD,
+  ...HARD_MORE,
   "p-recursion": fromHard(recursionHard),
   "p-loops": fromHard(loopsHard),
   "p-bitwise": fromHard(bitwiseHard),

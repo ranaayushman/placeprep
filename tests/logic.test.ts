@@ -53,7 +53,9 @@ describe("blood relation chains", () => {
     const FEMALE = ["Bela", "Divya", "Esha", "Gita", "Isha", "Kavya", "Meera", "Sana"];
     for (let seed = 1; seed <= 400; seed++) {
       if (seed % 4 === 0) continue;
-      for (const [line, name, word] of generate(`r-blood:${seed}`).prompt.matchAll(/(\w+) is the (\w+) of/g)) {
+      const { prompt } = generate(`r-blood:${seed}`);
+      if (prompt.includes(" means ")) continue; // coded variant: letters (A, B, P…), not named people
+      for (const [line, name, word] of prompt.matchAll(/(\w+) is the (\w+) of/g)) {
         expect(FEMALE.includes(name), `${seed}: ${line}`).toBe(["mother", "daughter", "sister"].includes(word));
       }
     }

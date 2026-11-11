@@ -140,7 +140,7 @@ describe("mock levels", () => {
     const pseudo = topicsFor("pseudocode").filter((t) => t.hard); // every slot eligible: shares are exact
     for (const [level, [lo, hi]] of Object.entries(HARD_SHARE_BY_LEVEL)) {
       for (const share of [lo, (lo + hi) / 2, hi]) {
-        const hs = hardSlots([...pseudo, ...pseudo, ...pseudo, pseudo[0]], share); // 10 slots
+        const hs = hardSlots([...pseudo, ...pseudo, ...pseudo].slice(0, 10), share); // 10 slots
         const n = hs.filter(Boolean).length;
         expect(n, level).toBe(Math.round(share * 10));
       }
