@@ -15,7 +15,6 @@
  * Usage:
  *   const face = useFaceProctor({ enabled: isMock, onViolation });
  *   <video ref={face.videoRef} ... />
- *   <canvas ref={face.canvasRef} ... />  ← optional overlay
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -139,7 +138,6 @@ export function useFaceProctor({
   onViolation: (t: ViolationType) => void;
 }) {
   const videoRef  = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef    = useRef<number>(0);
 
@@ -232,7 +230,6 @@ export function useFaceProctor({
           return;
         }
         await faceMesh.send({ image: videoRef.current }).catch(() => {});
-        drawOverlay(lastResults);
         rafRef.current = requestAnimationFrame(sendFrame);
       };
       rafRef.current = requestAnimationFrame(sendFrame);
@@ -286,35 +283,6 @@ export function useFaceProctor({
       }, CHECK_INTERVAL_MS);
     }
 
-    // ── Overlay drawing ──────────────────────────────────────────────────────
-    function drawOverlay(results: any) {
-      const canvas = canvasRef.current;
-      const video  = videoRef.current;
-      if (!canvas || !video) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      canvas.width  = video.videoWidth  || 320;
-      canvas.height = video.videoHeight || 240;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const faces: Landmark[][] = results?.multiFaceLandmarks ?? [];
-      if (faces.length === 0) return;
-
-      // Draw iris dots only (subtle; not scary)
-      const { width: W, height: H } = canvas;
-      ctx.fillStyle = "rgba(99,230,190,0.9)";
-      for (const lm of faces) {
-        for (const idx of [L_IRIS, R_IRIS]) {
-          if (lm[idx]) {
-            ctx.beginPath();
-            // Sized to the frame: the tile shows it at ~1/6 scale.
-            ctx.arc(lm[idx].x * W, lm[idx].y * H, W / 60, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      }
-    }
-
     start().catch((error: unknown) => {
       if (!cancelled) {
         setErrorMessage(error instanceof Error ? `Face checks could not start: ${error.message}` : "Face checks could not start.");
@@ -335,5 +303,5 @@ export function useFaceProctor({
     };
   }, [enabled, step]);
 
-  return { videoRef, canvasRef, state, errorMessage, seen };
+  return { videoRef, state, errorMessage, seen };
 }

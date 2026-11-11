@@ -12,11 +12,11 @@ const STATE_LABEL: Record<string, string> = {
   error:      "Camera error",
 };
 
-const SEEN_LABEL = { ok: "Face OK", away: "Look at the screen", "no-face": "No face", multiple: "Multiple faces" } as const;
+const SEEN_LABEL = { away: "Look at the screen", "no-face": "No face", multiple: "Multiple faces" } as const;
 
 /**
- * FaceProctoringTile — shows the student's webcam feed with the
- * MediaPipe iris-tracking overlay, and fires violations via onViolation().
+ * FaceProctoringTile — shows the student's webcam feed (no tracking marks drawn on it) and fires
+ * camera alerts via onViolation(); a red label appears only when something is wrong.
  *
  * Replaces the old <CameraPreview /> in mock mode.
  */
@@ -27,7 +27,7 @@ export function FaceProctoringTile({
   enabled: boolean;
   onViolation: (t: ViolationType) => void;
 }) {
-  const { videoRef, canvasRef, state, errorMessage, seen } = useFaceProctor({ enabled, onViolation });
+  const { videoRef, state, errorMessage, seen } = useFaceProctor({ enabled, onViolation });
 
   const isLive = state === "running";
   const isDenied = state === "denied";
@@ -46,12 +46,6 @@ export function FaceProctoringTile({
         className="absolute inset-0 h-full w-full -scale-x-100 object-cover"
       />
 
-      {/* Iris overlay canvas */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 h-full w-full -scale-x-100 object-cover"
-      />
-
       {/* Status badge */}
       <span
         className={`absolute left-1 top-1 flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[9px] font-semibold
@@ -61,10 +55,11 @@ export function FaceProctoringTile({
         {STATE_LABEL[state] ?? state}
       </span>
 
-      {isLive && seen && (
+      {/* Only problems are shown: a constant "Face OK" was distracting during the test. */}
+      {isLive && seen && seen !== "ok" && (
         <span
           role="status"
-          className={`absolute inset-x-0 bottom-0 py-0.5 text-center text-[9px] font-semibold ${seen === "ok" ? "bg-black/50 text-green-400" : "bg-red-600/90 text-white"}`}
+          className="absolute inset-x-0 bottom-0 bg-red-600/90 py-0.5 text-center text-[9px] font-semibold text-white"
         >
           {SEEN_LABEL[seen]}
         </span>
