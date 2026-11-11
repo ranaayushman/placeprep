@@ -37,3 +37,29 @@ describe("leaderboard", () => {
     expect(infosys.map((r) => r.id)).not.toContain(e);
   });
 });
+
+describe("leaderboard by questions attempted", () => {
+  it("ranks everyone by answered questions across mocks and practice, finished or not", async () => {
+    const { attemptQuestions } = await import("@/db");
+    const t = Math.random().toString(36).slice(2, 8);
+    const mk = async (name: string, answered: number, mode: "MOCK" | "PRACTICE", status: "SUBMITTED" | "IN_PROGRESS" = "SUBMITTED") => {
+      const [u] = await db.insert(users).values({ email: `att-${name}-${t}@example.com`, name: `${name} ${t}`, passwordHash: "x" }).returning();
+      const [a] = await db.insert(attempts).values({ userId: u.id, mode, title: "x", status }).returning();
+      await db.insert(attemptQuestions).values(
+        Array.from({ length: answered + 2 }, (_, i) => ({
+          attemptId: a.id, sectionOrder: 0, order: i, section: "math", topic: "m-percent", ref: `m-percent:${i}`, payload: "{}",
+          answerIndex: 0, explanation: "", chosenIndex: i < answered ? (i % 2) : null, isCorrect: i < answered ? i % 2 === 0 : null,
+        })),
+      );
+      return u.id;
+    };
+    const many = await mk("Many", 30, "PRACTICE", "IN_PROGRESS"); // unfinished practice still counts
+    const mid = await mk("Mid", 12, "MOCK");
+    const few = await mk("Few", 4, "PRACTICE");
+    const mine = (await leaderboard(undefined, "attempted")).filter((r) => r.name.endsWith(t));
+    expect(mine.map((r) => r.id)).toEqual([many, mid, few]);
+    expect(mine.map((r) => r.totalAnswered)).toEqual([30, 12, 4]);
+    expect(mine[0].rank! < mine[1].rank! && mine[1].rank! < mine[2].rank!).toBe(true);
+    expect(mine[0].totalAcc).toBeCloseTo(0.5);
+  });
+});

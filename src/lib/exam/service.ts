@@ -2,14 +2,13 @@ import "server-only";
 import { randomInt } from "node:crypto";
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { attemptQuestions, attempts, attemptSections, db, type Attempt, type AttemptSection } from "@/db";
-import { generate, SECTION_LABELS, TOPIC_BY_ID, TOPICS, toView, topicsFor, type SectionId, type Topic } from "@/lib/questions";
+import { generate, SECTION_LABELS, TOPIC_BY_ID, toView, topicsFor, type SectionId, type Topic } from "@/lib/questions";
 import { RC_GROUP, RC_PASSAGES } from "@/lib/questions/verbal";
 import { LEFT_AFTER_MS, MAX_VIOLATIONS, SUBMIT_GRACE_MS } from "./pattern";
 import { getExam } from "./exams";
+import { fingerprint, pickFresh, planTopics, shuffle, type History, type MocksAgo } from "./plan";
 import { logEvent } from "@/lib/events";
 import { COMMUNITY_PREFIX, freshCommunityIds, isCommunityRef, loadPublished } from "@/lib/community/serve";
-
-const POOL_TOPICS = TOPICS.filter((t) => t.poolSize).map((t) => t.id);
 
 export class ExamError extends Error {
   constructor(message: string, public status = 400) {
@@ -19,56 +18,42 @@ export class ExamError extends Error {
 
 type Planned = { section: SectionId; ref: string };
 
-const newSeed = () => randomInt(1, 2 ** 31 - 1);
-
-/** All refs this user has already seen, grouped by topic — used to avoid repeats from finite banks. */
-async function seenIndices(userId: string): Promise<Map<string, Set<number>>> {
-  // Only finite banks matter here; generated topics never repeat, so don't load their rows.
+async function loadHistory(userId: string): Promise<History> {
   const rows = await db
-    .selectDistinct({ topic: attemptQuestions.topic, ref: attemptQuestions.ref })
+    .select({ attemptId: attempts.id, mode: attempts.mode, startedAt: attempts.startedAt, topic: attemptQuestions.topic, ref: attemptQuestions.ref, payload: attemptQuestions.payload })
     .from(attemptQuestions)
     .innerJoin(attempts, eq(attempts.id, attemptQuestions.attemptId))
-    .where(and(eq(attempts.userId, userId), inArray(attemptQuestions.topic, POOL_TOPICS)));
-  const out = new Map<string, Set<number>>();
-  for (const { topic, ref } of rows) {
-    if (isCommunityRef(ref)) continue; // "community:<uuid>", not a bank index
+    .where(eq(attempts.userId, userId));
+  const seen = new Map<string, Set<number>>();
+  const prints = new Map<string, Set<string>>();
+  const mockStart = new Map<string, number>();
+  for (const { attemptId, mode, startedAt, topic, ref, payload } of rows) {
+    if (mode === "MOCK") mockStart.set(attemptId, startedAt.getTime());
+    if (isCommunityRef(ref)) continue; // community questions have their own "unseen" query
     const t = TOPIC_BY_ID.get(topic);
-    if (!t?.poolSize) continue;
-    const set = out.get(topic) ?? new Set<number>();
-    set.add(Number(ref.split(":")[1]) % t.poolSize);
-    out.set(topic, set);
+    if (!t) continue;
+    if (t.poolSize) {
+      const set = seen.get(topic) ?? new Set<number>();
+      set.add(Number(ref.split(":")[1]) % t.poolSize);
+      seen.set(topic, set);
+    }
+    try {
+      const set = prints.get(topic) ?? new Set<string>();
+      set.add(fingerprint(JSON.parse(payload)));
+      prints.set(topic, set);
+    } catch {
+      // A malformed old payload only means one less question is excluded.
+    }
   }
-  return out;
-}
-
-/** Picks a seed for a topic. Finite banks prefer items the user has not seen yet. */
-function pickSeed(topic: Topic, seen: Map<string, Set<number>>, taken: Set<string>): number {
-  if (!topic.poolSize) return newSeed();
-  const used = seen.get(topic.id) ?? new Set<number>();
-  const fresh = Array.from({ length: topic.poolSize }, (_, i) => i).filter((i) => !used.has(i) && !taken.has(`${topic.id}:${i}`));
-  const pool = fresh.length ? fresh : Array.from({ length: topic.poolSize }, (_, i) => i).filter((i) => !taken.has(`${topic.id}:${i}`));
-  const index = pool.length ? pool[randomInt(0, pool.length)] : randomInt(0, topic.poolSize);
-  taken.add(`${topic.id}:${index}`);
-  // Keep the bank index but vary the seed so option order is reshuffled on repeats.
-  return index + topic.poolSize * randomInt(0, 10_000);
-}
-
-/** Weighted sample of topics for a section, so frequent topics show up more often. */
-function sampleTopics(section: SectionId, count: number, exclude: string[] = []): Topic[] {
-  const topics = topicsFor(section).filter((t) => !exclude.includes(t.id));
-  const total = topics.reduce((s, t) => s + t.weight, 0);
-  const counts = new Map<string, number>();
-  const cap = (t: Topic) => Math.ceil((count * t.weight) / total) + 1;
-  const out: Topic[] = [];
-  while (out.length < count) {
-    let x = Math.random() * total;
-    const t = topics.find((tp) => (x -= tp.weight) < 0) ?? topics[topics.length - 1];
-    if ((counts.get(t.id) ?? 0) >= cap(t)) continue;
-    counts.set(t.id, (counts.get(t.id) ?? 0) + 1);
-    out.push(t);
+  // Mocks newest first; a topic's "mocks ago" is the index of the newest mock that contained it.
+  const order = new Map([...mockStart.entries()].sort((a, b) => b[1] - a[1]).map(([id], i) => [id, i]));
+  const mocksAgo: MocksAgo = new Map();
+  for (const { attemptId, topic } of rows) {
+    const i = order.get(attemptId);
+    if (i === undefined) continue;
+    mocksAgo.set(topic, Math.min(mocksAgo.get(topic) ?? i, i));
   }
-  // Group by topic, as real papers tend to cluster similar questions.
-  return out.sort((a, b) => topics.indexOf(a) - topics.indexOf(b));
+  return { seen, prints, mocksAgo };
 }
 
 async function insertAttempt(
@@ -138,7 +123,8 @@ async function insertAttempt(
 export async function createMock(userId: string, opts: { includeWriting: boolean; exam?: string; cameraOff?: boolean }) {
   const exam = await getExam(opts.exam ?? "infosys-se");
   if (!exam) throw new ExamError("Unknown exam");
-  const seen = await seenIndices(userId);
+  const history = await loadHistory(userId);
+  const seen = history.seen;
   const taken = new Set<string>();
   const plan = exam.pattern.filter((s) => opts.includeWriting || s.section !== "writing").map((spec) => {
     const refs: string[] = [];
@@ -150,9 +136,12 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
       const freshP = passages.filter((p) => ![0, 1, 2, 3].some((k) => used.has(p * RC_GROUP + k)));
       const p = (freshP.length ? freshP : passages)[randomInt(0, (freshP.length ? freshP : passages).length)];
       for (let k = 0; k < RC_GROUP; k++) refs.push(`${rc.id}:${p * RC_GROUP + k + rc.poolSize! * randomInt(0, 10_000)}`);
-      for (const t of sampleTopics("verbal", spec.questions - RC_GROUP, ["v-rc"])) refs.push(`${t.id}:${pickSeed(t, seen, taken)}`);
+      // The passage block stays together; the other verbal questions are mixed.
+      const others = topicsFor("verbal").filter((t) => t.id !== "v-rc");
+      for (const t of planTopics(others, spec.questions - RC_GROUP, history.mocksAgo)) refs.push(`${t.id}:${pickFresh(t, history, taken)}`);
     } else {
-      for (const t of sampleTopics(spec.section, spec.questions)) refs.push(`${t.id}:${pickSeed(t, seen, taken)}`);
+      // Mixed topics, every topic covered (or rotated in when there are fewer slots than topics), no repeats.
+      for (const t of planTopics(topicsFor(spec.section), spec.questions, history.mocksAgo)) refs.push(`${t.id}:${pickFresh(t, history, taken)}`);
     }
     return { section: spec.section, durationSec: spec.minutes * 60, refs };
   });
@@ -164,7 +153,7 @@ export async function createPractice(
   userId: string,
   opts: { topicIds: string[]; count: number; timed: boolean; title?: string; refs?: string[]; communityTopics?: string[] },
 ) {
-  const seen = await seenIndices(userId);
+  const history = await loadHistory(userId);
   const taken = new Set<string>();
   let planned: Planned[];
   if (opts.refs?.length) {
@@ -178,10 +167,13 @@ export async function createPractice(
   } else {
     const topics = opts.topicIds.map((id) => TOPIC_BY_ID.get(id)).filter((t): t is Topic => !!t && t.section !== "writing");
     if (!topics.length) throw new ExamError("Choose at least one topic");
-    planned = Array.from({ length: opts.count }, (_, i) => {
-      const t = topics[i % topics.length];
-      return { section: t.section, ref: `${t.id}:${pickSeed(t, seen, taken)}` };
-    });
+    // Round-robin keeps every chosen topic covered; shuffling mixes them instead of A, B, C, A, B, C.
+    planned = shuffle(
+      Array.from({ length: opts.count }, (_, i) => {
+        const t = topics[i % topics.length];
+        return { section: t.section, ref: `${t.id}:${pickFresh(t, history, taken)}` };
+      }),
+    );
     // Opted-in topics: up to half of their slots become unseen published community questions.
     for (const t of topics.filter((tp) => opts.communityTopics?.includes(tp.id))) {
       const slots = planned.map((p, i) => (p.ref.startsWith(`${t.id}:`) ? i : -1)).filter((i) => i >= 0);

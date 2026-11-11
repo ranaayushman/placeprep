@@ -216,18 +216,26 @@ export type LeaderRow = {
   /** Average seconds per answered mock question. */
   mockSecPerQ: number | null;
   practiceAnswered: number; practiceAcc: number | null;
+  /** Every answered question, mocks and practice, finished or not; accuracy over the graded ones. */
+  totalAnswered: number; totalAcc: number | null;
 };
 
+export type LeaderSort = "score" | "attempted";
+
 /**
- * Students who finished at least one test, ranked by average mock score (best mock breaks ties).
- * Practice-only students come after, unranked. `exam` limits it to one mock pattern's takers.
+ * by "score": students who finished at least one test, ranked by average mock score (best mock breaks
+ * ties); practice-only students come after, unranked. `exam` limits it to one mock pattern's takers.
+ * by "attempted": everyone who answered at least one question, ranked by how many they answered
+ * (mocks and practice, all exams); `exam` is ignored.
  */
 // shortcut: top 500 only, computed on every load; add paging or a cached table past a few thousand students.
-export async function leaderboard(exam?: string): Promise<LeaderRow[]> {
+export async function leaderboard(exam?: string, by: LeaderSort = "score"): Promise<LeaderRow[]> {
+  if (by === "attempted") exam = undefined;
   const examFilter = exam ? sql`AND exam = ${exam}` : sql``;
   const rows = await db.execute<{
     id: string; name: string; email: string; college: string | null; mocks: number | null; avg_pct: number | null; best_pct: number | null;
     last_at: number | null; answered: number | null; acc: number | null; rnk: number | null; sec_per_q: number | null;
+    total_answered: number | null; total_acc: number | null;
   }>(sql`
     WITH m AS (
       SELECT user_id, COUNT(*) AS mocks, AVG(score::float / NULLIF(max_score, 0)) AS avg_pct,
@@ -245,20 +253,33 @@ export async function leaderboard(exam?: string): Promise<LeaderRow[]> {
       FROM attempts a JOIN attempt_questions q ON q.attempt_id = a.id
       WHERE a.mode = 'PRACTICE' AND a.status = 'SUBMITTED'
       GROUP BY a.user_id
+    ), t AS (
+      SELECT a.user_id, COUNT(*) AS answered,
+             AVG(CASE WHEN q.is_correct THEN 1.0 ELSE 0 END) FILTER (WHERE q.is_correct IS NOT NULL) AS acc
+      FROM attempts a JOIN attempt_questions q ON q.attempt_id = a.id
+      WHERE q.chosen_index IS NOT NULL
+      GROUP BY a.user_id
     )
     SELECT u.id, u.name, u.email, u.college, m.mocks, m.avg_pct, m.best_pct, m.last_at, p.answered, p.acc, sp.sec_per_q,
-           CASE WHEN m.user_id IS NOT NULL THEN RANK() OVER (ORDER BY m.user_id IS NULL, m.avg_pct DESC NULLS LAST, m.best_pct DESC NULLS LAST) END AS rnk
+           t.answered AS total_answered, t.acc AS total_acc,
+           ${by === "attempted"
+             ? sql`RANK() OVER (ORDER BY t.answered DESC)`
+             : sql`CASE WHEN m.user_id IS NOT NULL THEN RANK() OVER (ORDER BY m.user_id IS NULL, m.avg_pct DESC NULLS LAST, m.best_pct DESC NULLS LAST) END`} AS rnk
     FROM users u
     LEFT JOIN m ON m.user_id = u.id
     LEFT JOIN p ON p.user_id = u.id
     LEFT JOIN sp ON sp.user_id = u.id
-    WHERE u.role <> 'ADMIN' AND (m.user_id IS NOT NULL ${exam ? sql`` : sql`OR p.user_id IS NOT NULL`})
-    ORDER BY m.user_id IS NULL, m.avg_pct DESC NULLS LAST, m.best_pct DESC NULLS LAST, p.answered DESC NULLS LAST, u.name
+    LEFT JOIN t ON t.user_id = u.id
+    WHERE u.role <> 'ADMIN' AND ${by === "attempted" ? sql`t.user_id IS NOT NULL` : sql`(m.user_id IS NOT NULL ${exam ? sql`` : sql`OR p.user_id IS NOT NULL`})`}
+    ORDER BY ${by === "attempted"
+      ? sql`t.answered DESC, u.name`
+      : sql`m.user_id IS NULL, m.avg_pct DESC NULLS LAST, m.best_pct DESC NULLS LAST, p.answered DESC NULLS LAST, u.name`}
     LIMIT 500`);
   return rows.map((r) => ({
     rank: r.rnk == null ? null : n(r.rnk), id: r.id, name: r.name, email: r.email, college: r.college,
     mocks: n(r.mocks), avgPct: r.avg_pct == null ? null : Number(r.avg_pct), bestPct: r.best_pct == null ? null : Number(r.best_pct),
     lastMockAt: r.last_at ? new Date(n(r.last_at)) : null, mockSecPerQ: r.sec_per_q == null ? null : Number(r.sec_per_q), practiceAnswered: n(r.answered), practiceAcc: r.acc == null ? null : Number(r.acc),
+    totalAnswered: n(r.total_answered), totalAcc: r.total_acc == null ? null : Number(r.total_acc),
   }));
 }
 
