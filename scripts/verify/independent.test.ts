@@ -188,6 +188,8 @@ describe("syllogism: logic.ts cross-checked by an independent solver", () => {
     const bad: string[] = [];
     for (let s = 1; s <= SEEDS; s++) {
       const q = generate(`r-syllogism:${s}`);
+      // Possibility / multi-statement types are checked by tests/reasoning-more.test.ts.
+      if (q.prompt.includes("possibility") || /\n3\. /.test(q.prompt)) continue;
       const lines = q.prompt.split("\n").map((l) => l.trim());
       const st = lines.filter((l) => /^\d+\./.test(l)).map((l) => l.replace(/^\d+\.\s*/, ""));
       const co = lines.filter((l) => /^(I|II)\./.test(l)).map((l) => l.replace(/^(I|II)\.\s*/, ""));
@@ -243,13 +245,17 @@ describe("blood relations: generated chains cross-checked independently", () => 
   it("every generated-chain answer matches an independent tree solver", () => {
     const bad: string[] = [];
     for (let s = 1; s <= SEEDS; s++) {
-      if (s % 4 === 0) continue; // seed%4==0 are hand-written puzzles (verified separately)
       const q = generate(`r-blood:${s}`);
+      // Only generated chains ("X is the father of Y. … How is X related to Z?"); hand-written puzzles and
+      // coded-operator questions are checked elsewhere (tests/reasoning-more.test.ts).
+      if (!/^(\w+ is the (father|mother|brother|sister|son|daughter) of \w+\. )+How is \w+ related to \w+\?$/.test(q.prompt)) continue;
       const sentences = [...q.prompt.matchAll(/(\w+) is the (\w+) of (\w+)\./g)];
       if (!sentences.length) {
         bad.push(`r-blood:${s} could not parse prompt`);
         continue;
       }
+      // Hand-written puzzles can use the same wording but are not one linked chain (X→Y, Y→Z, …).
+      if (sentences.some((m, i) => i > 0 && m[1] !== sentences[i - 1][3])) continue;
       const steps = sentences.map((m) => WORD_STEP[m[2]]);
       const firstMale = WORD_MALE[sentences[0][2]];
       const rel = solveChainI(steps, firstMale);

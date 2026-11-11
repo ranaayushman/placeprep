@@ -1,4 +1,5 @@
 /** Logical / Reasoning Ability: generators plus small original static banks. */
+import { codingDecoding } from "./coding";
 import { mcq, rng, staticMcq, type Rng } from "./rng";
 import { RELATION_REASON, RELATION_WORDS, sentence, solveChain, solveSyllogism, STEP_WORDS, type Form, type Prop } from "./logic";
 import type { Question, Topic } from "./types";
@@ -53,37 +54,6 @@ function numberSeries(seed: number): Question {
     distractors: [`${ans + 1}`, `${ans - 2}`, `${ans + (terms[4] - terms[3])}`, `${2 * terms[4] - terms[3]}`],
     explanation: `${rule} So the next term is ${ans}.`,
   });
-}
-
-function codingDecoding(seed: number): Question {
-  const r = rng(seed);
-  const words = ["CAT", "DOG", "MILK", "BOOK", "LAMP", "FISH", "CODE", "DESK", "GOLD", "ROSE", "TREE", "WIND", "PEN", "SALT"];
-  const [w1, w2] = r.shuffle(words);
-  const kind = r.int(0, 2);
-  const shiftCh = (ch: string, k: number) => String.fromCharCode(((ch.charCodeAt(0) - 65 + k + 26 * 3) % 26) + 65);
-  let enc: (w: string) => string;
-  let rule: string;
-  if (kind === 0) {
-    const k = r.pick([1, 2, 3, -1, -2]);
-    enc = (w) => [...w].map((c) => shiftCh(c, k)).join("");
-    rule = `Each letter is shifted ${Math.abs(k)} place(s) ${k > 0 ? "forward" : "backward"}.`;
-  } else if (kind === 1) {
-    enc = (w) => [...w].map((c, i) => shiftCh(c, i + 1)).join("");
-    rule = `Letters are shifted +1, +2, +3, … by position.`;
-  } else {
-    const k = r.pick([1, 2]);
-    enc = (w) => [...w].reverse().map((c) => shiftCh(c, k)).join("");
-    rule = `The word is reversed, then each letter is shifted +${k}.`;
-  }
-  const ans = enc(w2);
-  const wrongShift = [...w2].map((c) => shiftCh(c, 1)).join("");
-  const wrongRev = [...ans].reverse().join("");
-  return mcq(r, {
-    prompt: `In a certain code, ${w1} is written as ${enc(w1)}. How is ${w2} written in that code?`,
-    correct: ans,
-    distractors: [wrongRev, wrongShift, [...w2].map((c) => shiftCh(c, -1)).join(""), ans.slice(1) + ans[0]],
-    explanation: `${rule} Applying it to ${w2} gives ${ans}.`,
-  }, (i) => ans.slice(0, -1) + shiftCh(ans[ans.length - 1], i));
 }
 
 function directions(seed: number): Question {
@@ -284,8 +254,8 @@ function bloodRelations(seed: number): Question {
   }
 }
 
-const SYLL_OPTIONS = ["Only conclusion I follows", "Only conclusion II follows", "Both I and II follow", "Neither I nor II follows", "Either I or II follows"];
-const SYLL_TERMS = ["pens", "books", "tables", "cats", "dogs", "rats", "roses", "flowers", "phones", "laptops", "tablets", "teachers", "learners", "engineers", "artists", "servers", "machines", "rivers", "lakes", "ponds", "cars", "buses", "trucks", "fruits", "apples", "birds", "pets", "chairs", "desks", "coins", "notes", "keys", "locks"];
+export const SYLL_OPTIONS = ["Only conclusion I follows", "Only conclusion II follows", "Both I and II follow", "Neither I nor II follows", "Either I or II follows"];
+export const SYLL_TERMS = ["pens", "books", "tables", "cats", "dogs", "rats", "roses", "flowers", "phones", "laptops", "tablets", "teachers", "learners", "engineers", "artists", "servers", "machines", "rivers", "lakes", "ponds", "cars", "buses", "trucks", "fruits", "apples", "birds", "pets", "chairs", "desks", "coins", "notes", "keys", "locks"];
 
 /**
  * Generated two-statement syllogism, solved exactly by checking every Venn diagram (see logic.ts).

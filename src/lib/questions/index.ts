@@ -6,6 +6,7 @@ import { technicalTopics } from "./technical";
 import type { Question, QuestionView, SectionId, Topic } from "./types";
 import { ESSAY_PROMPTS, verbalTopics } from "./verbal";
 import { HARD } from "./hard";
+import { mixWith, VARIETY } from "./variety";
 
 const essayTopic: Topic = {
   id: "w-essay",
@@ -25,9 +26,12 @@ const essayTopic: Topic = {
   }),
 };
 
-export const TOPICS: Topic[] = [...reasoningTopics, ...mathTopics, ...verbalTopics, ...pseudocodeTopics, ...puzzleTopics, ...technicalTopics, essayTopic].map((t) =>
-  HARD[t.id] ? { ...t, hard: HARD[t.id] } : t,
-);
+export const TOPICS: Topic[] = [...reasoningTopics, ...mathTopics, ...verbalTopics, ...pseudocodeTopics, ...puzzleTopics, ...technicalTopics, essayTopic].map((t) => ({
+  ...t,
+  // Extra standard templates for topics that had only one, then the hard tier where it exists.
+  ...(VARIETY[t.id] ? { generate: mixWith(t.generate, VARIETY[t.id]) } : {}),
+  ...(HARD[t.id] ? { hard: HARD[t.id] } : {}),
+}));
 export const TOPIC_BY_ID = new Map(TOPICS.map((t) => [t.id, t]));
 
 export const SECTION_LABELS: Record<SectionId, string> = {

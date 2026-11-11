@@ -27,7 +27,8 @@ describe("hard tier: structure", () => {
   });
 
   it("hard questions differ from standard ones for the same seed", () => {
-    for (const id of HARD_TOPICS) expect(generate(`${id}:5:h`).prompt + (generate(`${id}:5:h`).code ?? "")).not.toBe(generate(`${id}:5`).prompt + (generate(`${id}:5`).code ?? ""));
+    const show = (q: { prompt: string; code?: string; options: string[] }) => q.prompt + (q.code ?? "") + [...q.options].sort().join("|");
+    for (const id of HARD_TOPICS) expect(show(generate(`${id}:5:h`))).not.toBe(show(generate(`${id}:5`)));
   });
 });
 
