@@ -133,10 +133,10 @@ const pointing: Gen = (r) => {
   const sib = targetMale ? "brother" : "sister";
   const self = speakerMale ? "son" : "daughter";
   const parentWord = speakerMale ? "father" : "mother";
-  const templates: { say: string; ans: string; why: string; ok?: boolean }[] = [
-    { say: `${he} is the ${child} of the only ${self} of my ${r.pick(["father", "mother"])}.`, ans: child, why: `The only ${self} of ${sp}'s parent is ${sp} — so the person is ${sp}'s ${child}.` },
-    { say: `${his} ${parentWord} is the only ${self} of my ${r.pick(["father", "mother"])}.`, ans: child, why: `The only ${self} of ${sp}'s parent is ${sp}, who is the person's ${parentWord}. So the person is ${sp}'s ${child}.` },
-    { say: `${he} is the ${child} of the only son of my grandfather.`, ans: sib, why: `The only son of ${sp}'s (paternal) grandfather is ${sp}'s father, so the person is ${sp}'s ${sib}.` },
+  const templates: { say: string; ans: string; why: string; ok?: boolean; trap?: boolean }[] = [
+    { say: `${he} is the ${child} of the only ${self} of my ${r.pick(["father", "mother"])}.`, ans: child, why: `The only ${self} of ${sp}'s parent is ${sp} — so the person is ${sp}'s ${child}.`, trap: true },
+    { say: `${his} ${parentWord} is the only ${self} of my ${r.pick(["father", "mother"])}.`, ans: child, why: `The only ${self} of ${sp}'s parent is ${sp}, who is the person's ${parentWord}. So the person is ${sp}'s ${child}.`, trap: true },
+    { say: `${he} is the ${child} of the only son of my paternal grandfather.`, ans: sib, why: `The only son of ${sp}'s paternal grandfather is ${sp}'s father, so the person is ${sp}'s ${sib}.` },
     { say: `${his} mother's only brother is my father.`, ans: "cousin", why: `The person's mother is the sister of ${sp}'s father, i.e. ${sp}'s aunt. Her child is ${sp}'s cousin.` },
     { say: `${his} mother is the wife of my father's only son.`, ans: child, why: `${sp}'s father's only son is ${sp} (male). His wife is the person's mother, so the person is ${sp}'s ${child}.`, ok: speakerMale },
   ];
@@ -145,7 +145,7 @@ const pointing: Gen = (r) => {
     prompt: `Pointing to ${who} in a photograph, ${sp} said, "${t.say}" How is that ${targetMale ? "man" : "woman"} related to ${sp}?`,
     correct: cap(t.ans),
     distractors: wordDecoys(r, t.ans, targetMale),
-    explanation: `${t.why} Trap: "the only ${self} of my ${parentWord}" usually means the speaker.`,
+    explanation: t.trap ? `${t.why} Trap: "the only ${self} of my parent" is the speaker.` : t.why,
   });
 };
 

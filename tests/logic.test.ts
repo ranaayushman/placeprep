@@ -50,13 +50,15 @@ describe("blood relation chains", () => {
   });
 
   it("every speaker's name matches the gender of their relation word", () => {
-    const FEMALE = ["Bela", "Divya", "Esha", "Gita", "Isha", "Kavya", "Meera", "Sana"];
+    const FEMALE = ["Bela", "Divya", "Esha", "Gita", "Isha", "Kavya", "Meera", "Sana", "Priya", "Anu", "Neha", "Ritu", "Kamala", "Pooja"];
+    const FEMALE_WORDS = ["mother", "daughter", "sister", "wife", "grandmother", "granddaughter", "aunt", "niece", "mother-in-law", "daughter-in-law", "sister-in-law"];
     for (let seed = 1; seed <= 400; seed++) {
       if (seed % 4 === 0) continue;
       const { prompt } = generate(`r-blood:${seed}`);
       if (prompt.includes(" means ")) continue; // coded variant: letters (A, B, P…), not named people
-      for (const [line, name, word] of prompt.matchAll(/(\w+) is the (\w+) of/g)) {
-        expect(FEMALE.includes(name), `${seed}: ${line}`).toBe(["mother", "daughter", "sister"].includes(word));
+      for (const [line, name, word] of prompt.matchAll(/(\w+) is the ([\w-]+) of/g)) {
+        if (!/^[A-Z][a-z]+$/.test(name) || name === "He" || name === "She" || word === "cousin") continue; // only real names carry a gender
+        expect(FEMALE.includes(name), `${seed}: ${line}`).toBe(FEMALE_WORDS.includes(word));
       }
     }
   });
@@ -65,6 +67,7 @@ describe("blood relation chains", () => {
     for (let seed = 1; seed <= 200; seed++) {
       if (seed % 4 === 0) continue; // hand-written puzzles
       const q = generate(`r-blood:${seed}`);
+      if (q.prompt.startsWith("A family has") || q.options[q.answer] === "Cannot be determined") continue; // checked in family.test.ts
       expect(q.explanation).toContain(`'s ${q.options[q.answer].toLowerCase()}.`);
     }
   });
