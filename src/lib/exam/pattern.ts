@@ -42,11 +42,13 @@ export const DELOITTE_NLA_PATTERN: SectionSpec[] = [
 ];
 
 /**
- * Difficulty of a mock. "normal": standard questions only. "hard": every topic that has a hard tier
- * (see lib/questions/hard.ts) is served from it; topics without one stay standard.
+ * Difficulty of a mock: the share of each section's questions served from the hard tier
+ * (see lib/questions/hard.ts), drawn at random within the range for every section of every mock.
+ * Topics without a hard tier always stay standard, so a section can fall short of the range until
+ * more topics get one.
  */
 export type ExamLevel = "normal" | "hard";
-export const HARD_SHARE_BY_LEVEL: Record<ExamLevel, number> = { normal: 0, hard: 1 };
+export const HARD_SHARE_BY_LEVEL: Record<ExamLevel, readonly [min: number, max: number]> = { normal: [0.3, 0.5], hard: [0.7, 0.8] };
 
 /** Exams students can take as full mocks. Add an entry when a new company's pattern exists. */
 export const EXAMS = [

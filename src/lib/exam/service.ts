@@ -125,7 +125,9 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
   if (!exam) throw new ExamError("Unknown exam");
   const history = await loadHistory(userId);
   const seen = history.seen;
-  const hardShare = HARD_SHARE_BY_LEVEL[exam.level];
+  const [minHard, maxHard] = HARD_SHARE_BY_LEVEL[exam.level];
+  // A fresh share per section, so mocks vary instead of always landing on the same split.
+  const hardShare = () => minHard + Math.random() * (maxHard - minHard);
   const taken = new Set<string>();
   const plan = exam.pattern.filter((s) => opts.includeWriting || s.section !== "writing").map((spec) => {
     const refs: string[] = [];
@@ -140,13 +142,13 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
       // The passage block stays together; the other verbal questions are mixed.
       const others = topicsFor("verbal").filter((t) => t.id !== "v-rc");
       const vt = planTopics(others, spec.questions - RC_GROUP, history.mocksAgo);
-      const vh = hardSlots(vt, hardShare);
+      const vh = hardSlots(vt, hardShare());
       vt.forEach((t, i) => refs.push(pickFresh(t, history, taken, vh[i])));
     } else {
       // Mixed topics, every topic covered (or rotated in when there are fewer slots than topics), no repeats.
-      // Normal mock: standard questions. Hard mock: the hard tier wherever a topic has one.
+      // Normal mock: 30–50% hard. Hard mock: 70–80% hard (where topics have a hard tier).
       const ts = planTopics(topicsFor(spec.section), spec.questions, history.mocksAgo);
-      const hs = hardSlots(ts, hardShare);
+      const hs = hardSlots(ts, hardShare());
       ts.forEach((t, i) => refs.push(pickFresh(t, history, taken, hs[i])));
     }
     return { section: spec.section, durationSec: spec.minutes * 60, refs };

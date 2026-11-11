@@ -136,11 +136,15 @@ describe("mock levels", () => {
     expect(EXAMS.find((e) => e.id === "infosys-se-hard")?.level).toBe("hard");
   });
 
-  it("normal mocks serve no hard questions; hard mocks serve every topic that has a hard tier as hard", () => {
-    for (const section of ["math", "reasoning", "pseudocode"] as const) {
-      const ts = planTopics(topicsFor(section), 10);
-      expect(hardSlots(ts, HARD_SHARE_BY_LEVEL.normal).some(Boolean)).toBe(false);
-      expect(hardSlots(ts, HARD_SHARE_BY_LEVEL.hard)).toEqual(ts.map((t) => !!t.hard));
+  it("hard share follows the level: normal 30–50%, hard 70–80% of slots (capped by topics with a hard tier)", () => {
+    const pseudo = topicsFor("pseudocode").filter((t) => t.hard); // every slot eligible: shares are exact
+    for (const [level, [lo, hi]] of Object.entries(HARD_SHARE_BY_LEVEL)) {
+      for (const share of [lo, (lo + hi) / 2, hi]) {
+        const hs = hardSlots([...pseudo, ...pseudo, ...pseudo, pseudo[0]], share); // 10 slots
+        const n = hs.filter(Boolean).length;
+        expect(n, level).toBe(Math.round(share * 10));
+      }
     }
+    expect(HARD_SHARE_BY_LEVEL.normal[1]).toBeLessThan(HARD_SHARE_BY_LEVEL.hard[0]);
   });
 });
