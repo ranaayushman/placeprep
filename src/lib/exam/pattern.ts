@@ -47,8 +47,8 @@ export const DELOITTE_NLA_PATTERN: SectionSpec[] = [
  * Topics without a hard tier always stay standard, so a section can fall short of the range until
  * more topics get one.
  */
-export type ExamLevel = "normal" | "hard";
-export const HARD_SHARE_BY_LEVEL: Record<ExamLevel, readonly [min: number, max: number]> = { normal: [0.3, 0.5], hard: [0.7, 0.8] };
+export type ExamLevel = "realistic" | "normal" | "hard";
+export const HARD_SHARE_BY_LEVEL: Record<ExamLevel, readonly [min: number, max: number]> = { realistic: [0, 0], normal: [0.3, 0.5], hard: [0.7, 0.8] };
 
 /** Exams students can take as full mocks. Add an entry when a new company's pattern exists. */
 export const EXAMS = [

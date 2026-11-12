@@ -6,7 +6,7 @@ import { z } from "zod";
 import { attempts, db } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { closeLeftAttempts, createMock, createPractice, wrongRefs } from "@/lib/exam/service";
-import { getExam } from "@/lib/exam/exams";
+import { canTakeExam } from "@/lib/exam/exams";
 import { SECTION_LABELS, TOPIC_BY_ID } from "@/lib/questions";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
 
@@ -53,7 +53,8 @@ export async function startMock(form: FormData) {
   if (open) redirect(`/attempt/${open.id}`);
   await guardStart(user.id);
   const examId = String(form.get("exam") ?? "infosys-se");
-  if (!(await getExam(examId))) redirect("/dashboard");
+  // Enforces the allowlist for restricted mocks: a student who isn't on it can't start it.
+  if (!(await canTakeExam(user.email, examId))) redirect("/dashboard");
   const id = await createMock(user.id, { exam: examId, includeWriting: form.get("writing") === "on", cameraOff: form.get("camera") !== "on" });
   redirect(`/attempt/${id}`);
 }

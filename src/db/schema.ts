@@ -335,12 +335,32 @@ export const mockExams = pgTable("mock_exams", {
   short: text("short").notNull(),
   note: text("note"),
   pattern: jsonb("pattern").$type<{ section: string; questions: number; minutes: number }[]>().notNull(),
+  /** Hard-tier share for generated questions: "realistic" (0%, matches the real paper), "normal", "hard". */
+  level: text("level", { enum: ["realistic", "normal", "hard"] }).notNull().default("normal"),
+  /** When true, only emails in mock_exam_access may see or start this mock (admin-managed allowlist). */
+  restricted: boolean("restricted").notNull().default(false),
   status: text("status", { enum: ["DRAFT", "PUBLISHED"] }).notNull().default("DRAFT"),
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
   publishedBy: text("published_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: now("created_at"),
   updatedAt: now("updated_at"),
 });
+
+/**
+ * Allowlist for a restricted mock: which emails may take it. Keyed by email (not user id) so an admin
+ * can grant access before that student has signed up. Only admins add or remove entries.
+ */
+export const mockExamAccess = pgTable(
+  "mock_exam_access",
+  {
+    mockId: text("mock_id").notNull().references(() => mockExams.id, { onDelete: "cascade" }),
+    /** Stored lower-cased; compared against the signed-in user's email. */
+    email: text("email").notNull(),
+    addedBy: text("added_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: now("created_at"),
+  },
+  (t) => [primaryKey({ columns: [t.mockId, t.email] })],
+);
 
 /** Reports on built-in bank questions (community questions use question_reports). `ref` is "topic:seed". */
 export const bankReports = pgTable(

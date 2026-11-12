@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { saveMockAction, type MockFormState } from "./actions";
 
-type Initial = { id?: string; company?: string; name?: string; short?: string; note?: string | null; pattern?: { section: string; questions: number; minutes: number }[] };
+type Initial = { id?: string; company?: string; name?: string; short?: string; note?: string | null; level?: string; restricted?: boolean; pattern?: { section: string; questions: number; minutes: number }[] };
 
 /** Create or edit a mock pattern. Empty rows (no section chosen) are ignored. */
 export function MockExamForm({ initial = {}, sections, maxSections }: { initial?: Initial; sections: { id: string; label: string }[]; maxSections: number }) {
@@ -32,6 +32,22 @@ export function MockExamForm({ initial = {}, sections, maxSections }: { initial?
         <label className="block text-sm sm:col-span-2">
           <span className="mb-1 block font-medium">Note for students <span className="font-normal text-slate-500">(optional)</span></span>
           <input name="note" maxLength={300} defaultValue={val("note", initial.note)} placeholder="e.g. The real test also has a coding round, not simulated here." className="input" />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium">Difficulty</span>
+          <select name="level" defaultValue={val("level", initial.level) || "normal"} className="input">
+            <option value="realistic">Realistic — matches the real exam</option>
+            <option value="normal">Normal</option>
+            <option value="hard">Hard</option>
+          </select>
+          <span className="mt-1 block text-xs text-slate-500">“Realistic” draws only standard questions, at real-exam difficulty.</span>
+        </label>
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" name="restricted" defaultChecked={v ? v.restricted === "on" : !!initial.restricted} className="mt-0.5" />
+          <span>
+            <span className="block font-medium">Restricted (allowlist only)</span>
+            <span className="mt-0.5 block text-xs text-slate-500">Only emails you add to this mock’s allowlist can see or start it. Manage the allowlist after saving.</span>
+          </span>
         </label>
       </div>
 

@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { getExam, listExams } from "@/lib/exam/exams";
+import { canTakeExam, listExamsFor } from "@/lib/exam/exams";
+import { requireUser } from "@/lib/auth";
 import { StartMockForm } from "../StartMockForm";
 
 export default async function SystemCheckPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
-  const exam = (await getExam((await searchParams).exam ?? "")) ?? (await listExams())[0];
+  const user = await requireUser();
+  const exam = (await canTakeExam(user.email, (await searchParams).exam ?? "")) ?? (await listExamsFor(user.email))[0];
   const hasWriting = exam.pattern.some((s) => s.section === "writing");
   const mcqMinutes = exam.pattern.filter((s) => s.section !== "writing").reduce((total, section) => total + section.minutes, 0);
 

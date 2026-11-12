@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { MAX_VIOLATIONS } from "@/lib/exam/pattern";
-import { listExams } from "@/lib/exam/exams";
+import { listExamsFor } from "@/lib/exam/exams";
+import { requireUser } from "@/lib/auth";
 import { SECTION_LABELS } from "@/lib/questions";
 import { LevelBadge } from "@/components/LevelBadge";
 
 export default async function MockPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
-  const EXAMS = await listExams();
+  const user = await requireUser();
+  const EXAMS = await listExamsFor(user.email);
   const wanted = (await searchParams).exam;
   const exam = EXAMS.find((e) => e.id === wanted) ?? EXAMS[0];
   const hasWriting = exam.pattern.some((s) => s.section === "writing");
