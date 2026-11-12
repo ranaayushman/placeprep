@@ -12,8 +12,8 @@ import { FaceProctoringTile } from "./CameraPreview";
 type InProgress = Extract<ExamState, { status: "IN_PROGRESS" }>;
 type Q = InProgress["current"]["questions"][number];
 
-async function api<T>(attemptId: string, body?: object): Promise<T> {
-  const res = await fetch(`/api/attempts/${attemptId}`, {
+async function api<T>(attemptId: string, body?: object, query = ""): Promise<T> {
+  const res = await fetch(`/api/attempts/${attemptId}${query}`, {
     method: body ? "POST" : "GET",
     headers: body ? { "Content-Type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
@@ -51,9 +51,10 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
 
   const goToResults = useCallback(() => router.replace(`/results/${attemptId}`), [router, attemptId]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opening = false) => {
     try {
-      const s = await api<ExamState>(attemptId);
+      // Only opening the page can find the test abandoned; reloads from the open page never submit it.
+      const s = await api<ExamState>(attemptId, undefined, opening ? "?opening=1" : "");
       if (s.status === "SUBMITTED") return goToResults();
       setOffset(s.serverNow - Date.now());
       setState(s);
@@ -65,10 +66,23 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   }, [attemptId, goToResults]);
 
   useEffect(() => {
-    load();
+    load(true);
   }, [load]);
 
-  // Tells the server this page is still open. If it goes quiet (tab closed, left the page), the test is scored.
+  // A network drop never submits the test; say so, so nobody panics or closes the tab.
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+
+  // Tells the server this page is still open. Long silence followed by reopening the page (tab was closed) scores the test.
   useEffect(() => {
     const t = setInterval(async () => {
       const res = await api<{ submitted: boolean }>(attemptId, { action: "ping" }).catch(() => null);
@@ -252,11 +266,16 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
 
   return (
     <div className={`flex h-screen flex-col bg-slate-100 ${isMock ? "select-none" : ""}`}>
+      {!online && (
+        <div role="status" className="bg-amber-100 px-4 py-2 text-center text-sm font-medium text-amber-900">
+          You&apos;re offline. Keep this page open: your test stays open and your saved answers are safe. The timer keeps running.
+        </div>
+      )}
       {/* Header */}
       <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-2.5">
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium uppercase tracking-wide text-slate-500" title={`Leaving this page for more than ${LEFT_AFTER_MS / 60_000} minutes submits the test.`}>
-            {state.title} <span className="normal-case tracking-normal">· leave for {LEFT_AFTER_MS / 60_000}+ min and it&apos;s submitted</span>
+          <p className="truncate text-xs font-medium uppercase tracking-wide text-slate-500" title={`Closing this page for more than ${LEFT_AFTER_MS / 60_000} minutes submits the test. A network drop doesn't.`}>
+            {state.title} <span className="normal-case tracking-normal">· close it for {LEFT_AFTER_MS / 60_000}+ min and it&apos;s submitted</span>
           </p>
           <p className="truncate text-base font-semibold text-slate-900">
             {isMock ? state.current.label : "Practice set"}

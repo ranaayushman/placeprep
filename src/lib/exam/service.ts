@@ -244,10 +244,10 @@ async function closeIfLeft(attempt: Attempt) {
 }
 const touch = (attemptId: string) => db.update(attempts).set({ lastActiveAt: new Date() }).where(eq(attempts.id, attemptId));
 
-/** Called by the open test page every HEARTBEAT_MS. */
+/** Called by the open test page every HEARTBEAT_MS. The page is open, so it never counts as left. */
 export async function heartbeat(attemptId: string, userId: string) {
   const attempt = await loadOwned(attemptId, userId);
-  if (attempt.status === "SUBMITTED" || (await closeIfLeft(attempt))) return { submitted: true };
+  if (attempt.status === "SUBMITTED") return { submitted: true };
   await touch(attemptId);
   return { submitted: false };
 }
@@ -279,10 +279,11 @@ async function advanceExpired(attempt: Attempt, sections: AttemptSection[]) {
   return current;
 }
 
-export async function getExamState(attemptId: string, userId: string) {
+/** `opening`: the test page is being opened, not refreshed from an already-open page. */
+export async function getExamState(attemptId: string, userId: string, { opening = false } = {}) {
   const attempt = await loadOwned(attemptId, userId);
   const sections = await db.select().from(attemptSections).where(eq(attemptSections.attemptId, attemptId)).orderBy(asc(attemptSections.order));
-  if (attempt.status === "SUBMITTED" || (await closeIfLeft(attempt))) return { status: "SUBMITTED" as const };
+  if (attempt.status === "SUBMITTED" || (opening && (await closeIfLeft(attempt)))) return { status: "SUBMITTED" as const };
   await touch(attempt.id);
 
   const current = await advanceExpired(attempt, sections);
@@ -337,7 +338,6 @@ export type ExamState = Awaited<ReturnType<typeof getExamState>>;
 
 async function activeSection(attempt: Attempt) {
   if (attempt.status !== "IN_PROGRESS") throw new ExamError("This test has already been submitted", 409);
-  if (await closeIfLeft(attempt)) throw new ExamError("You left this test, so it was submitted", 409);
   const sections = await db.select().from(attemptSections).where(eq(attemptSections.attemptId, attempt.id)).orderBy(asc(attemptSections.order));
   const current = await advanceExpired(attempt, sections);
   if (current >= sections.length) throw new ExamError("Time is up for this test", 409);

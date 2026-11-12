@@ -223,13 +223,24 @@ describe("leaving a test", () => {
     const [q] = await db.select().from(attemptQuestions).where(eq(attemptQuestions.id, s.current.questions[0].id));
     await saveAnswer(id, u.id, { questionId: q.id, chosenIndex: q.answerIndex });
 
-    await quietFor(id, LEFT_AFTER_MS - 30_000); // still within the window: a heartbeat keeps it open
-    expect(await heartbeat(id, u.id)).toEqual({ submitted: false });
-
     await quietFor(id, LEFT_AFTER_MS + 1000);
-    await expect(saveAnswer(id, u.id, { questionId: q.id, chosenIndex: null })).rejects.toThrow(/left this test/);
+    expect((await getExamState(id, u.id, { opening: true })).status).toBe("SUBMITTED"); // reopened after closing the tab
     expect(await status(id)).toMatchObject({ status: "SUBMITTED", autoSubmitted: true, score: 1, maxScore: 3 });
-    expect((await getExamState(id, u.id)).status).toBe("SUBMITTED");
+  });
+
+  it("a network drop with the page still open never submits the test", async () => {
+    const [u] = await db.insert(users).values({ email: `net-${Math.random()}@example.com`, name: "Net", passwordHash: "x" }).returning();
+    const id = await createMock(u.id, { includeWriting: false });
+    const s = await getExamState(id, u.id, { opening: true });
+    if (s.status !== "IN_PROGRESS") throw new Error("expected in progress");
+
+    await quietFor(id, LEFT_AFTER_MS * 3); // offline for a long time, page open
+    expect(await heartbeat(id, u.id)).toEqual({ submitted: false }); // first check-in after reconnecting
+    await quietFor(id, LEFT_AFTER_MS * 3);
+    await saveAnswer(id, u.id, { questionId: s.current.questions[0].id, chosenIndex: 0 }); // or the first answer
+    await quietFor(id, LEFT_AFTER_MS * 3);
+    expect((await getExamState(id, u.id)).status).toBe("IN_PROGRESS"); // or a reload from the open page
+    expect((await status(id)).status).toBe("IN_PROGRESS");
   });
 
   it("opening the dashboard scores a mock left with the tab closed", async () => {

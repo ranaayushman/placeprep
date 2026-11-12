@@ -112,3 +112,29 @@ export function dpNote(digits: number, ...values: number[]) {
   const exact = values.every((v) => Math.abs(v * scale - Math.round(v * scale)) < 1e-6);
   return exact ? "" : ` Give the answer to ${digits} decimal place${digits === 1 ? "" : "s"}.`;
 }
+
+const isPrime = (n: number) => {
+  if (n < 2) return false;
+  for (let d = 2; d * d <= n; d++) if (n % d === 0) return false;
+  return true;
+};
+/**
+ * Properties a student may spot in "odd one out" numbers. Divisibility only counts as "three share it,
+ * one doesn't"; being the only prime / square / cube / 3-digit number is a strong argument on its own too.
+ */
+const OBVIOUS_NUMBER_PROPS: { test: (n: number) => boolean; aloneCounts: boolean }[] = [
+  ...[2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((k) => ({ test: (n: number) => n % k === 0, aloneCounts: false })),
+  ...[isPrime, (n: number) => Number.isInteger(Math.sqrt(n)), (n: number) => Math.round(Math.cbrt(n)) ** 3 === n].map((test) => ({ test, aloneCounts: true })),
+  ...[1, 2, 3].map((d) => ({ test: (n: number) => String(n).length === d, aloneCounts: true })),
+];
+/**
+ * True when no obvious property points at a different option: otherwise the question has two
+ * defensible answers (e.g. 42, 35, 87, 63: 87 is the only non-multiple of 7, but 35 the only non-multiple of 3).
+ */
+export function oddOneIsUnique(options: number[], odd: number) {
+  return OBVIOUS_NUMBER_PROPS.every(({ test, aloneCounts }) => {
+    const yes = options.filter(test);
+    const lone = yes.length === options.length - 1 ? options.find((n) => !test(n)) : aloneCounts && yes.length === 1 ? yes[0] : undefined;
+    return lone === undefined || lone === odd;
+  });
+}

@@ -95,8 +95,10 @@ export const MAX_VIOLATIONS = 3;
 export const SUBMIT_GRACE_MS = 5000;
 
 /**
- * The open test page checks in every HEARTBEAT_MS. No check-in for LEFT_AFTER_MS (tab closed, left
- * the page, phone locked) means the student left: the test is submitted and scored as it stands.
+ * The open test page checks in every HEARTBEAT_MS. No check-in for LEFT_AFTER_MS means the student
+ * left, and the test is scored as it stands, but only when that is seen from elsewhere: the dashboard,
+ * starting another test, or reopening the test page. A request from the still-open page (a check-in or
+ * an answer after the network comes back) never submits it: a network drop is not leaving.
  */
 export const HEARTBEAT_MS = 30 * 1000;
-export const LEFT_AFTER_MS = 3 * 60 * 1000;
+export const LEFT_AFTER_MS = 10 * 60 * 1000;

@@ -36,11 +36,12 @@ function fail(err: unknown) {
   return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
 }
 
-export async function GET(_req: Request, { params }: Ctx) {
+export async function GET(req: Request, { params }: Ctx) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   try {
-    return NextResponse.json(await getExamState((await params).id, user.id));
+    const opening = new URL(req.url).searchParams.has("opening");
+    return NextResponse.json(await getExamState((await params).id, user.id, { opening }));
   } catch (err) {
     return fail(err);
   }

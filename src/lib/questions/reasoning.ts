@@ -1,6 +1,6 @@
 /** Logical / Reasoning Ability: generators plus small original static banks. */
 import { codingDecoding } from "./coding";
-import { mcq, rng, staticMcq, type Rng } from "./rng";
+import { mcq, oddOneIsUnique, rng, staticMcq, type Rng } from "./rng";
 import { RELATION_REASON, RELATION_WORDS, sentence, solveChain, solveSyllogism, STEP_WORDS, type Form, type Prop } from "./logic";
 import type { Question, Topic } from "./types";
 
@@ -142,10 +142,13 @@ function oddOneOut(seed: number): Question {
     { name: "multiples of 7", members: [14, 21, 28, 35, 42, 49, 56, 63, 77, 84], test: (n) => n % 7 === 0 },
     { name: "perfect cubes", members: [8, 27, 64, 125, 216, 343, 512, 729], test: (n) => Number.isInteger(Math.round(Math.cbrt(n))) && Math.round(Math.cbrt(n)) ** 3 === n },
   ];
-  const set = r.pick(sets);
-  const three = r.shuffle(set.members).slice(0, 3);
-  let odd = r.int(10, 150);
-  while (set.test(odd) || three.includes(odd)) odd++;
+  let set, three, odd;
+  do {
+    set = r.pick(sets);
+    three = r.shuffle(set.members).slice(0, 3);
+    odd = r.int(10, 150);
+    while (set.test(odd) || three.includes(odd)) odd++;
+  } while (!oddOneIsUnique([...three, odd], odd));
   return mcq(r, {
     prompt: `Find the odd one out:`,
     correct: `${odd}`,

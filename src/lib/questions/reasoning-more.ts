@@ -6,7 +6,7 @@
 import { FAMILY_HARD, FAMILY_STANDARD } from "./family";
 import { solveChain, type Step } from "./logic";
 import { SYLL_OPTIONS, SYLL_TERMS } from "./reasoning";
-import { mcq, rng, type Rng } from "./rng";
+import { mcq, oddOneIsUnique, rng, type Rng } from "./rng";
 import type { Question } from "./types";
 
 type Gen = (r: Rng) => Question;
@@ -412,7 +412,7 @@ const oddHard: Gen = (r) => {
         default: return String(n).split("").reduce((a, d) => a + Number(d), 0) === 10;
       }
     };
-    if (isMember(near)) continue;
+    if (isMember(near) || !oddOneIsUnique([...three, near], near)) continue;
     return mcq(r, {
       prompt: "Find the odd one out:",
       correct: String(near),
