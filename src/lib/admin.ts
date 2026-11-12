@@ -316,6 +316,30 @@ export async function signupFunnel(since: number): Promise<FunnelStep[]> {
   ];
 }
 
+export type GrowthDay = { day: string; signups: number; active: number };
+
+/** Per IST day, oldest first: student sign-ups, and distinct students who started any test. Missing days are 0. */
+export async function dailyGrowth(days = 30): Promise<GrowthDay[]> {
+  const IST = 330 * 60; // seconds
+  const dayOf = (i: number) => new Date(Date.now() + IST * 1000 - (days - 1 - i) * DAY).toISOString().slice(0, 10);
+  const since = Date.parse(`${dayOf(0)}T00:00:00+05:30`); // whole first day, not a partial one
+  const rows = await db.execute<{ day: string; signups: number; active: number }>(sql`
+    WITH d AS (
+      SELECT to_char(to_timestamp(created_at / 1000 + ${IST}) AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day, id AS signup, NULL AS active
+      FROM users WHERE role = 'STUDENT' AND created_at >= ${since}
+      UNION ALL
+      SELECT to_char(to_timestamp(a.started_at / 1000 + ${IST}) AT TIME ZONE 'UTC', 'YYYY-MM-DD'), NULL, a.user_id
+      FROM attempts a JOIN users u ON u.id = a.user_id AND u.role = 'STUDENT' WHERE a.started_at >= ${since}
+    )
+    SELECT day, COUNT(DISTINCT signup) AS signups, COUNT(DISTINCT active) AS active FROM d GROUP BY day`);
+  const by = new Map(rows.map((r) => [r.day, r]));
+  return Array.from({ length: days }, (_, i) => {
+    const day = dayOf(i);
+    const r = by.get(day);
+    return { day, signups: Number(r?.signups ?? 0), active: Number(r?.active ?? 0) };
+  });
+}
+
 export type Cohort = { weekStart: Date; size: number; weeks: (number | null)[] };
 
 /**

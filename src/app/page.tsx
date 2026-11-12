@@ -5,7 +5,7 @@ import { CookieSettingsButton } from "@/components/CookieConsent";
 import { INFOSYS_SE_PATTERN, MAX_VIOLATIONS, PRACTICE_TARGETS } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPICS, topicsFor } from "@/lib/questions";
 
-const SITE_URL = process.env.APP_URL ?? "https://placeprep.me";
+const SITE_URL = process.env.APP_URL ?? "https://www.placeprep.me";
 
 const TRAPS = [
   {

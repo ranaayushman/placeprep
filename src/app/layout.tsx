@@ -9,7 +9,7 @@ const sans = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbmono" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL ?? "https://placeprep.me"),
+  metadataBase: new URL(process.env.APP_URL ?? "https://www.placeprep.me"),
   title: { default: "PlacePrep | Free Placement Aptitude & MCQ Practice", template: "%s | PlacePrep" },
   description:
     "Free aptitude and MCQ practice, proctored mock tests, topic drills, and worked explanations for campus placement drives.",
