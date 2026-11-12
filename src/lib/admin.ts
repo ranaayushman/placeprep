@@ -213,6 +213,8 @@ export function describeEvent(type: string, meta: Record<string, unknown> | null
 export type LeaderRow = {
   rank: number | null; id: string; name: string; email: string; college: string | null;
   mocks: number; avgPct: number | null; bestPct: number | null; lastMockAt: Date | null;
+  /** Marks in the best mock, and summed over all mocks (null without a mock). */
+  bestScore: number | null; bestMax: number | null; totalScore: number | null; totalMax: number | null;
   /** Average seconds per answered mock question. */
   mockSecPerQ: number | null;
   practiceAnswered: number; practiceAcc: number | null;
@@ -235,11 +237,15 @@ export async function leaderboard(exam?: string, by: LeaderSort = "score"): Prom
   const rows = await db.execute<{
     id: string; name: string; email: string; college: string | null; mocks: number | null; avg_pct: number | null; best_pct: number | null;
     last_at: number | null; answered: number | null; acc: number | null; rnk: number | null; sec_per_q: number | null;
+    best_score: number | null; best_max: number | null; total_score: number | null; total_max: number | null;
     total_answered: number | null; total_acc: number | null;
   }>(sql`
     WITH m AS (
       SELECT user_id, COUNT(*) AS mocks, AVG(score::float / NULLIF(max_score, 0)) AS avg_pct,
-             MAX(score::float / NULLIF(max_score, 0)) AS best_pct, MAX(submitted_at) AS last_at
+             MAX(score::float / NULLIF(max_score, 0)) AS best_pct, MAX(submitted_at) AS last_at,
+             (ARRAY_AGG(score ORDER BY score::float / NULLIF(max_score, 0) DESC NULLS LAST))[1] AS best_score,
+             (ARRAY_AGG(max_score ORDER BY score::float / NULLIF(max_score, 0) DESC NULLS LAST))[1] AS best_max,
+             SUM(score) AS total_score, SUM(max_score) AS total_max
       FROM attempts WHERE mode = 'MOCK' AND status = 'SUBMITTED' ${examFilter}
       GROUP BY user_id
     ), sp AS (
@@ -261,6 +267,7 @@ export async function leaderboard(exam?: string, by: LeaderSort = "score"): Prom
       GROUP BY a.user_id
     )
     SELECT u.id, u.name, u.email, u.college, m.mocks, m.avg_pct, m.best_pct, m.last_at, p.answered, p.acc, sp.sec_per_q,
+           m.best_score, m.best_max, m.total_score, m.total_max,
            t.answered AS total_answered, t.acc AS total_acc,
            ${by === "attempted"
              ? sql`RANK() OVER (ORDER BY t.answered DESC)`
@@ -280,6 +287,8 @@ export async function leaderboard(exam?: string, by: LeaderSort = "score"): Prom
     mocks: n(r.mocks), avgPct: r.avg_pct == null ? null : Number(r.avg_pct), bestPct: r.best_pct == null ? null : Number(r.best_pct),
     lastMockAt: r.last_at ? new Date(n(r.last_at)) : null, mockSecPerQ: r.sec_per_q == null ? null : Number(r.sec_per_q), practiceAnswered: n(r.answered), practiceAcc: r.acc == null ? null : Number(r.acc),
     totalAnswered: n(r.total_answered), totalAcc: r.total_acc == null ? null : Number(r.total_acc),
+    bestScore: r.best_score == null ? null : n(r.best_score), bestMax: r.best_max == null ? null : n(r.best_max),
+    totalScore: r.total_score == null ? null : n(r.total_score), totalMax: r.total_max == null ? null : n(r.total_max),
   }));
 }
 

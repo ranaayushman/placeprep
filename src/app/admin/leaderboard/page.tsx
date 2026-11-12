@@ -21,6 +21,7 @@ export default async function AdminLeaderboard({ searchParams }: { searchParams:
 
   return (
     <div className="space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h1 className="text-2xl font-bold">Leaderboard</h1>
         <p className="text-sm text-slate-500">
@@ -28,6 +29,15 @@ export default async function AdminLeaderboard({ searchParams }: { searchParams:
             ? "Students ranked by how many questions they have answered, in mocks and practice (finished or not). Accuracy is over the graded ones."
             : <>Students ranked by average mock score (best mock breaks ties). Auto-submitted mocks count too.{!exam && " Students who only did practice sets are listed after, unranked."}</>}
         </p>
+      </div>
+      {/* Plain link: the route answers with an .xlsx download of exactly this view. */}
+      <a
+        href={`/admin/leaderboard/export?${by === "attempted" ? "by=attempted" : exam ? `exam=${exam.id}` : ""}`}
+        className="rounded-md bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
+        download
+      >
+        Export to Excel
+      </a>
       </div>
       <nav className="flex flex-wrap items-center gap-2 text-sm" aria-label="Rank by">
         <span className="text-slate-500">Rank by</span>
