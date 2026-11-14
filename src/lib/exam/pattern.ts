@@ -15,6 +15,11 @@ export interface SectionSpec {
   section: SectionId;
   questions: number;
   minutes: number;
+  /**
+   * Optional, per exam: topic id → weight for this section. When set, only these topics are served
+   * (at these weights) instead of every topic of the section at its default weight.
+   */
+  topics?: Record<string, number>;
 }
 
 export const INFOSYS_SE_PATTERN: SectionSpec[] = [
@@ -27,18 +32,45 @@ export const INFOSYS_SE_PATTERN: SectionSpec[] = [
 ];
 
 /**
- * Deloitte National Level Assessment, used for Cyber Gurukul / Analyst Trainee drives, as reported
- * for 2024–2026 (several sources; Deloitte does not publish it): sectional timers, ~1 min per MCQ.
+ * Deloitte National Level Assessment (NLA), used for the Cyber Gurukul · Analyst Trainee drives
+ * (2024–2027 batches). Deloitte does not publish the paper; this follows the pattern that prep sites
+ * and candidate write-ups agree on (PrepInsta, Tech6Sense, onlinestudy4u, GeeksforGeeks, Nov 2026):
+ * HirePro, 90 min, five sections each with its own timer (no going back), no negative marking.
  *
- *   Verbal 13 Q / 13 min   Reasoning 12 Q / 12 min   Quant 10 Q / 10 min   Technical 30 Q / 30 min
+ *   English 13 Q (10 MCQ + 3 fill-ups) / 13 min   Reasoning 12 Q / 12 min   Quant 10 Q / 10 min
+ *   Technical 30 Q / 30 min   Coding 2 Q (1 nugget + 1 program) / 25 min — not simulated here
  *
- * The real test also has a coding round (2 problems, ~25–35 min), which is not simulated here.
+ * Topic weights per section mirror the questions reported from real papers:
+ *  - English: error spotting, sentence correction, fill-ups, voice, para jumble, synonym/antonym,
+ *    one-word substitution; one short RC passage.
+ *  - Reasoning: letter puzzles, statement/assumption/conclusion, series, coding, blood relations,
+ *    data sufficiency, direction, arrangement, syllogism. No clocks or calendars reported.
+ *  - Quant: profit & loss, P&C, probability, time & work, speed/trains, mixtures, number system,
+ *    interest, percentages, averages, mensuration. No data interpretation charts.
+ *  - Technical: networking & cyber security dominate, then DBMS/SQL, programming & OOP,
+ *    software testing, OS, cloud, computer fundamentals.
+ * Difficulty is easy to medium throughout, so the mock runs at the realistic (standard) tier.
  */
 export const DELOITTE_NLA_PATTERN: SectionSpec[] = [
-  { section: "verbal", questions: 13, minutes: 13 },
-  { section: "reasoning", questions: 12, minutes: 12 },
-  { section: "math", questions: 10, minutes: 10 },
-  { section: "technical", questions: 30, minutes: 30 },
+  { section: "verbal", questions: 13, minutes: 13, topics: { "v-correction": 3, "v-fill": 3, "v-error": 2, "v-vocab": 2, "v-jumble": 1, "v-voice": 1, "v-oneword": 1 } },
+  {
+    section: "reasoning",
+    questions: 12,
+    minutes: 12,
+    topics: { "r-alpha": 3, "r-statement": 3, "r-series": 2, "r-coding": 2, "r-blood": 2, "r-ds": 2, "r-direction": 1, "r-seating": 1, "r-syllogism": 1, "r-odd": 1, "r-ranking": 1 },
+  },
+  {
+    section: "math",
+    questions: 10,
+    minutes: 10,
+    topics: { "m-profit": 3, "m-pnc": 3, "m-prob": 3, "m-timework": 3, "m-speed": 3, "m-ratio": 2, "m-number": 2, "m-interest": 2, "m-percent": 2, "m-average": 1, "m-mensuration": 1, "m-algebra": 1 },
+  },
+  {
+    section: "technical",
+    questions: 30,
+    minutes: 30,
+    topics: { "t-security": 5, "t-networks": 5, "t-dbms": 4, "t-programming": 4, "t-testing": 3, "t-os": 2, "t-cloud": 2, "t-fundamentals": 2 },
+  },
 ];
 
 /**
@@ -68,8 +100,8 @@ export const EXAMS = [
     name: "Cyber Gurukul · Analyst Trainee (NLA)",
     short: "Deloitte NLA",
     pattern: DELOITTE_NLA_PATTERN,
-    level: "normal" as ExamLevel,
-    note: "The real test also has a coding round (2 problems). It is not simulated here yet, so practise coding separately.",
+    level: "realistic" as ExamLevel,
+    note: "The real test has a fifth section: coding (1 nugget + 1 program, 25 min, in C/C++/Java/Python). It is not simulated here, so practise easy array and string problems separately.",
   },
 ] as const;
 export type ExamId = (typeof EXAMS)[number]["id"];

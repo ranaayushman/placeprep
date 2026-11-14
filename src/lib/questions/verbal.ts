@@ -6,6 +6,7 @@
 import { rng, staticMcq } from "./rng";
 import type { Question, Topic } from "./types";
 import { MORE_FILL_BLANKS, MORE_PARA_JUMBLES, MORE_PASSAGES, MORE_SENTENCE_CORRECTION } from "./verbal-extra";
+import { ERROR_SPOTTING, ONE_WORD, VOICE } from "./verbal-nla";
 
 type Item = { prompt: string; options: string[]; answer: number; explanation: string };
 
@@ -202,6 +203,9 @@ export const verbalTopics: Topic[] = [
   { id: "v-fill", section: "verbal", label: "Fill in the Blanks & Grammar", weight: 4, targetSec: 40, poolSize: FILL_BLANKS.length, generate: bankTopic(FILL_BLANKS) },
   { id: "v-jumble", section: "verbal", label: "Para Jumbles", weight: 2, targetSec: 75, poolSize: PARA_JUMBLES.length, generate: paraJumble },
   { id: "v-vocab", section: "verbal", label: "Synonyms & Antonyms", weight: 2, targetSec: 30, poolSize: VOCAB.length * 2, generate: vocabulary },
+  { id: "v-error", section: "verbal", label: "Spot the Error", weight: 2, targetSec: 45, poolSize: ERROR_SPOTTING.length, generate: bankTopic(ERROR_SPOTTING) },
+  { id: "v-voice", section: "verbal", label: "Active & Passive Voice", weight: 1, targetSec: 40, poolSize: VOICE.length, generate: bankTopic(VOICE) },
+  { id: "v-oneword", section: "verbal", label: "One-Word Substitution", weight: 1, targetSec: 30, poolSize: ONE_WORD.length, generate: bankTopic(ONE_WORD) },
 ];
 
 export const ESSAY_PROMPTS = [

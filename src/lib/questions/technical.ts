@@ -107,16 +107,112 @@ const PROGRAMMING: Item[] = [
   { prompt: "A constructor is:", options: ["A special method that runs automatically when an object is created", "A method that deletes an object", "A loop that builds arrays", "A global variable"], answer: 0, explanation: "Constructors initialise a new object's state." },
 ];
 
+// ─── Topics and phrasings reported for the Deloitte NLA (Cyber Gurukul · Analyst Trainee) paper ──────
+// Software testing and computer fundamentals appear in every reported set, and many items use the
+// "which statement(s) are correct: i) ii) iii)" form.
+
+const TESTING: Item[] = [
+  { prompt: "Testing a single module in isolation, usually by the developer who wrote it, is called:", options: ["Unit testing", "Integration testing", "System testing", "Acceptance testing"], answer: 0, explanation: "Unit tests check one function, class or module on its own." },
+  { prompt: "Testing that looks only at inputs and outputs, without seeing the internal code, is:", options: ["Black-box testing", "White-box testing", "Static testing", "Mutation testing"], answer: 0, explanation: "Black-box testing treats the software as a sealed box; white-box testing uses knowledge of the code." },
+  { prompt: "Re-running existing tests after a change to make sure nothing that worked before has broken is:", options: ["Regression testing", "Smoke testing", "Alpha testing", "Load testing"], answer: 0, explanation: "Regression tests guard against old features breaking when code changes." },
+  { prompt: "An input field accepts values from 1 to 100. Which set of values does boundary value analysis test?", options: ["0, 1, 100, 101", "50, 60, 70", "1, 50, 100", "-100, 0, 200"], answer: 0, explanation: "Boundary value analysis tests the values at and just outside each boundary." },
+  { prompt: "Equivalence partitioning:", options: ["Divides inputs into classes expected to behave alike and tests one value from each", "Tests every possible input value", "Tests only the boundary values", "Checks every path through the code"], answer: 0, explanation: "One representative per partition (valid and invalid) covers the class with few tests." },
+  { prompt: "Which technique(s) help find faults caused by invalid input data?\ni) Equivalence partitioning\nii) Boundary value analysis", options: ["Both i and ii", "Only i", "Only ii", "Neither i nor ii"], answer: 0, explanation: "Both techniques define invalid partitions and out-of-range boundaries to test." },
+  { prompt: "Which of these are levels of software testing?\ni) Unit testing\nii) Integration testing\niii) Collaboration testing\niv) System testing", options: ["i, ii and iv", "i and ii only", "All four", "ii and iii only"], answer: 0, explanation: "“Collaboration testing” is not a testing level; unit, integration, system and acceptance are." },
+  { prompt: "Verification and validation differ in that:", options: ["Verification checks the product is built right (meets its specification); validation checks the right product is built (meets user needs)", "Validation is done by the compiler and verification by users", "They are two names for the same activity", "Verification is only for hardware"], answer: 0, explanation: "“Are we building it right?” is verification; “are we building the right thing?” is validation." },
+  { prompt: "A smoke test is:", options: ["A quick check that the basic functions of a new build work before deeper testing", "An exhaustive test of every feature", "A test of the system under extreme load", "A test for security vulnerabilities"], answer: 0, explanation: "If the smoke test fails, the build is rejected without further testing." },
+  { prompt: "Alpha testing is performed by:", options: ["Internal staff at the developer's site", "Real users at their own locations", "The customer's legal team", "Only automated scripts"], answer: 0, explanation: "Alpha testing is in-house; beta testing is by real users outside the organisation." },
+  { prompt: "In the V-model, acceptance test cases are derived from the:", options: ["Requirements specification", "Detailed design", "Source code", "Unit test reports"], answer: 0, explanation: "Each development phase pairs with a test level; requirements pair with acceptance testing." },
+  { prompt: "The severity and priority of a defect differ in that:", options: ["Severity is the impact on the system; priority is how soon it must be fixed", "Priority is the impact; severity is the fix order", "They always have the same value", "Priority is set by the compiler"], answer: 0, explanation: "A typo in the company name on the home page is low severity but may be high priority." },
+  { prompt: "Testing how a system performs under its expected peak number of users is:", options: ["Load testing", "Unit testing", "Usability testing", "Static testing"], answer: 0, explanation: "Load testing applies realistic peak demand; stress testing goes beyond it to find the breaking point." },
+  { prompt: "Code reviews and walkthroughs are examples of:", options: ["Static testing", "Dynamic testing", "Regression testing", "Beta testing"], answer: 0, explanation: "Static testing examines code or documents without executing the program." },
+  { prompt: "Which document describes the scope, approach, resources and schedule of testing?", options: ["Test plan", "Test case", "Bug report", "User manual"], answer: 0, explanation: "The test plan is the master document for a testing effort." },
+  { prompt: "A test case normally contains:", options: ["Inputs, steps and the expected result", "Only the source code to test", "The developer's name and salary", "The compiler version only"], answer: 0, explanation: "A test case specifies what to do and what should happen so a pass or fail can be judged." },
+];
+
+const FUNDAMENTALS: Item[] = [
+  { prompt: "DIMM stands for:", options: ["Dual In-line Memory Module", "Discrete In-line Memory Module", "Dual Integrated Master Module", "Direct Internal Memory Map"], answer: 0, explanation: "DIMMs are the RAM sticks plugged into a motherboard." },
+  { prompt: "Which memory loses its contents when the power is switched off?", options: ["RAM", "ROM", "Hard disk", "Flash drive"], answer: 0, explanation: "RAM is volatile; the others keep data without power." },
+  { prompt: "The binary equivalent of decimal 25 is:", options: ["11001", "11010", "10101", "11100"], answer: 0, explanation: "25 = 16 + 8 + 1 → 11001." },
+  { prompt: "The decimal value of binary 1011 is:", options: ["11", "13", "9", "7"], answer: 0, explanation: "8 + 0 + 2 + 1 = 11." },
+  { prompt: "The part of the CPU that performs arithmetic and logical operations is the:", options: ["ALU", "Control unit", "Register file", "Cache"], answer: 0, explanation: "The Arithmetic Logic Unit does the calculations; the control unit directs them." },
+  { prompt: "The hexadecimal digit F equals decimal:", options: ["15", "16", "12", "10"], answer: 0, explanation: "Hex digits run 0–9 then A–F for 10–15." },
+  { prompt: "The firmware stored in ROM that starts the computer and loads the operating system is the:", options: ["BIOS / UEFI", "Compiler", "Device driver", "Spreadsheet"], answer: 0, explanation: "The BIOS (or its successor UEFI) runs first and hands over to the OS loader." },
+  { prompt: "Cache memory is used to:", options: ["Speed up access to frequently used data between the CPU and RAM", "Store files permanently", "Connect the computer to a network", "Print documents faster"], answer: 0, explanation: "Cache is small, fast memory close to the CPU." },
+  { prompt: "A compiler:", options: ["Translates the whole program into machine code before it runs", "Executes the program one line at a time", "Checks spelling in documents", "Manages the file system"], answer: 0, explanation: "An interpreter runs code line by line; a compiler translates it all first." },
+  { prompt: "In the binary convention, 1 KB equals how many bytes?", options: ["1024", "1000", "512", "2048"], answer: 0, explanation: "2¹⁰ = 1024 bytes (strictly a kibibyte)." },
+  { prompt: "Which of these is an input device?", options: ["Scanner", "Printer", "Monitor", "Speaker"], answer: 0, explanation: "A scanner sends data into the computer; the others output it." },
+  { prompt: "The 8-bit two's complement of 00000101 is:", options: ["11111011", "11111010", "10000101", "00000101"], answer: 0, explanation: "Invert the bits (11111010) and add 1 → 11111011, which represents −5." },
+  { prompt: "ASCII is a standard for representing:", options: ["Characters as numeric codes", "Images as pixels", "Sound as waves", "Networks as graphs"], answer: 0, explanation: "ASCII maps letters, digits and symbols to 7-bit codes; Unicode extends the idea." },
+  { prompt: "Which of these is secondary (permanent) storage?", options: ["SSD", "RAM", "Cache", "CPU register"], answer: 0, explanation: "Secondary storage keeps data when the power is off." },
+];
+
+const MORE_DBMS: Item[] = [
+  { prompt: "Which of these are document-oriented databases?\ni) MySQL\nii) MongoDB\niii) Cassandra\niv) CouchDB", options: ["Only ii and iv", "All four", "Only i and ii", "Only iii and iv"], answer: 0, explanation: "MongoDB and CouchDB store JSON-like documents; MySQL is relational and Cassandra is a wide-column store." },
+  { prompt: "After these statements run, what does SELECT * FROM demo return?", code: "CREATE TABLE demo (a INT, b INT);\nINSERT INTO demo VALUES (101, 567);\nUPDATE demo SET b = NULL;", options: ["101, NULL", "101, 567", "NULL, 567", "0, 567"], answer: 0, explanation: "The UPDATE sets column b of the only row to NULL; column a keeps 101." },
+  { prompt: "Which database object gives users a structured screen for entering data into a table?", options: ["Form", "Query", "Report", "Index"], answer: 0, explanation: "Forms are for data entry; queries retrieve data; reports present it." },
+  { prompt: "What does this query return?", code: "SELECT name FROM emp\nWHERE salary > (SELECT AVG(salary) FROM emp);", options: ["Employees earning more than the average salary", "The average salary", "All employees sorted by salary", "The highest-paid employee only"], answer: 0, explanation: "The subquery computes the average; the outer query keeps rows above it." },
+  { prompt: "Which of these are properties of a relational database?\ni) Data is stored in tables with rows and columns\nii) Tables can be linked with foreign keys\niii) Data is stored only as free-text documents", options: ["i and ii", "i and iii", "ii and iii", "All three"], answer: 0, explanation: "Free-text document storage describes NoSQL document databases, not relational ones." },
+];
+
+const MORE_NETWORKS: Item[] = [
+  { prompt: "Which statement(s) about IPv4 are incorrect?\ni) IPv4 provides error control and flow control\nii) IPv4 is a reliable protocol\niii) IPv4 works at the network layer of the OSI model", options: ["Only i and ii", "Only iii", "Only ii and iii", "All three"], answer: 0, explanation: "IP is a best-effort, unreliable network-layer protocol; reliability and flow control come from TCP." },
+  { prompt: "Which of the following is/are correct?\ni) FTP uses two TCP connections (control and data)\nii) HTTP uses a single TCP connection per request", options: ["Both i and ii", "Only i", "Only ii", "Neither"], answer: 0, explanation: "FTP keeps a control connection on port 21 and opens a separate data connection; HTTP uses one connection." },
+  { prompt: "Spanning Tree Protocol (STP) is used to:", options: ["Prevent switching loops in a network with redundant links", "Assign IP addresses automatically", "Encrypt wireless traffic", "Translate domain names"], answer: 0, explanation: "STP blocks redundant paths so that frames do not loop forever between switches." },
+  { prompt: "A load balancer:", options: ["Distributes incoming requests across several servers", "Compresses files before sending", "Stores website backups", "Blocks all incoming traffic"], answer: 0, explanation: "Spreading requests improves availability and performance." },
+  { prompt: "What is the default port for SSH?", options: ["22", "23", "25", "53"], answer: 0, explanation: "SSH 22, Telnet 23, SMTP 25, DNS 53." },
+  { prompt: "In the TCP/IP model, HTTP belongs to which layer?", options: ["Application layer", "Transport layer", "Internet layer", "Link layer"], answer: 0, explanation: "HTTP, FTP, DNS and SMTP are application-layer protocols." },
+  { prompt: "Which of these are valid IPv4 addresses?\ni) 192.168.1.256\nii) 10.0.0.1\niii) 172.16.254.3", options: ["Only ii and iii", "All three", "Only i and ii", "Only i"], answer: 0, explanation: "Each octet must be 0–255, so 256 is invalid." },
+];
+
+const MORE_SECURITY: Item[] = [
+  { prompt: "Which of these verifies the identity of a user or device trying to access a network?", options: ["Biometric authentication", "Encryption", "Firewall", "DMZ"], answer: 0, explanation: "Fingerprints or face scans are an authentication factor; the others protect data or traffic." },
+  { prompt: "A DMZ (demilitarised zone) in network security is:", options: ["A separate network segment for public-facing servers, isolated from the internal network", "A zone where no computers are allowed", "An encrypted hard disk", "A list of banned passwords"], answer: 0, explanation: "Web and mail servers sit in the DMZ so a compromise there does not reach the internal network." },
+  { prompt: "Which of these count as two-factor authentication?\ni) Password + OTP sent to a phone\nii) Two different passwords\niii) Fingerprint + smart card", options: ["i and iii", "i and ii", "ii and iii", "All three"], answer: 0, explanation: "Two factors must be of different kinds (know / have / are); two passwords are the same kind." },
+  { prompt: "Which of these is a symmetric encryption algorithm?", options: ["AES", "RSA", "ECC", "Diffie-Hellman"], answer: 0, explanation: "AES uses one shared key; RSA and ECC use key pairs; Diffie-Hellman is a key exchange." },
+  { prompt: "An intrusion detection system (IDS):", options: ["Monitors network or system activity and raises alerts on suspicious behaviour", "Encrypts emails", "Assigns IP addresses", "Backs up files nightly"], answer: 0, explanation: "An IDS detects and alerts; an IPS can also block the traffic." },
+  { prompt: "Social engineering is:", options: ["Manipulating people into revealing confidential information or taking unsafe actions", "Writing software for social networks", "Scanning a network for open ports", "Encrypting a database"], answer: 0, explanation: "Phishing, pretexting and tailgating are all social engineering." },
+  { prompt: "HTTPS encrypts traffic using:", options: ["TLS (SSL)", "FTP", "ARP", "ICMP"], answer: 0, explanation: "HTTPS is HTTP over TLS, the successor to SSL." },
+  { prompt: "Which attack sends so many requests to a server that genuine users cannot reach it?", options: ["DDoS", "Phishing", "Spoofing", "Brute force"], answer: 0, explanation: "A distributed denial-of-service attack floods the target from many machines." },
+];
+
+const MORE_PROGRAMMING: Item[] = [
+  { prompt: "What happens when this C code runs?", code: "int arr[5] = {1, 2, 3, 4, 5};\nprintf(\"%d\", arr[5]);", options: ["Undefined behaviour: index 5 is outside the array", "Prints 5", "Prints 0", "Compilation error"], answer: 0, explanation: "Valid indices are 0–4; reading arr[5] is out of bounds and may print garbage." },
+  { prompt: "Which Java statement(s) contain an error?\ni) int x = 10;\nii) int y = \"10\";\niii) String s = \"10\";", options: ["Only ii", "Only i", "ii and iii", "All three"], answer: 0, explanation: "A string literal cannot be assigned to an int." },
+  { prompt: "What does this C code print?", code: "int i = 0;\nwhile (i < 3) {\n  printf(\"%d\", i);\n  i++;\n}", options: ["012", "123", "0123", "3"], answer: 0, explanation: "The loop prints 0, 1 and 2 before i reaches 3." },
+  { prompt: "Which OOP principle lets a new class reuse the fields and methods of an existing class?", options: ["Inheritance", "Encapsulation", "Abstraction", "Overloading"], answer: 0, explanation: "A subclass inherits from its parent class." },
+  { prompt: "Abstraction in OOP means:", options: ["Showing only the essential features and hiding the implementation details", "Copying one object into another", "Running two methods at once", "Converting a class into a database table"], answer: 0, explanation: "A car's steering wheel abstracts away the mechanics underneath." },
+  { prompt: "What does this Python code print?", code: "x = [1, 2, 3]\nprint(x[-1])", options: ["3", "1", "An error", "-1"], answer: 0, explanation: "Negative indices count from the end; -1 is the last element." },
+  { prompt: "In Python, what is the value of 7 // 2?", options: ["3", "3.5", "4", "1"], answer: 0, explanation: "// is floor division: 7 ÷ 2 = 3.5, floored to 3." },
+  { prompt: "What does this Python code print?", code: "print(len(\"Deloitte\"))", options: ["8", "7", "9", "An error"], answer: 0, explanation: "D-e-l-o-i-t-t-e has 8 characters." },
+];
+
+const MORE_CLOUD: Item[] = [
+  { prompt: "Which of these are the three main cloud service models?\ni) SaaS\nii) PaaS\niii) IaaS\niv) DaaS", options: ["i, ii and iii", "i and ii only", "All four", "iii and iv only"], answer: 0, explanation: "Software, Platform and Infrastructure as a Service are the standard three." },
+  { prompt: "AWS, Microsoft Azure and Google Cloud are examples of:", options: ["Public cloud providers", "Private cloud software", "Operating systems", "Web browsers"], answer: 0, explanation: "They sell shared, internet-accessible cloud infrastructure to the public." },
+  { prompt: "A cloud “region” is:", options: ["A geographic area containing one or more data centres", "A type of virtual machine", "A billing plan", "A programming language"], answer: 0, explanation: "Regions contain availability zones, each with separate data centres." },
+  { prompt: "Moving an application from a company's own servers to a cloud provider is called:", options: ["Cloud migration", "Cloud bursting", "Cloud mining", "Cloud caching"], answer: 0, explanation: "Migration moves workloads to the cloud; bursting temporarily overflows to it." },
+];
+
+const MORE_OS: Item[] = [
+  { prompt: "Which of these are functions of an operating system?\ni) Memory management\nii) Process scheduling\niii) Compiling programs\niv) File management", options: ["i, ii and iv", "i and ii only", "All four", "iii only"], answer: 0, explanation: "Compiling is done by a compiler, not the OS." },
+  { prompt: "Which Linux command lists the files in a directory?", options: ["ls", "cd", "pwd", "rm"], answer: 0, explanation: "ls lists; cd changes directory; pwd prints the current directory; rm deletes." },
+  { prompt: "Which of these operating systems is open source?", options: ["Linux", "Windows 11", "macOS", "iOS"], answer: 0, explanation: "The Linux kernel and most distributions are open source." },
+  { prompt: "Multitasking means the OS:", options: ["Runs several programs at the same time by switching the CPU between them", "Runs one program until it finishes", "Uses several keyboards", "Needs several hard disks"], answer: 0, explanation: "The CPU switches between processes so fast that they appear to run together." },
+];
+
 const bank = (items: Item[]) => (seed: number) => staticMcq(rng(seed), items[seed % items.length]);
 const topic = (id: string, label: string, weight: number, items: Item[]): Topic => ({
   id, section: "technical", label, weight, targetSec: 50, poolSize: items.length, generate: bank(items),
 });
 
 export const technicalTopics: Topic[] = [
-  topic("t-security", "Cyber Security", 4, SECURITY),
-  topic("t-dbms", "DBMS & SQL", 3, DBMS),
-  topic("t-networks", "Computer Networks", 3, NETWORKS),
-  topic("t-programming", "Programming & OOP", 3, PROGRAMMING),
-  topic("t-os", "Operating Systems", 2, OS),
-  topic("t-cloud", "Cloud Computing", 2, CLOUD),
+  topic("t-security", "Cyber Security", 5, [...SECURITY, ...MORE_SECURITY]),
+  topic("t-networks", "Computer Networks", 5, [...NETWORKS, ...MORE_NETWORKS]),
+  topic("t-dbms", "DBMS & SQL", 4, [...DBMS, ...MORE_DBMS]),
+  topic("t-programming", "Programming & OOP", 4, [...PROGRAMMING, ...MORE_PROGRAMMING]),
+  topic("t-testing", "Software Testing", 3, TESTING),
+  topic("t-os", "Operating Systems", 2, [...OS, ...MORE_OS]),
+  topic("t-cloud", "Cloud Computing", 2, [...CLOUD, ...MORE_CLOUD]),
+  topic("t-fundamentals", "Computer Fundamentals", 2, FUNDAMENTALS),
 ];

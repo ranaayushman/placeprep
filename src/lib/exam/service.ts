@@ -6,7 +6,7 @@ import { generate, SECTION_LABELS, TOPIC_BY_ID, toView, topicsFor, type SectionI
 import { RC_GROUP, RC_PASSAGES } from "@/lib/questions/verbal";
 import { HARD_SHARE_BY_LEVEL, LEFT_AFTER_MS, MAX_VIOLATIONS, SUBMIT_GRACE_MS } from "./pattern";
 import { getExam } from "./exams";
-import { fingerprint, hardSlots, pickFresh, planTopics, shuffle, type History, type MocksAgo } from "./plan";
+import { fingerprint, hardSlots, pickFresh, planTopics, scopedTopics, shuffle, type History, type MocksAgo } from "./plan";
 import { logEvent } from "@/lib/events";
 import { COMMUNITY_PREFIX, freshCommunityIds, isCommunityRef, loadPublished } from "@/lib/community/serve";
 
@@ -140,14 +140,14 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
       const p = (freshP.length ? freshP : passages)[randomInt(0, (freshP.length ? freshP : passages).length)];
       for (let k = 0; k < RC_GROUP; k++) refs.push(`${rc.id}:${p * RC_GROUP + k + rc.poolSize! * randomInt(0, 10_000)}`);
       // The passage block stays together; the other verbal questions are mixed.
-      const others = topicsFor("verbal").filter((t) => t.id !== "v-rc");
+      const others = scopedTopics(topicsFor("verbal").filter((t) => t.id !== "v-rc"), spec.topics);
       const vt = planTopics(others, spec.questions - RC_GROUP, history.mocksAgo);
       const vh = hardSlots(vt, hardShare());
       vt.forEach((t, i) => refs.push(pickFresh(t, history, taken, vh[i])));
     } else {
       // Mixed topics, every topic covered (or rotated in when there are fewer slots than topics), no repeats.
       // Normal mock: 30–50% hard. Hard mock: 70–80% hard (where topics have a hard tier).
-      const ts = planTopics(topicsFor(spec.section), spec.questions, history.mocksAgo);
+      const ts = planTopics(scopedTopics(topicsFor(spec.section), spec.topics), spec.questions, history.mocksAgo);
       const hs = hardSlots(ts, hardShare());
       ts.forEach((t, i) => refs.push(pickFresh(t, history, taken, hs[i])));
     }

@@ -1,5 +1,6 @@
 /** Logical / Reasoning Ability: generators plus small original static banks. */
 import { codingDecoding } from "./coding";
+import { nlaReasoningTopics } from "./reasoning-nla";
 import { mcq, oddOneIsUnique, rng, staticMcq, type Rng } from "./rng";
 import { RELATION_REASON, RELATION_WORDS, sentence, solveChain, solveSyllogism, STEP_WORDS, type Form, type Prop } from "./logic";
 import type { Question, Topic } from "./types";
@@ -411,4 +412,5 @@ export const reasoningTopics: Topic[] = [
   { id: "r-ranking", section: "reasoning", label: "Ranking & Order", weight: 1, targetSec: 45, generate: ranking },
   { id: "r-odd", section: "reasoning", label: "Odd One Out", weight: 1, targetSec: 45, generate: oddOneOut },
   { id: "r-ds", section: "reasoning", label: "Data Sufficiency", weight: 3, targetSec: 90, generate: dataSufficiency },
+  ...nlaReasoningTopics,
 ];

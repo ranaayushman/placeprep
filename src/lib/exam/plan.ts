@@ -51,6 +51,15 @@ export function planTopics(topics: Topic[], count: number, mocksAgo: MocksAgo = 
   return shuffle(out, rand);
 }
 
+/**
+ * The topics an exam section draws from: every topic of the section, or, when the section spec names
+ * topics, only those at the spec's weights (so one company's paper can leave out another's topics).
+ */
+export function scopedTopics(topics: Topic[], weights?: Record<string, number>): Topic[] {
+  if (!weights) return topics;
+  return topics.filter((t) => t.id in weights).map((t) => ({ ...t, weight: weights[t.id] }));
+}
+
 export function shuffle<T>(arr: readonly T[], rand: () => number = Math.random): T[] {
   const out = [...arr];
   for (let i = out.length - 1; i > 0; i--) {
