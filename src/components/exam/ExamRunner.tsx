@@ -47,6 +47,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(true);
   /** Practice question whose answer is being checked by the server (options locked, "Checking…" shown). */
   const [checking, setChecking] = useState<string | null>(null);
   const shownAt = useRef(Date.now());
@@ -362,15 +363,15 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
       <div className="flex min-h-0 flex-1">
         {/* Question area */}
         <main className="flex min-w-0 flex-1 flex-col">
-          <div className="flex min-h-0 flex-1">
+          <div className={`flex min-h-0 flex-1 ${isCode ? "overflow-y-auto" : ""}`}>
             {passage && (
               <aside className="hidden w-1/2 overflow-y-auto border-r border-slate-200 bg-white p-6 text-[15px] leading-relaxed text-slate-700 lg:block">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Passage</p>
                 {passage}
               </aside>
             )}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className={`mx-auto ${isCode ? "max-w-6xl" : "max-w-3xl"}`}>
+            <div className={`flex-1 ${isCode ? "min-h-0 p-2" : "overflow-y-auto p-6"}`}>
+              <div className={`mx-auto ${isCode ? "h-full max-w-none" : "max-w-3xl"}`}>
                 <div className="mb-4 flex items-center justify-between text-sm">
                   <span className="font-semibold text-slate-700">
                     Question {idx + 1} of {questions.length}
@@ -493,9 +494,17 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
         </main>
 
         {/* Palette */}
-        <aside className="hidden w-72 shrink-0 flex-col border-l border-slate-200 bg-white p-4 md:flex">
-          <p className="mb-3 text-sm font-semibold text-slate-700">Question palette</p>
-          <div className="grid grid-cols-5 gap-2">
+        <aside className={`hidden shrink-0 flex-col border-l border-slate-200 bg-white p-4 md:flex ${paletteOpen ? "w-72" : "w-14 items-center px-2"}`}>
+          <button
+            type="button"
+            onClick={() => setPaletteOpen((open) => !open)}
+            aria-label={paletteOpen ? "Collapse question palette" : "Expand question palette"}
+            className={`rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 ${paletteOpen ? "mb-3 self-end px-2 py-1 text-xs" : "px-2 py-1 text-lg"}`}
+          >
+            {paletteOpen ? "Hide" : "›"}
+          </button>
+          {paletteOpen && <p className="mb-3 text-sm font-semibold text-slate-700">Question palette</p>}
+          {paletteOpen && <div className="grid grid-cols-5 gap-2">
             {questions.map((q, i) => {
               const answered = q.chosenIndex != null || !!(q.textAnswer ?? "").trim();
               const cls = q.marked
@@ -516,19 +525,19 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
                 </button>
               );
             })}
-          </div>
-          <ul className="mt-5 space-y-1.5 text-xs text-slate-600">
+          </div>}
+          {paletteOpen && <ul className="mt-5 space-y-1.5 text-xs text-slate-600">
             <li><span className="mr-2 inline-block h-3 w-3 rounded bg-emerald-600 align-middle" />Answered ({counts.answered})</li>
             <li><span className="mr-2 inline-block h-3 w-3 rounded bg-red-500 align-middle" />Visited, not answered</li>
             <li><span className="mr-2 inline-block h-3 w-3 rounded bg-slate-200 align-middle" />Not visited</li>
             <li><span className="mr-2 inline-block h-3 w-3 rounded bg-purple-600 align-middle" />Marked for review ({counts.marked})</li>
-          </ul>
-          <div className="mt-auto space-y-2 pt-4">
+          </ul>}
+          {paletteOpen && <div className="mt-auto space-y-2 pt-4">
             {isMock && <p className="text-xs leading-relaxed text-slate-500">No negative marking — attempt every question. You cannot return to this section after submitting it.</p>}
             <button onClick={() => setConfirming(true)} className="btn-danger w-full">
               {isLastSection ? "Submit test" : "Submit section"}
             </button>
-          </div>
+          </div>}
         </aside>
       </div>
 

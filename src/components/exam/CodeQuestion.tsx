@@ -52,8 +52,8 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
   };
 
   return (
-    <div className="grid gap-2 lg:grid-cols-2">
-      <article className="overflow-y-auto rounded-2xl border border-deep/10 bg-surface p-5 text-[15px] leading-7 shadow-sm">
+    <div className="grid h-full min-h-0 gap-2 lg:grid-cols-2">
+      <article className="min-h-0 overflow-y-auto rounded-2xl border border-deep/10 bg-surface p-5 text-[15px] leading-7 shadow-sm">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">{p.difficulty} · judged on hidden tests</p>
@@ -78,7 +78,7 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
         {saved && <p className={`mt-5 text-sm font-medium ${saved.passed === saved.total ? "text-emerald-700" : "text-amber-700"}`}>Last submission ({LANGUAGES[saved.language]}): {saved.passed}/{saved.total} tests passed.</p>}
       </article>
 
-      <section className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl border border-deep/10 bg-surface shadow-sm">
+      <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-deep/10 bg-surface shadow-sm">
         <div className="flex shrink-0 items-center gap-2 border-b border-deep/10 px-3 py-2 text-xs text-muted">
           <span className="font-semibold text-deep">{"</>"} Code</span>
           <span className="font-mono">· {lang === "cpp" ? "main.cpp" : "Main.java"}</span>
