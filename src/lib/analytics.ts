@@ -160,8 +160,10 @@ export async function mockHistory(userId: string) {
       };
       byId.set(r.id, m);
     }
-    const sec = m.bySection[r.section as SectionId];
-    m.bySection[r.section as SectionId] = { correct: sec.correct + Number(r.correct), total: sec.total + Number(r.total) };
+    const section = MCQ_SECTIONS.find((s) => s === r.section);
+    if (!section) continue;
+    const sec = m.bySection[section];
+    m.bySection[section] = { correct: sec.correct + Number(r.correct), total: sec.total + Number(r.total) };
     const p = pace.get(r.id) ?? { answered: 0, timeMs: 0, targetSec: 0 };
     const answered = Number(r.answered);
     pace.set(r.id, { answered: p.answered + answered, timeMs: p.timeMs + Number(r.time_ms), targetSec: p.targetSec + answered * (TOPIC_BY_ID.get(r.topic)?.targetSec ?? 60) });
