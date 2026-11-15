@@ -6,8 +6,8 @@ import { planTopics, scopedTopics } from "@/lib/exam/plan";
 import type { Topic } from "@/lib/questions/types";
 
 describe("Deloitte NLA pattern", () => {
-  it("matches the reported paper: 13 + 12 + 10 + 30 questions, one minute each, realistic tier", () => {
-    expect(DELOITTE_NLA_PATTERN.map((s) => [s.section, s.questions, s.minutes])).toEqual([["verbal", 13, 13], ["reasoning", 12, 12], ["math", 10, 10], ["technical", 30, 30]]);
+  it("matches the reported paper: 13 + 12 + 10 + 30 MCQs at one minute each, then 2 coding problems in 25 min, realistic tier", () => {
+    expect(DELOITTE_NLA_PATTERN.map((s) => [s.section, s.questions, s.minutes])).toEqual([["verbal", 13, 13], ["reasoning", 12, 12], ["math", 10, 10], ["technical", 30, 30], ["coding", 2, 25]]);
     expect(EXAM_BY_ID.get("deloitte-nla")?.level).toBe("realistic");
   });
 

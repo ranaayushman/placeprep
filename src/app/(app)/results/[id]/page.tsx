@@ -12,6 +12,7 @@ import { fmtSec, PACE_TONE, paceOf, speedOf } from "@/lib/exam/speed";
 import { startPractice } from "../../start-actions";
 import { hasFeedback } from "@/lib/feedback";
 import { FeedbackForm } from "./FeedbackForm";
+import { LANGUAGES, parseCodeAnswer } from "@/lib/code/problems";
 
 export default async function ResultsPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ auto?: string; filter?: string }> }) {
   const user = await requireUser();
@@ -124,10 +125,21 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
                 <div className="mb-3 flex items-center justify-between text-xs">
                   <span className="font-medium text-slate-500">{SECTION_LABELS[q.section as SectionId]} · Q{q.order + 1} · {TOPIC_BY_ID.get(q.topic)?.label}</span>
                   <span className={`rounded px-2 py-0.5 font-semibold ${q.isCorrect ? "bg-emerald-100 text-emerald-700" : q.chosenIndex == null ? "bg-slate-100 text-slate-600" : "bg-red-100 text-red-700"}`}>
-                    {q.isCorrect ? "Correct" : q.chosenIndex == null ? "Skipped" : "Wrong"} · {Math.round(q.timeSpentMs / 1000)}s
+                    {q.isCorrect ? (view.kind === "code" ? "Accepted" : "Correct") : q.chosenIndex == null ? "Skipped" : view.kind === "code" ? "Not accepted" : "Wrong"} · {Math.round(q.timeSpentMs / 1000)}s
                   </span>
                 </div>
                 <QuestionBody q={view} />
+                {view.kind === "code" && (() => {
+                  const a = parseCodeAnswer(q.textAnswer);
+                  return a ? (
+                    <div className="mt-4 text-sm">
+                      <p className="font-medium">{LANGUAGES[a.language]} · {a.passed}/{a.total} tests passed</p>
+                      <pre className="mt-2 max-h-96 overflow-auto rounded-lg bg-[#0d1117] p-3 font-mono text-xs leading-5 text-emerald-100">{a.code}</pre>
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-sm text-slate-500">No code was submitted.</p>
+                  );
+                })()}
                 <ul className="mt-4 space-y-1.5 text-sm">
                   {view.options.map((o, i) => (
                     <li key={i} className={`rounded-md border px-3 py-2 ${i === q.answerIndex ? "border-emerald-400 bg-emerald-50" : i === q.chosenIndex ? "border-red-400 bg-red-50" : "border-slate-200"}`}>

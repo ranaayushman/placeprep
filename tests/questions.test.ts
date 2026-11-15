@@ -17,6 +17,12 @@ describe.each(TOPICS.map((t) => [t.id, t] as const))("topic %s", (id, topic) => 
         expect(q.answer).toBe(-1);
         continue;
       }
+      if (q.kind === "code") {
+        // Judged by running the code: no options, answer is the accepted sentinel, hidden tests never in the view.
+        expect(q.answer).toBe(1);
+        expect(q.problem?.samples.length).toBeGreaterThanOrEqual(1);
+        continue;
+      }
       expect(q.options.length, `${id}:${seed} options`).toBeGreaterThanOrEqual(4);
       expect(new Set(q.options).size, `${id}:${seed} duplicate options: ${q.options}`).toBe(q.options.length);
       expect(q.answer, `${id}:${seed}`).toBeGreaterThanOrEqual(0);

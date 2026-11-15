@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import type { SubmitResult } from "@/lib/code/judge";
-import { LANGUAGES, RUN_MS, STARTER_CODE, verdict, type Language } from "@/lib/code/problems";
+import { LANGUAGES, parseCodeAnswer, RUN_MS, STARTER_CODE, verdict, type Language } from "@/lib/code/problems";
 import type { RunResult } from "@/lib/code/runner";
 import type { QuestionView } from "@/lib/questions/types";
 
-export type CodeAnswer = { language: Language; code: string; passed: number; total: number };
 type Props = {
   questionId: string;
   view: QuestionView;
@@ -15,15 +14,6 @@ type Props = {
   mock: boolean;
   run: (language: Language, code: string, stdin: string) => Promise<RunResult>;
   submit: (language: Language, code: string) => Promise<SubmitResult & { accepted: boolean }>;
-};
-
-export const parseCodeAnswer = (s: string | null): CodeAnswer | null => {
-  try {
-    const v = s ? (JSON.parse(s) as CodeAnswer) : null;
-    return v && typeof v.code === "string" && v.language in LANGUAGES ? v : null;
-  } catch {
-    return null;
-  }
 };
 
 const dark = "rounded-md border border-slate-800 bg-slate-800/60 p-2 font-mono text-xs text-slate-100 outline-none focus:border-emerald-500/60";

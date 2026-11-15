@@ -430,6 +430,17 @@ const STATUS: Record<RunStatus, string> = { ok: "Accepted", compile_error: "Comp
 export const verdict = (r: { status: RunStatus; stdout: string }, expected?: string) =>
   r.status !== "ok" ? STATUS[r.status] : expected !== undefined && normalizeOutput(r.stdout) !== normalizeOutput(expected) ? "Wrong Answer" : "Accepted";
 
+/** What a test stores as the answer to a coding question (attempt_questions.text_answer, as JSON). */
+export type CodeAnswer = { language: Language; code: string; passed: number; total: number };
+export const parseCodeAnswer = (s: string | null | undefined): CodeAnswer | null => {
+  try {
+    const v = s ? (JSON.parse(s) as CodeAnswer) : null;
+    return v && typeof v.code === "string" && v.language in LANGUAGES ? v : null;
+  } catch {
+    return null;
+  }
+};
+
 export const PROBLEM_BY_ID = new Map(PROBLEMS.map((p) => [p.id, p]));
 /** All tests for a problem, samples first, so a wrong answer is shown on a visible case when possible. */
 export const allTests = (p: Problem) => [...p.samples.map(({ input, output }) => ({ input, output })), ...p.tests];
