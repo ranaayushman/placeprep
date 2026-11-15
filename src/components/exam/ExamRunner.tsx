@@ -8,6 +8,10 @@ import { ReportProblem } from "@/components/ReportProblem";
 import { useProctoring } from "./useProctoring";
 import { HEARTBEAT_MS, LEFT_AFTER_MS } from "@/lib/exam/pattern";
 import { FaceProctoringTile } from "./CameraPreview";
+import { CodeQuestion } from "./CodeQuestion";
+import type { SubmitResult } from "@/lib/code/judge";
+import type { Language } from "@/lib/code/problems";
+import type { RunResult } from "@/lib/code/runner";
 
 type InProgress = Extract<ExamState, { status: "IN_PROGRESS" }>;
 type Q = InProgress["current"]["questions"][number];
@@ -186,6 +190,20 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
     essayTimer.current = setTimeout(() => send(q, { textAnswer: text }, takeDelta()), 1200);
   };
 
+  // Coding questions: Run is a scratch run; Submit judges on the server, which also saves the verdict as the answer.
+  const runCode = (q: Q) => (language: Language, code: string, stdin: string) => api<RunResult>(attemptId, { action: "code-run", questionId: q.id, language, code, stdin });
+  const submitCode = (q: Q) => async (language: Language, code: string) => {
+    try {
+      const r = await api<SubmitResult & { accepted: boolean }>(attemptId, { action: "code-submit", questionId: q.id, language, code });
+      const textAnswer = JSON.stringify({ language, code, passed: r.passed, total: r.total });
+      setQuestions((qs) => qs.map((x) => (x.id === q.id ? { ...x, chosenIndex: r.accepted ? 1 : 0, textAnswer } : x)));
+      return r;
+    } catch (e) {
+      if ((e as { status?: number }).status === 409) await load(); // section closed meanwhile
+      throw e;
+    }
+  };
+
   const go = (i: number) => {
     if (!current || i === idx) return;
     // Persist time spent on the question we're leaving. In practice, the clock stops at the answer:
@@ -263,6 +281,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   const isLastSection = state.current.order === state.sections.length - 1;
   const lowTime = remaining !== null && remaining < 60_000;
   const passage = current.view.passage;
+  const isCode = current.view.kind === "code";
 
   return (
     <div className={`flex h-screen flex-col bg-slate-100 ${isMock ? "select-none" : ""}`}>
@@ -351,7 +370,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
               </aside>
             )}
             <div className="flex-1 overflow-y-auto p-6">
-              <div className="mx-auto max-w-3xl">
+              <div className={`mx-auto ${isCode ? "max-w-6xl" : "max-w-3xl"}`}>
                 <div className="mb-4 flex items-center justify-between text-sm">
                   <span className="font-semibold text-slate-700">
                     Question {idx + 1} of {questions.length}
@@ -361,9 +380,13 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
                 {passage && (
                   <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4 text-[15px] leading-relaxed text-slate-700 lg:hidden">{passage}</div>
                 )}
-                <QuestionBody q={current.view} showPassage={false} />
+                {isCode ? (
+                  <CodeQuestion key={current.id} questionId={current.id} view={current.view} textAnswer={current.textAnswer} mock={!!isMock} run={runCode(current)} submit={submitCode(current)} />
+                ) : (
+                  <QuestionBody q={current.view} showPassage={false} />
+                )}
 
-                {current.view.kind === "mcq" ? (
+                {isCode ? null : current.view.kind === "mcq" ? (
                   <div className="mt-6 space-y-2.5" role="radiogroup">
                     {current.view.options.map((opt: string, i: number) => {
                       const chosen = current.chosenIndex === i;

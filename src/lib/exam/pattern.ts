@@ -38,7 +38,7 @@ export const INFOSYS_SE_PATTERN: SectionSpec[] = [
  * HirePro, 90 min, five sections each with its own timer (no going back), no negative marking.
  *
  *   English 13 Q (10 MCQ + 3 fill-ups) / 13 min   Reasoning 12 Q / 12 min   Quant 10 Q / 10 min
- *   Technical 30 Q / 30 min   Coding 2 Q (1 nugget + 1 program) / 25 min — not simulated here
+ *   Technical 30 Q / 30 min   Coding 2 Q (1 nugget + 1 program) / 25 min
  *
  * Topic weights per section mirror the questions reported from real papers:
  *  - English: error spotting, sentence correction, fill-ups, voice, para jumble, synonym/antonym,
@@ -49,6 +49,8 @@ export const INFOSYS_SE_PATTERN: SectionSpec[] = [
  *    interest, percentages, averages, mensuration. No data interpretation charts.
  *  - Technical: networking & cyber security dominate, then DBMS/SQL, programming & OOP,
  *    software testing, OS, cloud, computer fundamentals.
+ *  - Coding: one short "nugget" (arrays/strings/maths, the PYQ types) and one medium program, judged on
+ *    hidden tests in C++ or Java (the real test also allows C and Python). See lib/code/problems.ts.
  * Difficulty is easy to medium throughout, so the mock runs at the realistic (standard) tier.
  */
 export const DELOITTE_NLA_PATTERN: SectionSpec[] = [
@@ -71,6 +73,7 @@ export const DELOITTE_NLA_PATTERN: SectionSpec[] = [
     minutes: 30,
     topics: { "t-security": 5, "t-networks": 5, "t-dbms": 4, "t-programming": 4, "t-testing": 3, "t-os": 2, "t-cloud": 2, "t-fundamentals": 2 },
   },
+  { section: "coding", questions: 2, minutes: 25, topics: { "c-nugget": 1, "c-program": 1 } },
 ];
 
 /**
@@ -101,7 +104,7 @@ export const EXAMS = [
     short: "Deloitte NLA",
     pattern: DELOITTE_NLA_PATTERN,
     level: "realistic" as ExamLevel,
-    note: "The real test has a fifth section: coding (1 nugget + 1 program, 25 min, in C/C++/Java/Python). It is not simulated here, so practise easy array and string problems separately.",
+    note: "The last section is coding: one short problem and one medium one, 25 minutes, judged on hidden tests. Write C++ or Java here (the real test also allows C and Python). The reported cut-off is 1 of 2.",
   },
 ] as const;
 export type ExamId = (typeof EXAMS)[number]["id"];
@@ -118,6 +121,7 @@ export const PRACTICE_TARGETS: Partial<Record<SectionId, number>> = {
   pseudocode: 0.6,
   puzzle: 0.5,
   technical: 0.6,
+  coding: 0.5,
 };
 
 /** Auto-submit the mock after this many proctoring violations. */

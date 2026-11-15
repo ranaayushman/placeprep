@@ -16,8 +16,8 @@ RUN npm run build
 FROM node:22-bookworm-slim AS run
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
-# g++ for the C++ code runner (src/lib/code/runner.ts).
-RUN apt-get update && apt-get install -y --no-install-recommends g++ && rm -rf /var/lib/apt/lists/* \
+# g++ and a JDK for the code runner (src/lib/code/runner.ts).
+RUN apt-get update && apt-get install -y --no-install-recommends g++ default-jdk-headless && rm -rf /var/lib/apt/lists/* \
     && groupadd -r app && useradd -r -g app app
 COPY --from=build --chown=app:app /app/.next/standalone ./
 COPY --from=build --chown=app:app /app/.next/static ./.next/static

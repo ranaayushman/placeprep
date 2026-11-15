@@ -1,8 +1,8 @@
-export type SectionId = "reasoning" | "math" | "verbal" | "pseudocode" | "puzzle" | "technical" | "writing";
+export type SectionId = "reasoning" | "math" | "verbal" | "pseudocode" | "puzzle" | "technical" | "writing" | "coding";
 
 /** What the candidate sees. Safe to send to the browser. */
 export interface QuestionView {
-  kind: "mcq" | "essay";
+  kind: "mcq" | "essay" | "code";
   prompt: string;
   /** Optional monospace block (pseudocode, number series layout). */
   code?: string;
@@ -17,8 +17,19 @@ export interface QuestionView {
   options: string[];
   /** Essay only. */
   minWords?: number;
+  /** Code only: the problem spec the candidate sees (never the hidden tests). */
+  problem?: ProblemSpec;
   /** Set on community-contributed questions (shown as a badge; `author` is "First L."). */
   community?: { id: string; author: string };
+}
+
+export interface ProblemSpec {
+  id: string;
+  difficulty: string;
+  input: string;
+  output: string;
+  constraints: string;
+  samples: { input: string; output: string; note?: string }[];
 }
 
 /** Bar and line: one value per label for each series. Pie: one series of percentages (summing to 100). */

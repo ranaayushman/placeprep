@@ -4,22 +4,29 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import { RUN_MS, type Language, type RunStatus } from "./problems";
 
 /**
- * Compiles and runs one C++17 program with the system compiler (g++, or $CXX), in a throwaway
+ * Compiles and runs one C++17 (g++, or $CXX) or Java (javac/java, or $JAVA_HOME) program in a throwaway
  * directory, with a wall-clock limit and an output cap. The caller (actions.ts) gates who may use it.
  *
  * shortcut: no sandbox beyond timeouts and output caps; the program runs as the server user. Fine
  * for the owner's own practice; add a container or seccomp sandbox before opening it to students.
  */
-export type RunStatus = "ok" | "compile_error" | "runtime_error" | "timeout" | "output_limit";
+export type { RunStatus };
 export type RunResult = { status: RunStatus; stdout: string; stderr: string; timeMs: number };
 
 export const CODE_LIMIT = 64 * 1024;
 const OUTPUT_LIMIT = 64 * 1024;
 const COMPILE_MS = 15_000;
-const RUN_MS = 2_000;
 const CXX = process.env.CXX ?? "g++";
+const JAVA_BIN = process.env.JAVA_HOME ? `${process.env.JAVA_HOME}/bin/` : "";
+
+/** Per language: source file name, compile command and how to run it. */
+const LANG = {
+  cpp: { file: "main.cpp", compile: (dir: string) => [CXX, ["-O2", "-std=c++17", "-I", dir, "main.cpp", "-o", "main"]] as const, run: (dir: string) => [path.join(dir, "main"), []] as const },
+  java: { file: "Main.java", compile: () => [`${JAVA_BIN}javac`, ["-d", ".", "Main.java"]] as const, run: (dir: string) => [`${JAVA_BIN}java`, ["-Xmx256m", "-Xss64m", "-cp", dir, "Main"]] as const },
+};
 
 /** Apple clang has no <bits/stdc++.h>; this shim is put on the include path for every compile. */
 const BITS_STDCPP = `#pragma once
@@ -56,27 +63,30 @@ const BITS_STDCPP = `#pragma once
 const execFileP = promisify(execFile);
 const clip = (s: string) => (s.length > OUTPUT_LIMIT ? s.slice(0, OUTPUT_LIMIT) + "\n… output truncated" : s);
 
-/** Compiles `code`; on success returns the binary path inside `dir`. */
-async function compile(dir: string, code: string): Promise<{ bin: string } | { error: string }> {
-  await mkdir(path.join(dir, "bits"));
-  await writeFile(path.join(dir, "bits", "stdc++.h"), BITS_STDCPP);
-  await writeFile(path.join(dir, "main.cpp"), code);
-  const bin = path.join(dir, "main");
+/** Compiles `code` into `dir`; returns the compiler error text if it fails. */
+async function compile(lang: Language, dir: string, code: string): Promise<{ error: string } | null> {
+  if (lang === "cpp") {
+    await mkdir(path.join(dir, "bits"));
+    await writeFile(path.join(dir, "bits", "stdc++.h"), BITS_STDCPP);
+  }
+  await writeFile(path.join(dir, LANG[lang].file), code);
+  const [cmd, args] = LANG[lang].compile(dir);
   try {
-    await execFileP(CXX, ["-O2", "-std=c++17", "-I", dir, "main.cpp", "-o", bin], { cwd: dir, timeout: COMPILE_MS, maxBuffer: OUTPUT_LIMIT * 4 });
-    return { bin };
+    await execFileP(cmd, args, { cwd: dir, timeout: COMPILE_MS, maxBuffer: OUTPUT_LIMIT * 4 });
+    return null;
   } catch (e) {
     const err = e as { killed?: boolean; stderr?: string; code?: string | number; message: string };
     if (err.killed) return { error: "Compilation timed out." };
-    if (err.code === "ENOENT") return { error: `Compiler "${CXX}" is not installed on the server.` };
+    if (err.code === "ENOENT") return { error: `Compiler "${cmd}" is not installed on the server.` };
     return { error: clip(err.stderr?.replace(new RegExp(dir + "/", "g"), "") || err.message) };
   }
 }
 
-function execute(bin: string, stdin: string): Promise<RunResult> {
+function execute(lang: Language, dir: string, stdin: string): Promise<RunResult> {
   return new Promise((resolve) => {
     const t0 = Date.now();
-    const child = spawn(bin, [], { stdio: ["pipe", "pipe", "pipe"] });
+    const [cmd, args] = LANG[lang].run(dir);
+    const child = spawn(cmd, args, { cwd: dir, stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
     let timedOut = false;
@@ -84,7 +94,7 @@ function execute(bin: string, stdin: string): Promise<RunResult> {
     const timer = setTimeout(() => {
       timedOut = true;
       child.kill("SIGKILL");
-    }, RUN_MS);
+    }, RUN_MS[lang]);
     const collect = (set: (s: string) => void, get: () => string) => (chunk: Buffer) => {
       set(get() + chunk.toString());
       if (get().length > OUTPUT_LIMIT) {
@@ -110,14 +120,27 @@ function execute(bin: string, stdin: string): Promise<RunResult> {
   });
 }
 
+/** Same contract, served by the Go microservice (github.com/ranaayushman/placeprep-runner). Used when RUNNER_URL is set, e.g. on Vercel. */
+async function runRemote(lang: Language, code: string, inputs: string[]): Promise<RunResult[]> {
+  const res = await fetch(`${process.env.RUNNER_URL!.replace(/\/$/, "")}/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.RUNNER_TOKEN ?? ""}` },
+    body: JSON.stringify({ language: lang, code, inputs }),
+    signal: AbortSignal.timeout(60_000),
+  });
+  if (!res.ok) throw new Error(`runner ${res.status}: ${(await res.text()).trim()}`);
+  return ((await res.json()) as { results: RunResult[] }).results;
+}
+
 /** Compiles once, then runs the program on every input in order (stops early only on a compile error). */
-export async function runCpp(code: string, inputs: string[]): Promise<RunResult[]> {
-  const dir = await mkdtemp(path.join(tmpdir(), "placeprep-cpp-"));
+export async function runCode(lang: Language, code: string, inputs: string[]): Promise<RunResult[]> {
+  if (process.env.RUNNER_URL) return runRemote(lang, code, inputs);
+  const dir = await mkdtemp(path.join(tmpdir(), `placeprep-${lang}-`));
   try {
-    const built = await compile(dir, code);
-    if ("error" in built) return inputs.map(() => ({ status: "compile_error", stdout: "", stderr: built.error, timeMs: 0 }));
+    const failed = await compile(lang, dir, code);
+    if (failed) return inputs.map(() => ({ status: "compile_error", stdout: "", stderr: failed.error, timeMs: 0 }));
     const out: RunResult[] = [];
-    for (const input of inputs) out.push(await execute(built.bin, input));
+    for (const input of inputs) out.push(await execute(lang, dir, input));
     return out;
   } finally {
     await rm(dir, { recursive: true, force: true });

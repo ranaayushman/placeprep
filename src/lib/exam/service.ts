@@ -9,6 +9,11 @@ import { getExam } from "./exams";
 import { fingerprint, hardSlots, pickFresh, planTopics, scopedTopics, shuffle, type History, type MocksAgo } from "./plan";
 import { logEvent } from "@/lib/events";
 import { COMMUNITY_PREFIX, freshCommunityIds, isCommunityRef, loadPublished } from "@/lib/community/serve";
+import { judge } from "@/lib/code/judge";
+import { PROBLEM_BY_ID, type Language } from "@/lib/code/problems";
+import { runCode } from "@/lib/code/runner";
+import { CODE_ACCEPTED } from "@/lib/questions/code-problems";
+import type { QuestionView } from "@/lib/questions/types";
 
 export class ExamError extends Error {
   constructor(message: string, public status = 400) {
@@ -378,6 +383,47 @@ export async function saveAnswer(
   return attempt.mode === "PRACTICE" && patch.chosenIndex != null
     ? { feedback: { answerIndex: q.answerIndex, explanation: q.explanation } }
     : { feedback: null };
+}
+
+/** The coding question `questionId` of the attempt's open section, with its problem (hidden tests included). */
+async function loadCodeQuestion(attemptId: string, userId: string, questionId: string) {
+  const attempt = await loadOwned(attemptId, userId);
+  const { current } = await activeSection(attempt);
+  const [q] = await db.select().from(attemptQuestions).where(and(eq(attemptQuestions.id, questionId), eq(attemptQuestions.attemptId, attemptId)));
+  if (!q) throw new ExamError("Question not found", 404);
+  if (q.sectionOrder !== current) throw new ExamError("This section is closed", 409);
+  const view = JSON.parse(q.payload) as QuestionView;
+  const problem = view.kind === "code" && view.problem ? PROBLEM_BY_ID.get(view.problem.id) : undefined;
+  if (!problem) throw new ExamError("Not a coding question");
+  return { attempt, q, problem };
+}
+
+/** Runs the student's code on one custom input. Nothing is judged or saved. */
+export async function runCodeAnswer(attemptId: string, userId: string, input: { questionId: string; language: Language; code: string; stdin: string }) {
+  await loadCodeQuestion(attemptId, userId, input.questionId);
+  const [result] = await runCode(input.language, input.code, [input.stdin]);
+  return result;
+}
+
+/**
+ * Judges the code against every test of the problem and saves the verdict as the answer: chosenIndex
+ * CODE_ACCEPTED when all pass, 0 otherwise, so finalize() scores it like an MCQ. The latest submission
+ * counts. Hidden test details are revealed in practice only.
+ */
+export async function submitCodeAnswer(attemptId: string, userId: string, input: { questionId: string; language: Language; code: string }) {
+  const { attempt, q, problem } = await loadCodeQuestion(attemptId, userId, input.questionId);
+  const result = await judge(problem, input.language, input.code, { reveal: attempt.mode === "PRACTICE" });
+  const accepted = result.passed === result.total;
+  await db
+    .update(attemptQuestions)
+    .set({
+      chosenIndex: accepted ? CODE_ACCEPTED : 0,
+      textAnswer: JSON.stringify({ language: input.language, code: input.code, passed: result.passed, total: result.total }),
+      answeredAt: new Date(),
+      isCorrect: accepted,
+    })
+    .where(eq(attemptQuestions.id, q.id));
+  return { ...result, accepted };
 }
 
 export async function submitSection(attemptId: string, userId: string, sectionOrder: number) {

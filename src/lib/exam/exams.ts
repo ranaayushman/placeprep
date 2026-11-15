@@ -94,7 +94,7 @@ export async function removeMockAccess(mockId: string, email: string): Promise<v
   await db.delete(mockExamAccess).where(and(eq(mockExamAccess.mockId, mockId), eq(mockExamAccess.email, norm(email))));
 }
 
-export const MOCK_SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "technical", "writing"];
+export const MOCK_SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "technical", "writing", "coding"];
 export const MAX_MOCK_SECTIONS = 8;
 
 const sectionSchema = z.object({
