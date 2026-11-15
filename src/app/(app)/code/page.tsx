@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { PROBLEMS } from "@/lib/code/problems";
 import { SolvedMark } from "./SolvedMark";
 
 export const metadata = { title: "Code practice" };
 
 export default async function CodePage() {
-  await requireAdmin();
+  await requireUser();
   return (
     <div className="space-y-6">
       <div>

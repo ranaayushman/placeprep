@@ -10,6 +10,7 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/practice", label: "Practice" },
   { href: "/mock", label: "Mock Test" },
+  { href: "/code", label: "Code" },
   { href: "/history", label: "History" },
   { href: "/analytics", label: "Analytics" },
   { href: "/community", label: "Community" },
@@ -22,7 +23,7 @@ export function AppShell({ user, updates, children }: { user: SafeUser; updates:
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Logo />
           <nav className="flex gap-1 overflow-x-auto text-sm">
-            {(user.role === "ADMIN" ? [...NAV, { href: "/code", label: "Code" }, { href: "/admin", label: "Admin" }] : user.role === "MODERATOR" ? [...NAV, { href: "/admin", label: "Moderate" }] : NAV).map((n) => (
+            {(user.role === "ADMIN" ? [...NAV, { href: "/admin", label: "Admin" }] : user.role === "MODERATOR" ? [...NAV, { href: "/admin", label: "Moderate" }] : NAV).map((n) => (
               <Link key={n.href} href={n.href} className="whitespace-nowrap rounded-md px-3 py-1.5 font-medium text-muted hover:bg-brand-soft hover:text-deep">
                 {n.label}
               </Link>

@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { allTests, LANGUAGES, PROBLEM_BY_ID, verdict, type Language } from "@/lib/code/problems";
 import { CODE_LIMIT, runCode, type RunResult } from "@/lib/code/runner";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
@@ -13,9 +13,10 @@ type Fail = { error: string };
 const codeSchema = z.string().min(1, "Write some code first").max(CODE_LIMIT, "Code is too long");
 const langSchema = z.enum(Object.keys(LANGUAGES) as [Language, ...Language[]]);
 
-// The compiler runs on the server itself, so only the owner (admin) may use it. See runner.ts.
+// Student execution requires the isolated remote runner. The local runner executes as the server user.
 async function guard(): Promise<Fail | null> {
-  const user = await requireAdmin();
+  const user = await requireUser();
+  if (user.role !== "ADMIN" && !process.env.RUNNER_URL) return { error: "Code execution is unavailable until the secure runner is configured." };
   const rl = await rateLimit(`code:${user.id}`, LIMITS.code.limit, LIMITS.code.windowMs);
   return rl.ok ? null : { error: `Too many runs. Try again in ${rl.retryAfterSec}s.` };
 }

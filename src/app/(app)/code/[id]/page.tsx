@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { PROBLEMS } from "@/lib/code/problems";
 import { Workspace, type ProblemLink, type PublicProblem } from "./Workspace";
 
 export default async function ProblemPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin();
+  await requireUser();
   const { id } = await params;
   const i = PROBLEMS.findIndex((p) => p.id === id);
   if (i < 0) notFound();
