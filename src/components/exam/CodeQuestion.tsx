@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SubmitResult } from "@/lib/code/judge";
 import { LANGUAGES, parseCodeAnswer, RUN_MS, STARTER_CODE, verdict, type Language } from "@/lib/code/problems";
 import type { RunResult } from "@/lib/code/runner";
@@ -16,9 +16,7 @@ type Props = {
   submit: (language: Language, code: string) => Promise<SubmitResult & { accepted: boolean }>;
 };
 
-const dark = "rounded-md border border-slate-800 bg-slate-800/60 p-2 font-mono text-xs text-slate-100 outline-none focus:border-emerald-500/60";
-
-/** One coding question inside a test: statement on the left, a dark editor with Run / Submit on the right. */
+/** One coding question inside a test: statement on the left, a workspace-style editor on the right. */
 export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }: Props) {
   const p = view.problem!;
   const saved = parseCodeAnswer(textAnswer);
@@ -26,8 +24,10 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
   const key = `exam-code:${questionId}:${lang}`;
   const [code, setCode] = useState(saved?.code ?? STARTER_CODE.cpp);
   const [stdin, setStdin] = useState(p.samples[0]?.input ?? "");
+  const [bottom, setBottom] = useState<"testcase" | "result">("testcase");
   const [busy, setBusy] = useState<"run" | "submit" | null>(null);
   const [out, setOut] = useState<{ run?: RunResult; sub?: SubmitResult & { accepted: boolean }; error?: string } | null>(null);
+  const gutter = useRef<HTMLPreElement>(null);
 
   // Drafts survive a reload; the server only ever has the last submitted code.
   useEffect(() => {
@@ -41,6 +41,7 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
   const go = async (what: "run" | "submit") => {
     setBusy(what);
     setOut(null);
+    setBottom("result");
     try {
       setOut(what === "run" ? { run: await run(lang, code, stdin) } : { sub: await submit(lang, code) });
     } catch (e) {
@@ -51,77 +52,78 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
   };
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <article className="space-y-4 text-[15px] leading-relaxed text-slate-800">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{p.difficulty} · judged on hidden tests · C++ or Java</p>
-        <p>{view.prompt}</p>
-        <dl className="space-y-1.5 text-sm">
-          <div><dt className="inline font-semibold">Input: </dt><dd className="inline">{p.input}</dd></div>
-          <div><dt className="inline font-semibold">Output: </dt><dd className="inline">{p.output}</dd></div>
-          <div><dt className="inline font-semibold">Constraints: </dt><dd className="inline font-mono text-xs">{p.constraints}</dd></div>
-        </dl>
-        {p.samples.map((s, i) => (
-          <div key={i} className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
-            <p className="mb-2 font-semibold">Sample {i + 1}</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <pre className="overflow-x-auto rounded-md bg-slate-50 p-2 font-mono text-xs"><span className="text-slate-400">Input</span>{"\n"}{s.input}</pre>
-              <pre className="overflow-x-auto rounded-md bg-slate-50 p-2 font-mono text-xs"><span className="text-slate-400">Output</span>{"\n"}{s.output}</pre>
-            </div>
-            {s.note && <p className="mt-2 text-slate-600">{s.note}</p>}
+    <div className="grid gap-2 lg:grid-cols-2">
+      <article className="overflow-y-auto rounded-2xl border border-deep/10 bg-surface p-5 text-[15px] leading-7 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">{p.difficulty} · judged on hidden tests</p>
+            <h2 className="mt-1 text-xl font-bold text-deep">{view.prompt}</h2>
           </div>
-        ))}
-        {saved && (
-          <p className={`text-sm font-medium ${saved.passed === saved.total ? "text-emerald-700" : "text-amber-700"}`}>
-            Last submission ({LANGUAGES[saved.language]}): {saved.passed}/{saved.total} tests passed. You can submit again until the section ends.
-          </p>
-        )}
+          <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-medium text-deep">C++ / Java</span>
+        </div>
+        <div className="space-y-3">
+          <p><span className="font-semibold text-deep">Input:</span> {p.input}</p>
+          <p><span className="font-semibold text-deep">Output:</span> {p.output}</p>
+          {p.samples.map((s, i) => (
+            <div key={i}>
+              <p className="font-semibold text-deep">Example {i + 1}:</p>
+              <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-r-lg border-l-2 border-brand bg-canvas-deep p-3 font-mono text-sm leading-6">
+                <span className="font-semibold text-deep">Input:</span>{"\n"}{s.input.trimEnd()}{"\n"}<span className="font-semibold text-deep">Output:</span>{"\n"}{s.output.trimEnd()}
+                {s.note && <>{"\n"}<span className="font-semibold text-deep">Explanation:</span>{"\n"}{s.note}</>}
+              </pre>
+            </div>
+          ))}
+          <p><span className="font-semibold text-deep">Constraints:</span> <code className="font-mono text-sm">{p.constraints}</code></p>
+        </div>
+        {saved && <p className={`mt-5 text-sm font-medium ${saved.passed === saved.total ? "text-emerald-700" : "text-amber-700"}`}>Last submission ({LANGUAGES[saved.language]}): {saved.passed}/{saved.total} tests passed.</p>}
       </article>
 
-      <section className="space-y-2 rounded-xl bg-[#0d1117] p-3 text-slate-200 ring-1 ring-slate-800">
-        <div className="flex items-center gap-2 px-1 font-mono text-xs text-slate-400">
-          <span>{lang === "cpp" ? "main.cpp" : "Main.java"}</span>
-          <select value={lang} onChange={(e) => setLang(e.target.value as Language)} aria-label="Language" className="ml-auto rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-200">
+      <section className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl border border-deep/10 bg-surface shadow-sm">
+        <div className="flex shrink-0 items-center gap-2 border-b border-deep/10 px-3 py-2 text-xs text-muted">
+          <span className="font-semibold text-deep">{"</>"} Code</span>
+          <span className="font-mono">· {lang === "cpp" ? "main.cpp" : "Main.java"}</span>
+          <select value={lang} onChange={(e) => setLang(e.target.value as Language)} aria-label="Language" className="ml-auto rounded-md border border-slate-300 bg-white px-2 py-0.5 text-slate-700">
             {Object.entries(LANGUAGES).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
           </select>
           <span>· {RUN_MS[lang] / 1000} s limit</span>
+          <button type="button" onClick={() => update(STARTER_CODE[lang])} disabled={!!busy} title="Reset code" aria-label="Reset code" className="rounded p-1 hover:bg-brand-soft hover:text-deep">↺</button>
         </div>
-        <textarea
-          value={code}
-          onChange={(e) => update(e.target.value)}
-          onPaste={(e) => mock && e.preventDefault()}
-          onKeyDown={(e) => {
-            if (e.key !== "Tab") return; // Tab indents instead of leaving the editor
-            e.preventDefault();
-            const el = e.currentTarget;
-            const pos = el.selectionStart + 4;
-            update(code.slice(0, el.selectionStart) + "    " + code.slice(el.selectionEnd));
-            requestAnimationFrame(() => el.setSelectionRange(pos, pos));
-          }}
-          spellCheck={false}
-          rows={18}
-          aria-label={`${LANGUAGES[lang]} code`}
-          className="w-full resize-y rounded-lg border border-slate-800 bg-[#161b22] p-3 font-mono text-sm leading-6 text-emerald-100 caret-emerald-400 outline-none focus:border-emerald-500/60"
-        />
-        <label className="block text-xs text-slate-400">
-          Custom input for Run
-          <textarea value={stdin} onChange={(e) => setStdin(e.target.value)} rows={2} spellCheck={false} className={`mt-1 w-full ${dark}`} />
-        </label>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => go("run")} disabled={!!busy} className="rounded-md border border-slate-700 bg-slate-800 px-4 py-1.5 text-sm font-medium hover:bg-slate-700 disabled:opacity-50">{busy === "run" ? "Running…" : "▶ Run"}</button>
-          <button type="button" onClick={() => go("submit")} disabled={!!busy} className="rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50">{busy === "submit" ? "Judging…" : "Submit answer"}</button>
-          <button type="button" onClick={() => update(STARTER_CODE[lang])} disabled={!!busy} className="ml-auto text-xs text-slate-500 hover:text-slate-300">Reset code</button>
+        <div className="flex min-h-64 flex-1">
+          <pre ref={gutter} aria-hidden className="select-none overflow-hidden bg-canvas-deep py-3 pl-3 pr-2 text-right font-mono text-sm leading-6 text-slate-400">{Array.from({ length: code.split("\n").length }, (_, i) => i + 1).join("\n")}</pre>
+          <textarea
+            value={code}
+            onChange={(e) => update(e.target.value)}
+            onPaste={(e) => mock && e.preventDefault()}
+            onKeyDown={(e) => {
+              if (e.key !== "Tab") return;
+              e.preventDefault();
+              const el = e.currentTarget;
+              const pos = el.selectionStart + 4;
+              update(code.slice(0, el.selectionStart) + "    " + code.slice(el.selectionEnd));
+              requestAnimationFrame(() => el.setSelectionRange(pos, pos));
+            }}
+            onScroll={(e) => { if (gutter.current) gutter.current.scrollTop = e.currentTarget.scrollTop; }}
+            spellCheck={false}
+            aria-label={`${LANGUAGES[lang]} code`}
+            className="min-h-full flex-1 resize-none overflow-auto whitespace-pre bg-transparent p-3 font-mono text-sm leading-6 text-slate-900 caret-brand outline-none"
+          />
         </div>
-        {out?.error && <p role="alert" className="rounded-md border border-red-900 bg-red-950/60 px-3 py-2 text-sm text-red-300">{out.error}</p>}
-        {out?.run && (
-          <div className="space-y-1 rounded-lg border border-slate-800 bg-[#161b22] p-3 font-mono text-xs">
-            <p className={out.run.status === "ok" ? "text-emerald-400" : "text-red-400"}>{verdict(out.run)} · {out.run.timeMs} ms</p>
-            {out.run.stdout && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-black/40 p-2">{out.run.stdout}</pre>}
-            {out.run.stderr && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-red-950/50 p-2 text-red-300">{out.run.stderr}</pre>}
-          </div>
-        )}
-        {out?.sub && (
-          <div className="space-y-2 rounded-lg border border-slate-800 bg-[#161b22] p-3 font-mono text-xs">
-            <p className={`text-sm font-semibold ${out.sub.accepted ? "text-emerald-400" : "text-red-400"}`}>
+        <div className="flex shrink-0 gap-2 border-t border-deep/10 bg-canvas-deep px-3 py-2">
+          <button type="button" onClick={() => go("run")} disabled={!!busy} className="btn-secondary py-1.5">{busy === "run" ? "Running…" : "▶ Run"}</button>
+          <button type="button" onClick={() => go("submit")} disabled={!!busy} className="btn-primary py-1.5">{busy === "submit" ? "Judging…" : "⬆ Submit"}</button>
+        </div>
+        <nav className="flex shrink-0 border-y border-deep/10 px-2">
+          <button type="button" className={`border-b-2 px-3 py-2 text-sm font-medium ${bottom === "testcase" ? "border-brand text-deep" : "border-transparent text-muted"}`} onClick={() => setBottom("testcase")}>☑ Testcase</button>
+          <button type="button" className={`border-b-2 px-3 py-2 text-sm font-medium ${bottom === "result" ? "border-brand text-deep" : "border-transparent text-muted"}`} onClick={() => setBottom("result")}>{">_"} Test Result</button>
+        </nav>
+        <div className="max-h-56 min-h-28 overflow-y-auto p-3 text-sm">
+          {bottom === "testcase" ? (
+            <label className="block text-xs text-muted">Input for Run<textarea value={stdin} onChange={(e) => setStdin(e.target.value)} rows={3} spellCheck={false} className="input mt-1 font-mono" /></label>
+          ) : out?.error ? <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">{out.error}</p> : out?.run ? (
+            <div className="space-y-1 font-mono text-xs"><p className={out.run.status === "ok" ? "text-emerald-700" : "text-red-700"}>{verdict(out.run)} · {out.run.timeMs} ms</p>{out.run.stdout && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-canvas-deep p-2">{out.run.stdout}</pre>}{out.run.stderr && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-red-700">{out.run.stderr}</pre>}</div>
+          ) : out?.sub ? (
+            <div className="space-y-2 font-mono text-xs">
+            <p className={`text-sm font-semibold ${out.sub.accepted ? "text-emerald-700" : "text-red-700"}`}>
               {out.sub.accepted ? "Accepted" : (verdict(out.sub.cases.find((c) => !c.passed)!, out.sub.cases.find((c) => !c.passed)!.expected || undefined))} · {out.sub.passed}/{out.sub.total} tests passed
             </p>
             <ul className="flex flex-wrap gap-1.5">
@@ -131,14 +133,15 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
             </ul>
             {out.sub.cases.filter((c) => !c.passed && !c.hidden).slice(0, 1).map((c, i) => (
               <div key={i} className="grid gap-2 sm:grid-cols-3">
-                <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-black/40 p-2"><span className="text-slate-500">Input</span>{"\n"}{c.input}</pre>
-                <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-black/40 p-2"><span className="text-slate-500">Expected</span>{"\n"}{c.expected}</pre>
-                <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-red-950/50 p-2 text-red-300"><span className="text-slate-500">Got</span>{"\n"}{c.stdout}{c.stderr}</pre>
+                <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-canvas-deep p-2"><span className="text-slate-500">Input</span>{"\n"}{c.input}</pre>
+                <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-canvas-deep p-2"><span className="text-slate-500">Expected</span>{"\n"}{c.expected}</pre>
+                <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-red-700"><span className="text-slate-500">Got</span>{"\n"}{c.stdout}{c.stderr}</pre>
               </div>
             ))}
-            {out.sub.cases[0]?.status === "compile_error" && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-red-950/50 p-2 text-red-300">{out.sub.cases[0].stderr}</pre>}
-          </div>
-        )}
+            {out.sub.cases[0]?.status === "compile_error" && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-red-700">{out.sub.cases[0].stderr}</pre>}
+            </div>
+          ) : <p className="flex h-24 items-center justify-center text-muted">Run your code to see the result.</p>}
+        </div>
       </section>
     </div>
   );
