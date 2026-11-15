@@ -73,3 +73,19 @@ describe.skipIf(!hasCompiler)("Deloitte NLA mock: coding section", () => {
     expect([r2.isCorrect, r2.chosenIndex, r2.textAnswer]).toEqual([null, null, null]);
   }, 120_000);
 });
+
+describe("Cognizant GenC mock", () => {
+  it("builds a mixed technical round: 2 coding problems first, then 30 MCQs", async () => {
+    const id = await createMock(userId, { exam: "cognizant-genc", includeWriting: false });
+    for (let i = 0; i < 3; i++) await submitSection(id, userId, i);
+    const s = await getExamState(id, userId);
+    if (s.status !== "IN_PROGRESS") throw new Error("expected in progress");
+    expect(s.current.section).toBe("technical");
+    expect(s.current.questions).toHaveLength(32);
+    const kinds = s.current.questions.map((q) => q.view.kind);
+    expect(kinds.slice(0, 2)).toEqual(["code", "code"]);
+    expect(kinds.slice(2).every((k) => k === "mcq")).toBe(true);
+    const ids = new Set(s.current.questions.map((q) => q.id));
+    expect(ids.size).toBe(32);
+  });
+});

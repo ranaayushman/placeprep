@@ -38,4 +38,21 @@ using namespace std;int main(){string s;cin>>s;int n=s.size(),best=1;for(int i=0
 using namespace std;int main(){int n,k;cin>>n>>k;vector<long long>a(n);for(auto&x:a)cin>>x;sort(a.rbegin(),a.rend());cout<<a[k-1]<<"\\n";}`,
   "count-inversions": `#include <bits/stdc++.h>
 using namespace std;int main(){int n;cin>>n;vector<long long>a(n);for(auto&x:a)cin>>x;long long c=0;for(int i=0;i<n;i++)for(int j=i+1;j<n;j++)if(a[i]>a[j])c++;cout<<c<<"\\n";}`,
+  // GenC pool
+  "char-frequency": `#include <bits/stdc++.h>
+using namespace std;int main(){string s;cin>>s;map<char,int>c;string order;for(char ch:s){if(!c.count(ch))order+=ch;c[ch]++;}for(char ch:order)cout<<ch<<" "<<c[ch]<<"\\n";}`,
+  "string-match": `#include <bits/stdc++.h>
+using namespace std;int main(){string t,p;cin>>t>>p;int c=0;for(size_t i=0;i+p.size()<=t.size();i++)if(t.compare(i,p.size(),p)==0)c++;cout<<c<<"\\n";}`,
+  "first-non-repeating": `#include <bits/stdc++.h>
+using namespace std;int main(){string s;cin>>s;int c[26]={0};for(char ch:s)c[ch-'a']++;for(char ch:s)if(c[ch-'a']==1){cout<<ch<<"\\n";return 0;}cout<<-1<<"\\n";}`,
+  "missing-number": `#include <bits/stdc++.h>
+using namespace std;int main(){long long n,x,s=0;cin>>n;while(cin>>x)s+=x;cout<<n*(n+1)/2-s<<"\\n";}`,
+  "merge-sorted": `#include <bits/stdc++.h>
+using namespace std;int main(){int n;cin>>n;vector<long long>a(n);for(auto&x:a)cin>>x;int m;cin>>m;vector<long long>b(m);for(auto&x:b)cin>>x;a.insert(a.end(),b.begin(),b.end());sort(a.begin(),a.end());for(size_t i=0;i<a.size();i++)cout<<(i?" ":"")<<a[i];cout<<"\\n";}`,
+  "symmetric-matrix": `#include <bits/stdc++.h>
+using namespace std;int main(){int n;cin>>n;vector<vector<long long>>a(n,vector<long long>(n));for(auto&r:a)for(auto&x:r)cin>>x;for(int i=0;i<n;i++)for(int j=0;j<n;j++)if(a[i][j]!=a[j][i]){cout<<"NO\\n";return 0;}cout<<"YES\\n";}`,
+  "pairs-target-sum": `#include <bits/stdc++.h>
+using namespace std;int main(){int n;cin>>n;vector<long long>a(n);for(auto&x:a)cin>>x;long long t,c=0;cin>>t;for(int i=0;i<n;i++)for(int j=i+1;j<n;j++)if(a[i]+a[j]==t)c++;cout<<c<<"\\n";}`,
+  "matrix-row-col-max": `#include <bits/stdc++.h>
+using namespace std;int main(){int n,m;cin>>n>>m;vector<long long>r(n,0),c(m,0);for(int i=0;i<n;i++)for(int j=0;j<m;j++){long long x;cin>>x;r[i]+=x;c[j]+=x;}cout<<*max_element(r.begin(),r.end())+*max_element(c.begin(),c.end())<<"\\n";}`,
 };

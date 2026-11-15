@@ -77,6 +77,34 @@ export const DELOITTE_NLA_PATTERN: SectionSpec[] = [
 ];
 
 /**
+ * Cognizant GenC common assessment (GenC / GenC Pro / GenC Next share one paper; the technical score
+ * decides the track). Cognizant publishes only the round names; sizes follow candidate reports from the
+ * Nov–Dec 2025 drive (GeeksforGeeks, PrepInsta) and PlacementPreparation (Nov 2026):
+ *
+ *   Aptitude ~80 min: Quant 25 / 30 min, Logical 30 / 35 min, Verbal 15 / 15 min
+ *   Technical 120 min, one timer, Java cluster: 2 coding + 20 code-debugging MCQs + 10 tech MCQs (Java, SQL)
+ *
+ * Not simulated yet: the 60-min AI communication round (speaking), the game-based puzzles inside aptitude,
+ * and the 2 SQL questions of the technical round. No negative marking.
+ */
+export const COGNIZANT_GENC_PATTERN: SectionSpec[] = [
+  {
+    section: "math",
+    questions: 25,
+    minutes: 30,
+    topics: { "m-profit": 3, "m-timework": 3, "m-speed": 3, "m-percent": 3, "m-number": 2, "m-average": 2, "m-ratio": 2, "m-interest": 2, "m-pnc": 1, "m-prob": 1, "m-progression": 1, "m-mensuration": 1, "m-algebra": 1 },
+  },
+  {
+    section: "reasoning",
+    questions: 30,
+    minutes: 35,
+    topics: { "r-series": 4, "r-coding": 4, "r-blood": 3, "r-direction": 3, "r-seating": 3, "r-syllogism": 3, "r-ds": 2, "r-odd": 2, "r-ranking": 2, "r-alpha": 2, "r-statement": 2 },
+  },
+  { section: "verbal", questions: 15, minutes: 15, topics: { "v-correction": 4, "v-fill": 4, "v-vocab": 3, "v-error": 2, "v-jumble": 2 } },
+  { section: "technical", questions: 32, minutes: 120, topics: { "c-genc": 2, "t-debug": 20, "t-java": 6, "t-dbms": 4 } },
+];
+
+/**
  * Difficulty of a mock: the share of each section's questions served from the hard tier
  * (see lib/questions/hard.ts), drawn at random within the range for every section of every mock.
  * Topics without a hard tier always stay standard, so a section can fall short of the range until
@@ -105,6 +133,15 @@ export const EXAMS = [
     pattern: DELOITTE_NLA_PATTERN,
     level: "realistic" as ExamLevel,
     note: "The last section is coding: one short problem and one medium one, 25 minutes, judged on hidden tests. Write C++ or Java here (the real test also allows C and Python). The reported cut-off is 1 of 2.",
+  },
+  {
+    id: "cognizant-genc",
+    company: "Cognizant",
+    name: "GenC · GenC Pro · GenC Next (common assessment)",
+    short: "Cognizant GenC",
+    pattern: COGNIZANT_GENC_PATTERN,
+    level: "realistic" as ExamLevel,
+    note: "Reported 2025–26 pattern. Aptitude first, then one 120-minute technical round (Java cluster): 2 coding problems judged on hidden tests, 20 code-debugging MCQs and 10 Java/SQL MCQs. The AI communication round, the game-based puzzles and the 2 SQL queries are not simulated yet.",
   },
 ] as const;
 export type ExamId = (typeof EXAMS)[number]["id"];

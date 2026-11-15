@@ -9,6 +9,9 @@ import type { Question, Topic } from "./types";
  */
 export const CODE_ACCEPTED = 1;
 
+/** Existing problems that also fit the GenC pool. */
+const GENC_EXTRA = new Set(["reverse-words", "second-largest", "palindrome", "kth-largest"]);
+
 const toQuestion = (p: Problem): Question => ({
   kind: "code",
   prompt: p.statement,
@@ -18,12 +21,14 @@ const toQuestion = (p: Problem): Question => ({
   explanation: "Accepted when the program prints the expected output for every hidden test within the time limit.",
 });
 
-const topic = (id: string, label: string, tier: Problem["tier"], targetSec: number): Topic => {
-  const pool = PROBLEMS.filter((p) => p.tier === tier);
+const topic = (id: string, label: string, pick: (p: Problem) => boolean, targetSec: number): Topic => {
+  const pool = PROBLEMS.filter(pick);
   return { id, section: "coding", label, weight: 1, targetSec, poolSize: pool.length, generate: (seed) => toQuestion(pool[seed % pool.length]) };
 };
 
 export const codingTopics: Topic[] = [
-  topic("c-nugget", "Coding nugget (short problem)", "nugget", 600),
-  topic("c-program", "Coding program (medium problem)", "program", 900),
+  topic("c-nugget", "Coding nugget (short problem)", (p) => p.tier === "nugget", 600),
+  topic("c-program", "Coding program (medium problem)", (p) => p.tier === "program", 900),
+  // Cognizant GenC technical round: string and array basics (character frequency, string matching, …).
+  topic("c-genc", "Coding (strings & arrays)", (p) => p.tier === "genc" || GENC_EXTRA.has(p.id), 1200),
 ];

@@ -2,7 +2,7 @@ import "server-only";
 import { randomInt } from "node:crypto";
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { attemptQuestions, attempts, attemptSections, db, type Attempt, type AttemptSection } from "@/db";
-import { generate, SECTION_LABELS, TOPIC_BY_ID, toView, topicsFor, type SectionId, type Topic } from "@/lib/questions";
+import { generate, SECTION_LABELS, TOPIC_BY_ID, TOPICS, toView, topicsFor, type SectionId, type Topic } from "@/lib/questions";
 import { RC_GROUP, RC_PASSAGES } from "@/lib/questions/verbal";
 import { HARD_SHARE_BY_LEVEL, LEFT_AFTER_MS, MAX_VIOLATIONS, SUBMIT_GRACE_MS } from "./pattern";
 import { getExam } from "./exams";
@@ -152,7 +152,13 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
     } else {
       // Mixed topics, every topic covered (or rotated in when there are fewer slots than topics), no repeats.
       // Normal mock: 30–50% hard. Hard mock: 70–80% hard (where topics have a hard tier).
-      const ts = planTopics(scopedTopics(topicsFor(spec.section), spec.topics), spec.questions, history.mocksAgo);
+      // A section that names its topics may draw from any section (GenC's technical round mixes coding
+      // problems with MCQs). Weights that add up to the question count are exact counts; coding problems
+      // then come first, as in a real multi-part paper, and the MCQs are shuffled.
+      const scoped = scopedTopics(spec.topics ? TOPICS : topicsFor(spec.section), spec.topics);
+      const exact = !!spec.topics && scoped.reduce((a, t) => a + t.weight, 0) === spec.questions;
+      const expanded = scoped.flatMap((t) => Array.from({ length: t.weight }, () => t));
+      const ts = exact ? [...expanded.filter((t) => t.section === "coding"), ...shuffle(expanded.filter((t) => t.section !== "coding"))] : planTopics(scoped, spec.questions, history.mocksAgo);
       const hs = hardSlots(ts, hardShare());
       ts.forEach((t, i) => refs.push(pickFresh(t, history, taken, hs[i])));
     }
