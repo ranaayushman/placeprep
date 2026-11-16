@@ -144,10 +144,11 @@ describe("practice", () => {
 
   it("avoids repeating finite-bank items until the bank is exhausted", async () => {
     const { TOPIC_BY_ID } = await import("@/lib/questions");
-    const pool = TOPIC_BY_ID.get("v-jumble")!.poolSize!;
+    // Standard and hard items come from separate banks, so tier is part of an item's identity.
+    const t = TOPIC_BY_ID.get("v-jumble")!;
     const id = await createPractice(userId, { topicIds: ["v-jumble"], count: 10, timed: false });
     const rows = await db.select().from(attemptQuestions).where(eq(attemptQuestions.attemptId, id));
-    const items = rows.map((r) => Number(r.ref.split(":")[1]) % pool);
+    const items = rows.map((r) => { const [, seed, tier] = r.ref.split(":"); return `${tier ?? ""}:${Number(seed) % (tier ? t.hardPoolSize! : t.poolSize!)}`; });
     expect(new Set(items).size).toBe(10);
   });
 });

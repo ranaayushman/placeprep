@@ -65,4 +65,6 @@ export interface Topic {
   generate: (seed: number) => Question;
   /** Hard tier (multi-step, trap distractors), referenced as "<topic>:<seed>:h". Optional per topic. */
   hard?: (seed: number) => Question;
+  /** Size of a static hard bank (see lib/questions/genc-hard.ts), when the hard tier is one. */
+  hardPoolSize?: number;
 }

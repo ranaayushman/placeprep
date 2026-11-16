@@ -123,8 +123,9 @@ export const COGNIZANT_GENC_PYTHON_PATTERN: SectionSpec[] = [
  * Topics without a hard tier always stay standard, so a section can fall short of the range until
  * more topics get one.
  */
-export type ExamLevel = "realistic" | "normal" | "hard";
-export const HARD_SHARE_BY_LEVEL: Record<ExamLevel, readonly [min: number, max: number]> = { realistic: [0, 0], normal: [0.3, 0.5], hard: [0.7, 0.8] };
+/** "max" (every question from the hard tier where one exists) is for built-in mocks only; the admin form offers the other three. */
+export type ExamLevel = "realistic" | "normal" | "hard" | "max";
+export const HARD_SHARE_BY_LEVEL: Record<ExamLevel, readonly [min: number, max: number]> = { realistic: [0, 0], normal: [0.3, 0.5], hard: [0.7, 0.8], max: [1, 1] };
 
 /** Exams students can take as full mocks. Add an entry when a new company's pattern exists. */
 export const EXAMS = [
@@ -153,8 +154,9 @@ export const EXAMS = [
     name: "GenC · GenC Pro · GenC Next — Java cluster",
     short: "Cognizant GenC (Java)",
     pattern: COGNIZANT_GENC_PATTERN,
-    level: "realistic" as ExamLevel,
-    note: "Reported 2025–26 pattern. Aptitude first, then one 120-minute technical round for the Java + SQL cluster: 2 coding problems and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs (Java, C, JavaScript, SQL) and 10 Java/SQL MCQs. A 50-minute game round (Geo-Sudo, Switch, Digit and Motion challenges) sits between aptitude and technical. The AI communication round and the Grid and Inductive games are not simulated yet.",
+    // Deliberately above the real paper (1.5–2×): most questions come from the hard tier.
+    level: "hard" as ExamLevel,
+    note: "Reported 2025–26 pattern, pitched 1.5–2× harder than the real paper so the real one feels easy. Aptitude first, then one 120-minute technical round for the Java + SQL cluster: 2 coding problems and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs (Java, C, JavaScript, SQL) and 10 Java/SQL MCQs. A 50-minute game round (Geo-Sudo, Switch, Digit and Motion challenges) sits between aptitude and technical. The AI communication round and the Grid and Inductive games are not simulated yet.",
   },
   {
     id: "cognizant-genc-python",
@@ -162,26 +164,26 @@ export const EXAMS = [
     name: "GenC · GenC Pro · GenC Next — Python cluster",
     short: "Cognizant GenC (Python)",
     pattern: COGNIZANT_GENC_PYTHON_PATTERN,
-    level: "realistic" as ExamLevel,
-    note: "Same aptitude and game rounds, then the technical round for the Python + SQL + cloud cluster: 2 coding problems (solve them in Python) and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs (Python, C, JavaScript, SQL) and 10 Python/SQL/cloud MCQs.",
+    level: "hard" as ExamLevel,
+    note: "Pitched 1.5–2× harder than the real paper. Same aptitude and game rounds, then the technical round for the Python + SQL + cloud cluster: 2 coding problems (solve them in Python) and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs (Python, C, JavaScript, SQL) and 10 Python/SQL/cloud MCQs.",
   },
   {
     id: "cognizant-genc-hard",
     company: "Cognizant",
-    name: "GenC · GenC Pro · GenC Next — Java cluster (Hard)",
-    short: "Cognizant GenC (Java) Hard",
+    name: "GenC · GenC Pro · GenC Next — Java cluster (Extreme)",
+    short: "Cognizant GenC (Java) Extreme",
     pattern: COGNIZANT_GENC_PATTERN,
-    level: "hard" as ExamLevel,
-    note: "Hard mode: same pattern and timers as the Java mock, but most aptitude and game questions come from the hard tier (multi-step, trap options, bigger grids and mazes). Aim to clear this and the real paper feels easy.",
+    level: "max" as ExamLevel,
+    note: "Extreme mode: same pattern and timers as the Java mock, but every aptitude, game, verbal and technical MCQ comes from the hard tier (multi-step, trap options, bigger grids and mazes). Clear this and the real paper feels easy.",
   },
   {
     id: "cognizant-genc-python-hard",
     company: "Cognizant",
-    name: "GenC · GenC Pro · GenC Next — Python cluster (Hard)",
-    short: "Cognizant GenC (Python) Hard",
+    name: "GenC · GenC Pro · GenC Next — Python cluster (Extreme)",
+    short: "Cognizant GenC (Python) Extreme",
     pattern: COGNIZANT_GENC_PYTHON_PATTERN,
-    level: "hard" as ExamLevel,
-    note: "Hard mode: same pattern and timers as the Python mock, with most aptitude and game questions from the hard tier.",
+    level: "max" as ExamLevel,
+    note: "Extreme mode: same pattern and timers as the Python mock, with every MCQ from the hard tier.",
   },
 ] as const;
 export type ExamId = (typeof EXAMS)[number]["id"];

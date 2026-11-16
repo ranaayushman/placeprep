@@ -362,6 +362,17 @@ export const mockExamAccess = pgTable(
   (t) => [primaryKey({ columns: [t.mockId, t.email] })],
 );
 
+/**
+ * Exams the admin features in the dashboard carousel, in display order. `examId` is a built-in exam id
+ * (lib/exam/pattern.ts) or a mock_exams id, so there is no foreign key; unknown or unpublished ids are skipped.
+ */
+export const featuredExams = pgTable("featured_exams", {
+  examId: text("exam_id").primaryKey(),
+  position: integer("position").notNull(),
+  addedBy: text("added_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: now("created_at"),
+});
+
 /** Reports on built-in bank questions (community questions use question_reports). `ref` is "topic:seed". */
 export const bankReports = pgTable(
   "bank_reports",

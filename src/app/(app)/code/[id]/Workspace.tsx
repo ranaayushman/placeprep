@@ -23,7 +23,7 @@ const chip = (on: boolean) => `rounded-md px-2.5 py-1 text-xs font-medium ${on ?
  */
 export type ProblemLink = Pick<Problem, "id" | "title" | "difficulty">;
 
-export function Workspace({ problem: p, index, problems, prev, next }: { problem: PublicProblem; index: number; problems: ProblemLink[]; prev?: string; next?: string }) {
+export function Workspace({ problem: p, index, problems, prev, next, back = { href: "/code", label: "All problems" } }: { problem: PublicProblem; index: number; problems: ProblemLink[]; prev?: string; next?: string; back?: { href: string; label: string } }) {
   const total = problems.length;
   const langs = languagesFor(p);
   const [lang, setLang] = useState<Language>(langs[0]);
@@ -109,6 +109,7 @@ export function Workspace({ problem: p, index, problems, prev, next }: { problem
       <header className="flex h-14 shrink-0 items-center gap-1 whitespace-nowrap border-b border-deep/10 bg-white/90 px-3 text-sm backdrop-blur">
         <Link href="/dashboard" aria-label="PlacePrep home" className="mr-1 shrink-0"><img src="/placeprep-icon.svg" alt="" className="h-8 w-8" /></Link>
         <button type="button" onClick={openDrawer} className="rounded-md px-2 py-1.5 font-medium text-muted hover:bg-brand-soft hover:text-deep">☰ <span className="hidden sm:inline">Problem </span>List</button>
+        <Link href={back.href} className="hidden rounded-md px-2 py-1.5 font-medium text-muted hover:bg-brand-soft hover:text-deep md:inline">← {back.label}</Link>
         <Link href={prev ? `/code/${prev}` : "#"} aria-disabled={!prev} aria-label="Previous problem" className={navBtn}>‹</Link>
         <Link href={next ? `/code/${next}` : "#"} aria-disabled={!next} aria-label="Next problem" className={navBtn}>›</Link>
         <div className="mx-auto flex gap-1">
@@ -120,7 +121,7 @@ export function Workspace({ problem: p, index, problems, prev, next }: { problem
 
       <dialog ref={drawer} className="m-0 h-full max-h-none w-80 max-w-[85vw] overflow-y-auto border-r border-deep/10 bg-surface p-0 text-slate-900 shadow-xl backdrop:bg-deep/30" aria-label="Problem list">
         <div className="flex items-center justify-between border-b border-deep/10 px-4 py-3">
-          <Link href="/code" className="font-semibold text-deep hover:underline" onClick={() => drawer.current?.close()}>All problems</Link>
+          <Link href={back.href} className="font-semibold text-deep hover:underline" onClick={() => drawer.current?.close()}>{back.label}</Link>
           <button type="button" onClick={() => drawer.current?.close()} aria-label="Close" className="rounded-md px-2 py-1 text-muted hover:bg-brand-soft hover:text-deep">✕</button>
         </div>
         <ul className="divide-y divide-deep/10 text-sm">

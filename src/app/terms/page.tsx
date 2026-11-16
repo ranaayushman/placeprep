@@ -132,7 +132,7 @@ export default function TermsPage() {
               <strong>PlacePrep is an independent educational platform.</strong>
             </p>
             <p className="leading-relaxed text-slate-700">
-              PlacePrep is not affiliated with, sponsored by, endorsed by, or in any way associated with Infosys Limited, Deloitte Touche Tohmatsu Limited, or any other corporate entity, recruitment partner, or assessment vendor mentioned on this website.
+              PlacePrep is not affiliated with, sponsored by, endorsed by, or in any way associated with Infosys Limited, Deloitte Touche Tohmatsu Limited, Cognizant Technology Solutions Corporation, or any other corporate entity, recruitment partner, or assessment vendor mentioned on this website.
             </p>
             <p className="leading-relaxed text-slate-700">
               All company names, trademarks, service marks, exam patterns, and brand identifiers referenced on PlacePrep are the property of their respective trademark owners and are used strictly for nominative, educational, and descriptive identification purposes.

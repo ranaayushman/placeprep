@@ -115,17 +115,20 @@ export function pickFresh(topic: Topic, history: History, taken: Set<string>, ha
   const gen = tier ? topic.hard! : topic.generate;
   const prints = history.prints.get(topic.id) ?? new Set<string>();
   history.prints.set(topic.id, prints);
-  if (topic.poolSize) {
+  // A static hard bank has its own size; otherwise the hard tier shares the standard bank's indices.
+  const size = tier ? (topic.hardPoolSize ?? topic.poolSize) : topic.poolSize;
+  if (size) {
     // Finite bank: never repeat an item inside this attempt; prefer items this student has not seen.
-    const all = Array.from({ length: topic.poolSize }, (_, i) => i);
-    const free = all.filter((i) => !taken.has(`${topic.id}:${i}`));
+    const key = (i: number) => `${topic.id}${tier}:${i}`;
+    const all = Array.from({ length: size }, (_, i) => i);
+    const free = all.filter((i) => !taken.has(key(i)));
     const unseen = free.filter((i) => !prints.has(fingerprint(toView(gen(i)))));
     const pool = unseen.length ? unseen : free.length ? free : all;
     const index = pool[randomInt(0, pool.length)];
-    taken.add(`${topic.id}:${index}`);
+    taken.add(key(index));
     prints.add(fingerprint(toView(gen(index))));
     // Same bank item, different seed, so option order is reshuffled on repeats.
-    return `${topic.id}:${index + topic.poolSize * randomInt(0, 10_000)}${tier}`;
+    return `${topic.id}:${index + size * randomInt(0, 10_000)}${tier}`;
   }
   let seed = pickSeed(topic, history.seen, taken);
   for (let i = 1; i < FRESH_TRIES; i++) {

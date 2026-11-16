@@ -6,6 +6,8 @@
  * class monitor, string alternation); the program pool follows the medium ones they list (K set bits,
  * odd-sum subarrays, longest palindromic substring, Kth largest, inversions). Every sample is also a hidden test.
  */
+import { DSA_PROBLEMS } from "./dsa";
+
 export type Language = "cpp" | "java" | "python" | "sql";
 export const LANGUAGES: Record<Language, string> = { cpp: "C++17", java: "Java", python: "Python 3", sql: "SQL (SQLite)" };
 /** Wall-clock limit per run; the JVM needs start-up time. */
@@ -16,7 +18,7 @@ export type Problem = {
   title: string;
   difficulty: "Easy" | "Medium";
   /** Deloitte NLA serves one "coding nugget" (short, function-level) and one fuller "program" per paper. */
-  tier: "nugget" | "program" | "genc" | "sql";
+  tier: "nugget" | "program" | "genc" | "sql" | "dsa";
   tags: string[];
   statement: string;
   input: string;
@@ -75,7 +77,7 @@ export const normalizeOutput = (s: string) =>
     .join("\n")
     .replace(/\n+$/, "");
 
-export const PROBLEMS: Problem[] = [
+const PLACEMENT_PROBLEMS: Problem[] = [
   {
     id: "move-zeros",
     title: "Move the empty packets to the end",
@@ -685,6 +687,9 @@ export const PROBLEMS: Problem[] = [
     ],
   },
 ];
+
+/** Placement-style problems first, then the personal DSA track (lib/code/dsa.ts). */
+export const PROBLEMS: Problem[] = [...PLACEMENT_PROBLEMS, ...DSA_PROBLEMS];
 
 export type RunStatus = "ok" | "compile_error" | "runtime_error" | "timeout" | "output_limit";
 const STATUS: Record<RunStatus, string> = { ok: "Accepted", compile_error: "Compile Error", runtime_error: "Runtime Error", timeout: "Time Limit Exceeded", output_limit: "Output Limit Exceeded" };

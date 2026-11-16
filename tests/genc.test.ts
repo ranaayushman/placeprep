@@ -17,7 +17,8 @@ describe("Cognizant GenC pattern", () => {
       ["technical", 34, 120],
     ]);
     expect(EXAMS.find((e) => e.id === "cognizant-genc")).toBeTruthy();
-    expect(EXAMS.find((e) => e.id === "cognizant-genc-hard")?.level).toBe("hard");
+    expect(EXAMS.find((e) => e.id === "cognizant-genc")?.level).toBe("hard");
+    expect(EXAMS.find((e) => e.id === "cognizant-genc-hard")?.level).toBe("max");
   });
 
   it("names topics that exist, with weights adding up to the section size", () => {

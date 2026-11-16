@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
-import { listExams, staffMockExams } from "@/lib/exam/exams";
+import { featuredExamIds, listExams, staffMockExams } from "@/lib/exam/exams";
+import { saveFeaturedAction } from "./actions";
 import { SECTION_LABELS, type SectionId } from "@/lib/questions";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ const summary = (p: readonly { section: string; questions: number; minutes: numb
 export default async function MockExamsPage({ searchParams }: { searchParams: Promise<{ msg?: string }> }) {
   const me = await requireStaff();
   const { msg } = await searchParams;
-  const [rows, all] = await Promise.all([staffMockExams(), listExams()]);
+  const [rows, all, featured] = await Promise.all([staffMockExams(), listExams(), featuredExamIds()]);
   const builtIn = all.filter((e) => e.builtIn);
   return (
     <div className="space-y-5">
@@ -25,6 +26,30 @@ export default async function MockExamsPage({ searchParams }: { searchParams: Pr
         <Link href="/admin/mocks/new" className="btn-primary">New mock</Link>
       </div>
       {msg && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{msg}</p>}
+      {me.role === "ADMIN" && (
+        <form action={saveFeaturedAction} className="card space-y-3">
+          <div>
+            <h2 className="font-semibold">Featured on dashboard</h2>
+            <p className="text-xs text-slate-500">Ticked exams appear as large cards in the dashboard carousel, in the order given. The rest show in the grid below it. Restricted mocks only appear for students on their allowlist.</p>
+          </div>
+          <ul className="divide-y divide-slate-100 text-sm">
+            {all.map((e) => {
+              const at = featured.indexOf(e.id);
+              return (
+                <li key={e.id} className="flex items-center gap-3 py-2">
+                  <input type="checkbox" name="featured" value={e.id} defaultChecked={at >= 0} id={`f-${e.id}`} className="h-4 w-4" />
+                  <label htmlFor={`f-${e.id}`} className="flex-1">{e.company} · {e.name}{e.restricted ? <span className="ml-2 text-xs text-slate-500">restricted</span> : null}</label>
+                  <label className="flex items-center gap-1 text-xs text-slate-500">
+                    Order
+                    <input type="number" name={`pos:${e.id}`} min={1} max={99} defaultValue={at >= 0 ? at + 1 : ""} className="w-14 rounded border border-slate-300 px-2 py-1 text-sm" />
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+          <button type="submit" className="btn-primary">Save carousel</button>
+        </form>
+      )}
       <ul className="space-y-3">
         {rows.map((m) => (
           <li key={m.id} className="card flex flex-wrap items-center justify-between gap-3 text-sm">

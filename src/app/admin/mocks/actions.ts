@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireAdmin, requireStaff } from "@/lib/auth";
-import { addMockAccess, deleteDraft, MAX_MOCK_SECTIONS, MockExamError, removeMockAccess, saveDraft, setPublished } from "@/lib/exam/exams";
+import { addMockAccess, deleteDraft, MAX_MOCK_SECTIONS, MockExamError, removeMockAccess, saveDraft, setFeaturedExams, setPublished } from "@/lib/exam/exams";
 
 export type MockFormState = { error?: string; values?: Record<string, string> } | undefined;
 
@@ -79,4 +79,16 @@ export async function deleteMockAction(form: FormData) {
   }
   revalidatePath("/admin/mocks");
   redirect(`/admin/mocks?msg=${encodeURIComponent("Draft deleted.")}`);
+}
+
+/** Admins only: which exams the dashboard carousel shows, ordered by the position each row was given. */
+export async function saveFeaturedAction(form: FormData) {
+  const admin = await requireAdmin();
+  const ids = form.getAll("featured").map(String);
+  const pos = (id: string) => Number(form.get(`pos:${id}`)) || 999;
+  ids.sort((a, b) => pos(a) - pos(b));
+  await setFeaturedExams(admin.id, ids);
+  revalidatePath("/dashboard");
+  revalidatePath("/admin/mocks");
+  redirect(`/admin/mocks?msg=${encodeURIComponent(ids.length ? `Carousel updated: ${ids.length} featured.` : "Carousel cleared. The dashboard shows only the grid.")}`);
 }

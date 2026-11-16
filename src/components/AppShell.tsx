@@ -11,6 +11,7 @@ const NAV = [
   { href: "/practice", label: "Practice" },
   { href: "/mock", label: "Mock Test" },
   { href: "/code", label: "Code" },
+  { href: "/dsa", label: "DSA" },
   { href: "/history", label: "History" },
   { href: "/analytics", label: "Analytics" },
   { href: "/community", label: "Community" },

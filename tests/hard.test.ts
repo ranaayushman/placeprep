@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generate, TOPICS } from "@/lib/questions";
+import { generate, TOPIC_BY_ID, TOPICS } from "@/lib/questions";
 
 // Pure logic: no DB needed. Every hard-tier generator, many seeds.
 const SEEDS = 1500;
@@ -20,6 +20,8 @@ describe("hard tier: structure", () => {
       if (new Set(q.options).size !== q.options.length) bad.push(`${ref} duplicate options: ${q.options.join(" | ")}`);
       if (!(q.answer >= 0 && q.answer < q.options.length)) bad.push(`${ref} answer index ${q.answer}`);
       const blob = [q.prompt, q.code ?? "", q.explanation, ...q.options].join(" | ");
+      // Static banks (genc-hard.ts) quote real program output, where Infinity and negatives are correct answers.
+      if (TOPIC_BY_ID.get(id)!.hardPoolSize) continue;
       if (/NaN|undefined|Infinity|\[object|-\d+ days|^-/.test(blob)) bad.push(`${ref} junk: ${blob.slice(0, 200)}`);
       if (q.options.some((o) => /^−?-/.test(o))) bad.push(`${ref} negative option ${q.options.join(" | ")}`);
     }

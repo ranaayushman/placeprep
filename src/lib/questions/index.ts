@@ -10,6 +10,8 @@ import { HARD } from "./hard";
 import { mixWith, VARIETY } from "./variety";
 import { codingTopics } from "./code-problems";
 import { gencTopics } from "./genc";
+import { STATIC_HARD } from "./genc-hard";
+import { rng, staticMcq } from "./rng";
 
 const essayTopic: Topic = {
   id: "w-essay",
@@ -34,6 +36,7 @@ export const TOPICS: Topic[] = [...reasoningTopics, ...mathTopics, ...verbalTopi
   // Extra standard templates for topics that had only one, then the hard tier where it exists.
   ...(VARIETY[t.id] ? { generate: mixWith(t.generate, VARIETY[t.id]) } : {}),
   ...(HARD[t.id] ? { hard: HARD[t.id] } : {}),
+  ...(STATIC_HARD[t.id]?.length ? { hard: (seed: number) => staticMcq(rng(seed), STATIC_HARD[t.id][seed % STATIC_HARD[t.id].length]), hardPoolSize: STATIC_HARD[t.id].length } : {}),
 }));
 export const TOPIC_BY_ID = new Map(TOPICS.map((t) => [t.id, t]));
 

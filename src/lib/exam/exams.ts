@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { attempts, db, mockExamAccess, mockExams } from "@/db";
+import { attempts, db, featuredExams, mockExamAccess, mockExams } from "@/db";
 import type { SectionId } from "@/lib/questions/types";
 import { RC_GROUP } from "@/lib/questions/verbal";
 import { EXAMS, type ExamLevel, type SectionSpec } from "./pattern";
@@ -170,3 +170,25 @@ export async function deleteDraft(id: string) {
 
 export const staffMockExams = () => db.select().from(mockExams).orderBy(asc(mockExams.status), asc(mockExams.createdAt));
 export const mockExamById = async (id: string) => (await db.select().from(mockExams).where(eq(mockExams.id, id)))[0];
+
+/** Exam ids featured in the dashboard carousel, in display order (admin-chosen; may include unpublished ids). */
+export async function featuredExamIds(): Promise<string[]> {
+  try {
+    const rows = await db.select({ examId: featuredExams.examId }).from(featuredExams).orderBy(asc(featuredExams.position), asc(featuredExams.examId));
+    return rows.map((r) => r.examId);
+  } catch (e) {
+    // The carousel is optional: if the query fails (e.g. migration 0018 not yet applied), the dashboard still renders, grid only.
+    console.error("featuredExamIds failed; showing no carousel", e);
+    return [];
+  }
+}
+
+/** Admin only (caller checks requireAdmin). Replaces the featured list with `ids`, in that order; unknown ids are dropped. */
+export async function setFeaturedExams(adminId: string, ids: string[]): Promise<void> {
+  const known = new Set((await listExams()).map((e) => e.id));
+  const keep = [...new Set(ids)].filter((id) => known.has(id));
+  await db.transaction(async (tx) => {
+    await tx.delete(featuredExams);
+    if (keep.length) await tx.insert(featuredExams).values(keep.map((examId, position) => ({ examId, position, addedBy: adminId })));
+  });
+}
