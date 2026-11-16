@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.APP_URL ?? "https://www.placeprep.me";
+  const baseUrl = SITE_URL;
   const now = new Date();
 
   return [
@@ -10,16 +11,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 1,
-    },
-    {
-      url: `${baseUrl}/login`,
-      changeFrequency: "monthly",
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/register`,
-      changeFrequency: "monthly",
-      priority: 0.4,
     },
     {
       url: `${baseUrl}/privacy`,

@@ -23,7 +23,8 @@ const advertisingAllowed = () => {
 export function AdSlot({ slot, className = "" }: { slot?: string; className?: string }) {
   const [allowed, setAllowed] = useState(false);
   const pushed = useRef(false);
-  const inTest = usePathname()?.startsWith("/attempt") ?? false;
+  const path = usePathname() ?? "";
+  const inTest = path.startsWith("/attempt") || path.startsWith("/code"); // never during a test or in the code editor
 
   useEffect(() => {
     setAllowed(advertisingAllowed());
@@ -48,7 +49,7 @@ export function AdSlot({ slot, className = "" }: { slot?: string; className?: st
     <div className={className}>
       <p className="mb-1 text-[10px] font-semibold tracking-wider text-muted uppercase">Advertisement</p>
       <Script id="adsbygoogle-js" src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`} crossOrigin="anonymous" strategy="afterInteractive" />
-      <ins className="adsbygoogle block" style={{ display: "block" }} data-ad-client={ADSENSE_CLIENT} data-ad-slot={slot} data-ad-format="auto" data-full-width-responsive="true" />
+      <ins className="adsbygoogle block" style={{ display: "block", minHeight: 100 /* reserved so the page does not jump when the ad loads */ }} data-ad-client={ADSENSE_CLIENT} data-ad-slot={slot} data-ad-format="auto" data-full-width-responsive="true" />
     </div>
   );
 }

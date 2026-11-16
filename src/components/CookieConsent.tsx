@@ -153,8 +153,9 @@ export function CookieConsent() {
                 <h3 className="font-semibold text-deep">We respect your privacy</h3>
               </div>
               <p className="leading-relaxed">
-                PlacePrep is 100% free. We use strictly necessary cookies to keep you signed in and ensure security.
-                You can also choose whether to enable functional preferences and performance cookies. Read our{" "}
+                PlacePrep is 100% free. We use strictly necessary cookies to keep you signed in and secure. With your
+                permission, we also use optional preference, analytics and advertising cookies; ads help keep PlacePrep
+                free. You can change this at any time. Read our{" "}
                 <Link href="/cookies" className="font-medium text-brand underline underline-offset-2 hover:text-brand-dark">
                   Cookie Policy
                 </Link>{" "}

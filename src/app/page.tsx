@@ -1,11 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { OPEN_GRAPH, SITE_URL } from "@/lib/site";
 import { Logo } from "@/components/Logo";
 import { AuthLinks } from "@/components/AuthLinks";
 import { CookieSettingsButton } from "@/components/CookieConsent";
 import { INFOSYS_SE_PATTERN, MAX_VIOLATIONS, PRACTICE_TARGETS } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPICS, topicsFor } from "@/lib/questions";
 
-const SITE_URL = process.env.APP_URL ?? "https://www.placeprep.me";
+// Canonical lives here, not in the root layout, so other pages do not inherit "/" as theirs.
+export const metadata: Metadata = { alternates: { canonical: "/" }, openGraph: { ...OPEN_GRAPH, url: "/" } };
 
 const TRAPS = [
   {
