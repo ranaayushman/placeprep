@@ -73,7 +73,7 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
       </div>
 
       {isLocked(exam.id) ? (
-        <InviteCard link={inviteLink(user.id)} have={referrals.have} need={REFERRALS_TO_UNLOCK[exam.id]} />
+        <InviteCard link={await inviteLink(user.id)} have={referrals.have} need={REFERRALS_TO_UNLOCK[exam.id]} />
       ) : (
       <div className="card flex flex-wrap items-center justify-between gap-4">
         <span className="text-sm text-slate-500">Ready? Complete the system check before starting.</span>

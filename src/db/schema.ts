@@ -45,6 +45,8 @@ export const users = pgTable(
     emailVerifiedAt: ms("email_verified_at").default(sql`(extract(epoch from now()) * 1000)::bigint`),
     /** When the student ticked "send me emails" (proof of consent). Null = never opted in. */
     marketingOptInAt: ms("marketing_opt_in_at"),
+    /** Short code in this student's invite link (/r/<code>), made the first time they open it. */
+    referralCode: text("referral_code").unique(),
     /** Who shared the invite link this student signed up through (see lib/referral.ts). */
     referredBy: text("referred_by").references((): AnyPgColumn => users.id, { onDelete: "set null" }),
     /** Set by an admin: invite-only mocks are open without referrals. Who did it is in admin_actions. */

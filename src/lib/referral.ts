@@ -1,11 +1,12 @@
 import "server-only";
+import { randomInt } from "node:crypto";
 import { and, count, eq, isNotNull, isNull } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { db, users } from "@/db";
 import { SITE_URL } from "@/lib/site";
 
 /**
- * Invite links. A student shares /r/<their id>; whoever signs up through it is stored as referred by
+ * Invite links. A student shares /r/<their short code>; whoever signs up through it is stored as referred by
  * them. A referral counts once the new student has verified their email and finished onboarding, and
  * isn't blocked. Some mocks unlock after enough of them, or when an admin unlocks them for a user.
  */
@@ -18,17 +19,35 @@ export const REFERRALS_TO_UNLOCK: Record<string, number> = {
   "cognizant-genc-python-hard": 2,
 };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const isRefCode = (code: string) => UUID.test(code);
+// Lowercase letters and digits minus look-alikes (0/o, 1/l/i), so a code read aloud or typed from a screenshot works.
+const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+const CODE_LENGTH = 7; // 31^7 ≈ 27 billion codes
+const CODE = new RegExp(`^[${ALPHABET}]{${CODE_LENGTH}}$`);
+export const isRefCode = (code: string) => CODE.test(code);
+const newCode = () => Array.from({ length: CODE_LENGTH }, () => ALPHABET[randomInt(ALPHABET.length)]).join("");
 
-// shortcut: the code is the user id (random UUID, not secret, grants nothing); add a short code column if links need to be prettier.
-export const inviteLink = (userId: string) => `${SITE_URL}/r/${userId}`;
+/** This user's invite link, giving them a code the first time. */
+export async function inviteLink(userId: string): Promise<string> {
+  const [row] = await db.select({ code: users.referralCode }).from(users).where(eq(users.id, userId)).limit(1);
+  let code = row?.code;
+  for (let tries = 0; !code && tries < 5; tries++) {
+    try {
+      // Only fills an empty code, so two tabs opening at once can't give one user two different links.
+      await db.update(users).set({ referralCode: newCode() }).where(and(eq(users.id, userId), isNull(users.referralCode)));
+      [{ code }] = await db.select({ code: users.referralCode }).from(users).where(eq(users.id, userId)).limit(1);
+    } catch {
+      // Unique clash with another user's code: try a new one.
+    }
+  }
+  if (!code) throw new Error("Could not create an invite code");
+  return `${SITE_URL}/r/${code}`;
+}
 
 /** The referrer from the invite cookie, if it names an existing, unblocked user. Call while creating an account. */
 export async function referrerFromCookie(): Promise<string | null> {
   const code = (await cookies()).get(REF_COOKIE)?.value ?? "";
   if (!isRefCode(code)) return null;
-  const [row] = await db.select({ id: users.id }).from(users).where(and(eq(users.id, code), isNull(users.blockedAt))).limit(1);
+  const [row] = await db.select({ id: users.id }).from(users).where(and(eq(users.referralCode, code), isNull(users.blockedAt))).limit(1);
   return row?.id ?? null;
 }
 

@@ -6,7 +6,7 @@ import { db, users } from "@/db";
 // referrerFromCookie reads the invite cookie through next/headers.
 let cookie: string | undefined;
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => (cookie ? { value: cookie } : undefined) }) }));
-const { referralLock, referrerFromCookie, successfulReferrals } = await import("@/lib/referral");
+const { inviteLink, isRefCode, referralLock, referrerFromCookie, successfulReferrals } = await import("@/lib/referral");
 
 beforeAll(async () => {
   await migrate(db, { migrationsFolder: "drizzle" });
@@ -19,13 +19,19 @@ describe("referrals", () => {
   it("reads the referrer from the cookie only when it names a real, unblocked user", async () => {
     const a = await mk();
     const blocked = await mk({ blockedAt: new Date() });
-    cookie = a.id;
+    const link = await inviteLink(a.id);
+    const code = link.split("/r/")[1];
+    expect(isRefCode(code)).toBe(true);
+    expect(code).toHaveLength(7);
+    expect(await inviteLink(a.id)).toBe(link); // stable once made
+    expect(await inviteLink(blocked.id)).not.toBe(link);
+    cookie = code;
     expect(await referrerFromCookie()).toBe(a.id);
-    cookie = blocked.id;
+    cookie = (await inviteLink(blocked.id)).split("/r/")[1];
     expect(await referrerFromCookie()).toBeNull();
-    cookie = "not-a-uuid";
+    cookie = a.id; // raw ids are not codes
     expect(await referrerFromCookie()).toBeNull();
-    cookie = crypto.randomUUID();
+    cookie = "zzzzzzz"; // well-formed, nobody's
     expect(await referrerFromCookie()).toBeNull();
   });
 
