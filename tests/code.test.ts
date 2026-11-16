@@ -119,7 +119,7 @@ describe("verdict", () => {
   it("compares outputs loosely and names failures like LeetCode", () => {
     expect(verdict(ok("4 5 1 9 5 0 0 0 \n\n"), "4 5 1 9 5 0 0 0\n")).toBe("Accepted");
     expect(verdict(ok("4 5 1 9 5 0 0 0"), "4 5 1 9 5 0 0 1")).toBe("Wrong Answer");
-    expect(verdict(ok("anything"))).toBe("Accepted"); // custom case: nothing to compare with
+    expect(verdict(ok("hello"))).toBe("Finished"); // custom input: nothing checked, so never "Accepted"
     expect(verdict({ status: "timeout", stdout: "" }, "x")).toBe("Time Limit Exceeded");
   });
 });

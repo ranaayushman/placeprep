@@ -688,9 +688,16 @@ export const PROBLEMS: Problem[] = [
 
 export type RunStatus = "ok" | "compile_error" | "runtime_error" | "timeout" | "output_limit";
 const STATUS: Record<RunStatus, string> = { ok: "Accepted", compile_error: "Compile Error", runtime_error: "Runtime Error", timeout: "Time Limit Exceeded", output_limit: "Output Limit Exceeded" };
-/** LeetCode-style verdict for one run; without an expected output any clean run is "Accepted". */
+/**
+ * LeetCode-style verdict for one run. Without an expected output (a custom input) a clean run is only
+ * "Finished": nothing was checked, so it must never read as "Accepted".
+ */
 export const verdict = (r: { status: RunStatus; stdout: string }, expected?: string) =>
-  r.status !== "ok" ? STATUS[r.status] : expected !== undefined && normalizeOutput(r.stdout) !== normalizeOutput(expected) ? "Wrong Answer" : "Accepted";
+  r.status !== "ok" ? STATUS[r.status] : expected === undefined ? "Finished" : normalizeOutput(r.stdout) === normalizeOutput(expected) ? "Accepted" : "Wrong Answer";
+/** A verdict that is not a failure (green or neutral, never red). */
+export const isClean = (label: string) => label === "Accepted" || label === "Finished";
+/** Editor file name per language. */
+export const SOURCE_FILE: Record<Language, string> = { cpp: "main.cpp", java: "Main.java", python: "main.py", sql: "query.sql" };
 
 /** What a test stores as the answer to a coding question (attempt_questions.text_answer, as JSON). */
 export type CodeAnswer = { language: Language; code: string; passed: number; total: number };

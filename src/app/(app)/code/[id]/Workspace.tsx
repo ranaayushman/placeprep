@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { LANGUAGES, languagesFor, RUN_MS, STARTER_CODE, verdict, type Language, type Problem } from "@/lib/code/problems";
+import { LANGUAGES, languagesFor, RUN_MS, STARTER_CODE, verdict, isClean, SOURCE_FILE, type Language, type Problem } from "@/lib/code/problems";
 import type { RunResult } from "@/lib/code/runner";
 import { runAction, submitAction, type SubmitResult } from "../actions";
 
@@ -12,9 +12,8 @@ type Case = { input: string; expected?: string };
 type Submission = { at: number; lang: Language; label: string; passed: number; total: number };
 type Outcome = { kind: "run"; cases: Case[]; results: RunResult[] } | { kind: "submit"; result: SubmitResult };
 
-const FILE: Record<Language, string> = { cpp: "main.cpp", java: "Main.java", python: "main.py", sql: "query.sql" };
 const MAX_CASES = 10; // same cap as runAction
-const tone = (label: string) => (label === "Accepted" ? "text-emerald-700" : "text-red-700");
+const tone = (label: string) => (label === "Accepted" ? "text-emerald-700" : label === "Finished" ? "text-deep" : "text-red-700");
 const tab = (on: boolean) => `border-b-2 px-3 py-2 text-sm font-medium ${on ? "border-brand text-deep" : "border-transparent text-muted hover:text-deep"}`;
 const chip = (on: boolean) => `rounded-md px-2.5 py-1 text-xs font-medium ${on ? "bg-brand-soft text-deep" : "bg-slate-100 text-muted hover:bg-slate-200"}`;
 
@@ -194,7 +193,7 @@ export function Workspace({ problem: p, index, problems, prev, next }: { problem
           <section style={{ "--rows": `${split.rows}%` } as React.CSSProperties} className="flex flex-col rounded-2xl border border-deep/10 bg-surface shadow-sm lg:min-h-0 lg:shrink-0 lg:[height:var(--rows)]">
             <div className="flex shrink-0 items-center gap-2 border-b border-deep/10 px-3 py-1.5 text-xs text-muted">
               <span className="font-semibold text-deep">{"</>"} Code</span>
-              <span className="font-mono">· {FILE[lang]}</span>
+              <span className="font-mono">· {SOURCE_FILE[lang]}</span>
               <select value={lang} onChange={(e) => switchLang(e.target.value as Language)} aria-label="Language" className="ml-auto rounded-md border border-slate-300 bg-white px-2 py-0.5 text-slate-700 focus:border-brand focus:outline-none">
                 {langs.map((id) => <option key={id} value={id}>{LANGUAGES[id]}</option>)}
               </select>
@@ -284,7 +283,7 @@ function Block({ label, value, bad }: { label: string; value: string; bad?: bool
 
 function RunView({ cases, results, idx, setIdx }: { cases: Case[]; results: RunResult[]; idx: number; setIdx: (i: number) => void }) {
   const labels = results.map((r, i) => verdict(r, cases[i].expected));
-  const overall = labels.find((l) => l !== "Accepted") ?? "Accepted";
+  const overall = labels.find((l) => !isClean(l)) ?? (labels.every((l) => l === "Accepted") ? "Accepted" : "Finished");
   const r = results[idx];
   const c = cases[idx];
   return (
@@ -293,14 +292,14 @@ function RunView({ cases, results, idx, setIdx }: { cases: Case[]; results: RunR
       <div className="flex flex-wrap gap-2">
         {labels.map((l, i) => (
           <button key={i} type="button" className={chip(i === idx)} onClick={() => setIdx(i)}>
-            <span className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${l === "Accepted" ? "bg-emerald-600" : "bg-red-500"}`} />Case {i + 1}
+            <span className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${l === "Accepted" ? "bg-emerald-600" : l === "Finished" ? "bg-slate-400" : "bg-red-500"}`} />Case {i + 1}
           </button>
         ))}
       </div>
       {r.status === "compile_error" ? <Block label="Compiler output" value={r.stderr} bad /> : (
         <>
           <Block label="Input" value={c.input} />
-          <Block label="Output" value={r.stdout} bad={labels[idx] !== "Accepted"} />
+          <Block label="Output" value={r.stdout} bad={!isClean(labels[idx])} />
           {r.stderr && <Block label="Stderr" value={r.stderr} bad />}
           {c.expected !== undefined && <Block label="Expected" value={c.expected} />}
         </>

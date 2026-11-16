@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { SubmitResult } from "@/lib/code/judge";
-import { LANGUAGES, parseCodeAnswer, RUN_MS, STARTER_CODE, verdict, type Language } from "@/lib/code/problems";
+import { LANGUAGES, parseCodeAnswer, RUN_MS, STARTER_CODE, normalizeOutput, verdict, isClean, SOURCE_FILE, type Language } from "@/lib/code/problems";
 import type { RunResult } from "@/lib/code/runner";
 import type { QuestionView } from "@/lib/questions/types";
 
@@ -20,19 +20,25 @@ type Props = {
 export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }: Props) {
   const p = view.problem!;
   const saved = parseCodeAnswer(textAnswer);
-  const langs = p.languages as Language[];
+  // Questions stored before a language existed, or a language without starter code, must not crash the test.
+  const langs = (p.languages?.length ? p.languages : ["cpp"]) as Language[];
+  const starter = (l: Language) => STARTER_CODE[l] ?? "";
   const [lang, setLang] = useState<Language>(saved?.language ?? langs[0]);
   const key = `exam-code:${questionId}:${lang}`;
-  const [code, setCode] = useState(saved?.code ?? STARTER_CODE[langs[0]]);
+  const [code, setCode] = useState(saved?.code ?? starter(langs[0]));
   const [stdin, setStdin] = useState(p.samples[0]?.input ?? "");
   const [bottom, setBottom] = useState<"testcase" | "result">("testcase");
   const [busy, setBusy] = useState<"run" | "submit" | null>(null);
   const [out, setOut] = useState<{ run?: RunResult; sub?: SubmitResult & { accepted: boolean }; error?: string } | null>(null);
   const gutter = useRef<HTMLPreElement>(null);
+  // Run on a sample's input is checked against that sample's output; any other input is only "Finished".
+  const runExpected = (input: string) => p.samples.find((x) => normalizeOutput(x.input) === normalizeOutput(input))?.output;
+  const [ranOn, setRanOn] = useState("");
+  const runLabel = out?.run ? verdict(out.run, runExpected(ranOn)) : null;
 
   // Drafts survive a reload; the server only ever has the last submitted code.
   useEffect(() => {
-    setCode(localStorage.getItem(key) ?? (saved?.language === lang ? saved.code : STARTER_CODE[lang]));
+    setCode(localStorage.getItem(key) ?? (saved?.language === lang ? saved.code : starter(lang)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
   const update = (v: string) => {
@@ -44,6 +50,7 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
     setOut(null);
     setBottom("result");
     try {
+      setRanOn(stdin);
       setOut(what === "run" ? { run: await run(lang, code, stdin) } : { sub: await submit(lang, code) });
     } catch (e) {
       setOut({ error: (e as Error).message });
@@ -60,7 +67,7 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">{p.difficulty} · judged on hidden tests</p>
             <h2 className="mt-1 text-xl font-bold text-deep">{view.prompt}</h2>
           </div>
-          <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-medium text-deep">C++ / Java</span>
+          <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-medium text-deep">{langs.map((l) => LANGUAGES[l]).join(" / ")}</span>
         </div>
         <div className="space-y-3">
           <p><span className="font-semibold text-deep">Input:</span> {p.input}</p>
@@ -82,12 +89,12 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
       <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-deep/10 bg-surface shadow-sm">
         <div className="flex shrink-0 items-center gap-2 border-b border-deep/10 px-3 py-2 text-xs text-muted">
           <span className="font-semibold text-deep">{"</>"} Code</span>
-          <span className="font-mono">· {lang === "cpp" ? "main.cpp" : "Main.java"}</span>
+          <span className="font-mono">· {SOURCE_FILE[lang]}</span>
           <select value={lang} onChange={(e) => setLang(e.target.value as Language)} aria-label="Language" className="ml-auto rounded-md border border-slate-300 bg-white px-2 py-0.5 text-slate-700">
             {langs.map((id) => <option key={id} value={id}>{LANGUAGES[id]}</option>)}
           </select>
           <span>· {RUN_MS[lang] / 1000} s limit</span>
-          <button type="button" onClick={() => update(STARTER_CODE[lang])} disabled={!!busy} title="Reset code" aria-label="Reset code" className="rounded p-1 hover:bg-brand-soft hover:text-deep">↺</button>
+          <button type="button" onClick={() => update(starter(lang))} disabled={!!busy} title="Reset code" aria-label="Reset code" className="rounded p-1 hover:bg-brand-soft hover:text-deep">↺</button>
         </div>
         <div className="flex min-h-64 flex-1">
           <pre ref={gutter} aria-hidden className="select-none overflow-hidden bg-canvas-deep py-3 pl-3 pr-2 text-right font-mono text-sm leading-6 text-slate-400">{Array.from({ length: code.split("\n").length }, (_, i) => i + 1).join("\n")}</pre>
@@ -121,11 +128,11 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
           {bottom === "testcase" ? (
             <label className="block text-xs text-muted">Input for Run<textarea value={stdin} onChange={(e) => setStdin(e.target.value)} rows={3} spellCheck={false} className="input mt-1 font-mono" /></label>
           ) : out?.error ? <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">{out.error}</p> : out?.run ? (
-            <div className="space-y-1 font-mono text-xs"><p className={out.run.status === "ok" ? "text-emerald-700" : "text-red-700"}>{verdict(out.run)} · {out.run.timeMs} ms</p>{out.run.stdout && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-canvas-deep p-2">{out.run.stdout}</pre>}{out.run.stderr && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-red-700">{out.run.stderr}</pre>}</div>
+            <div className="space-y-1 font-mono text-xs"><p className={runLabel === "Accepted" ? "text-emerald-700" : isClean(runLabel!) ? "text-deep" : "text-red-700"}>{runLabel} · {out.run.timeMs} ms</p>{out.run.stdout && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-canvas-deep p-2">{out.run.stdout}</pre>}{out.run.stderr && <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-red-700">{out.run.stderr}</pre>}</div>
           ) : out?.sub ? (
             <div className="space-y-2 font-mono text-xs">
             <p className={`text-sm font-semibold ${out.sub.accepted ? "text-emerald-700" : "text-red-700"}`}>
-              {out.sub.accepted ? "Accepted" : (verdict(out.sub.cases.find((c) => !c.passed)!, out.sub.cases.find((c) => !c.passed)!.expected || undefined))} · {out.sub.passed}/{out.sub.total} tests passed
+              {out.sub.accepted ? "Accepted" : (out.sub.cases.find((c) => !c.passed)!.status === "ok" ? "Wrong Answer" : verdict(out.sub.cases.find((c) => !c.passed)!)) /* hidden tests have no expected text, so name the failure directly */} · {out.sub.passed}/{out.sub.total} tests passed
             </p>
             <ul className="flex flex-wrap gap-1.5">
               {out.sub.cases.map((c, i) => (
