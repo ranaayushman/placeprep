@@ -82,10 +82,12 @@ export const DELOITTE_NLA_PATTERN: SectionSpec[] = [
  * Nov–Dec 2025 drive (GeeksforGeeks, PrepInsta) and PlacementPreparation (Nov 2026):
  *
  *   Aptitude ~80 min: Quant 25 / 30 min, Logical 30 / 35 min, Verbal 15 / 15 min
+ *   Games 50 min: 4 games picked from a larger set (PrepInsta 2025). Simulated as 6 MCQ rounds each of
+ *   Geo-Sudo, Switch, Digit and Motion challenge (see lib/questions/games.ts).
  *   Technical 120 min, one timer: 2 coding + 2 SQL queries + 20 code-debugging MCQs + 10 tech MCQs.
  *   Clusters (chosen at the pre-placement talk): Java + SQL + web, or Python + SQL + cloud. One mock entry each.
  *
- * Not simulated yet: the 60-min AI communication round (speaking) and the game-based puzzles inside aptitude.
+ * Not simulated yet: the 60-min AI communication round (speaking), and the Grid and Inductive games.
  * No negative marking.
  */
 const GENC_APTITUDE: SectionSpec[] = [
@@ -102,6 +104,7 @@ const GENC_APTITUDE: SectionSpec[] = [
     topics: { "r-series": 4, "r-coding": 4, "r-blood": 3, "r-direction": 3, "r-seating": 3, "r-syllogism": 3, "r-ds": 2, "r-odd": 2, "r-ranking": 2, "r-alpha": 2, "r-statement": 2 },
   },
   { section: "verbal", questions: 15, minutes: 15, topics: { "v-correction": 4, "v-fill": 4, "v-vocab": 3, "v-error": 2, "v-jumble": 2 } },
+  { section: "game", questions: 24, minutes: 50, topics: { "g-geosudo": 6, "g-switch": 6, "g-digit": 6, "g-motion": 6 } },
 ];
 
 export const COGNIZANT_GENC_PATTERN: SectionSpec[] = [
@@ -151,7 +154,7 @@ export const EXAMS = [
     short: "Cognizant GenC (Java)",
     pattern: COGNIZANT_GENC_PATTERN,
     level: "realistic" as ExamLevel,
-    note: "Reported 2025–26 pattern. Aptitude first, then one 120-minute technical round for the Java + SQL cluster: 2 coding problems and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs (Java, C, JavaScript, SQL) and 10 Java/SQL MCQs. The AI communication round and the game-based puzzles are not simulated yet.",
+    note: "Reported 2025–26 pattern. Aptitude first, then one 120-minute technical round for the Java + SQL cluster: 2 coding problems and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs (Java, C, JavaScript, SQL) and 10 Java/SQL MCQs. A 50-minute game round (Geo-Sudo, Switch, Digit and Motion challenges) sits between aptitude and technical. The AI communication round and the Grid and Inductive games are not simulated yet.",
   },
   {
     id: "cognizant-genc-python",
@@ -160,7 +163,25 @@ export const EXAMS = [
     short: "Cognizant GenC (Python)",
     pattern: COGNIZANT_GENC_PYTHON_PATTERN,
     level: "realistic" as ExamLevel,
-    note: "Same aptitude round, then the technical round for the Python + SQL + cloud cluster: 2 coding problems (solve them in Python) and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs (Python, C, JavaScript, SQL) and 10 Python/SQL/cloud MCQs.",
+    note: "Same aptitude and game rounds, then the technical round for the Python + SQL + cloud cluster: 2 coding problems (solve them in Python) and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs (Python, C, JavaScript, SQL) and 10 Python/SQL/cloud MCQs.",
+  },
+  {
+    id: "cognizant-genc-hard",
+    company: "Cognizant",
+    name: "GenC · GenC Pro · GenC Next — Java cluster (Hard)",
+    short: "Cognizant GenC (Java) Hard",
+    pattern: COGNIZANT_GENC_PATTERN,
+    level: "hard" as ExamLevel,
+    note: "Hard mode: same pattern and timers as the Java mock, but most aptitude and game questions come from the hard tier (multi-step, trap options, bigger grids and mazes). Aim to clear this and the real paper feels easy.",
+  },
+  {
+    id: "cognizant-genc-python-hard",
+    company: "Cognizant",
+    name: "GenC · GenC Pro · GenC Next — Python cluster (Hard)",
+    short: "Cognizant GenC (Python) Hard",
+    pattern: COGNIZANT_GENC_PYTHON_PATTERN,
+    level: "hard" as ExamLevel,
+    note: "Hard mode: same pattern and timers as the Python mock, with most aptitude and game questions from the hard tier.",
   },
 ] as const;
 export type ExamId = (typeof EXAMS)[number]["id"];
@@ -176,6 +197,7 @@ export const PRACTICE_TARGETS: Partial<Record<SectionId, number>> = {
   verbal: 0.65,
   pseudocode: 0.6,
   puzzle: 0.5,
+  game: 0.5,
   technical: 0.6,
   coding: 0.5,
 };

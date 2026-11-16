@@ -13,9 +13,11 @@ describe("Cognizant GenC pattern", () => {
       ["math", 25, 30],
       ["reasoning", 30, 35],
       ["verbal", 15, 15],
+      ["game", 24, 50],
       ["technical", 34, 120],
     ]);
     expect(EXAMS.find((e) => e.id === "cognizant-genc")).toBeTruthy();
+    expect(EXAMS.find((e) => e.id === "cognizant-genc-hard")?.level).toBe("hard");
   });
 
   it("names topics that exist, with weights adding up to the section size", () => {
@@ -27,7 +29,7 @@ describe("Cognizant GenC pattern", () => {
   });
 
   it("technical round is 2 coding + 2 SQL + 20 debugging + 10 MCQ with big enough pools", () => {
-    const tech = COGNIZANT_GENC_PATTERN[3].topics!;
+    const tech = COGNIZANT_GENC_PATTERN[4].topics!;
     expect(tech).toEqual({ "c-genc": 2, "c-sql": 2, "t-debug": 20, "t-java": 6, "t-dbms": 4 });
     for (const [id, n] of Object.entries(tech)) expect(topic(id).poolSize!, id).toBeGreaterThanOrEqual(n);
     expect(topic("c-genc").section).toBe("coding");
@@ -37,8 +39,8 @@ describe("Cognizant GenC pattern", () => {
   });
 
   it("Python cluster swaps the Java banks for Python ones and shares the rest", () => {
-    expect(COGNIZANT_GENC_PYTHON_PATTERN.slice(0, 3)).toEqual(COGNIZANT_GENC_PATTERN.slice(0, 3));
-    expect(COGNIZANT_GENC_PYTHON_PATTERN[3].topics).toEqual({ "c-genc": 2, "c-sql": 2, "t-debug-py": 20, "t-python": 6, "t-dbms": 2, "t-cloud": 2 });
+    expect(COGNIZANT_GENC_PYTHON_PATTERN.slice(0, 4)).toEqual(COGNIZANT_GENC_PATTERN.slice(0, 4));
+    expect(COGNIZANT_GENC_PYTHON_PATTERN[4].topics).toEqual({ "c-genc": 2, "c-sql": 2, "t-debug-py": 20, "t-python": 6, "t-dbms": 2, "t-cloud": 2 });
     expect(EXAMS.find((e) => e.id === "cognizant-genc-python")).toBeTruthy();
     expect(DEBUG.some((q) => q.lang === "Python")).toBe(false);
     expect(DEBUG_PY.some((q) => q.lang === "Java")).toBe(false);

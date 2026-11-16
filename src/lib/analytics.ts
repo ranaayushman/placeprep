@@ -5,7 +5,7 @@ import { PRACTICE_TARGETS } from "@/lib/exam/pattern";
 import { SECTION_LABELS, TOPIC_BY_ID, TOPICS, topicsFor, type SectionId } from "@/lib/questions";
 import type { Speed } from "@/lib/exam/speed";
 
-const MCQ_SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "technical"];
+const MCQ_SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "game", "technical"];
 const TOPIC_SECTION = new Map(TOPICS.map((t) => [t.id, t.section]));
 
 export interface TopicStat {

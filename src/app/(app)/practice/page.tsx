@@ -6,7 +6,7 @@ import { pct } from "@/components/charts";
 import { publishedCountsByTopic } from "@/lib/community/service";
 import { startPractice } from "../start-actions";
 
-const SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "technical"];
+const SECTIONS: SectionId[] = ["reasoning", "math", "verbal", "pseudocode", "puzzle", "game", "technical"];
 
 export default async function PracticePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await requireUser();

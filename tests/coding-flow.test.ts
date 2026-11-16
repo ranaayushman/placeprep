@@ -78,6 +78,11 @@ describe("Cognizant GenC mock", () => {
   it("builds a mixed technical round: 2 coding + 2 SQL problems first, then 30 MCQs", async () => {
     const id = await createMock(userId, { exam: "cognizant-genc", includeWriting: false });
     for (let i = 0; i < 3; i++) await submitSection(id, userId, i);
+    const games = await getExamState(id, userId);
+    if (games.status !== "IN_PROGRESS") throw new Error("expected in progress");
+    expect(games.current.section).toBe("game");
+    expect(games.current.questions).toHaveLength(24);
+    await submitSection(id, userId, 3);
     const s = await getExamState(id, userId);
     if (s.status !== "IN_PROGRESS") throw new Error("expected in progress");
     expect(s.current.section).toBe("technical");

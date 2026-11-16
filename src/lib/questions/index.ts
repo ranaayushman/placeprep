@@ -1,6 +1,7 @@
 import { mathTopics } from "./math";
 import { pseudocodeTopics } from "./pseudocode";
 import { puzzleTopics } from "./puzzle";
+import { gameTopics } from "./games";
 import { reasoningTopics } from "./reasoning";
 import { technicalTopics } from "./technical";
 import type { Question, QuestionView, SectionId, Topic } from "./types";
@@ -28,7 +29,7 @@ const essayTopic: Topic = {
   }),
 };
 
-export const TOPICS: Topic[] = [...reasoningTopics, ...mathTopics, ...verbalTopics, ...pseudocodeTopics, ...puzzleTopics, ...technicalTopics, ...gencTopics, essayTopic, ...codingTopics].map((t) => ({
+export const TOPICS: Topic[] = [...reasoningTopics, ...mathTopics, ...verbalTopics, ...pseudocodeTopics, ...puzzleTopics, ...gameTopics, ...technicalTopics, ...gencTopics, essayTopic, ...codingTopics].map((t) => ({
   ...t,
   // Extra standard templates for topics that had only one, then the hard tier where it exists.
   ...(VARIETY[t.id] ? { generate: mixWith(t.generate, VARIETY[t.id]) } : {}),
@@ -42,6 +43,7 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   verbal: "Verbal Ability",
   pseudocode: "Pseudocode",
   puzzle: "Numerical Puzzles",
+  game: "Game-Based Aptitude",
   technical: "Technical (CS Fundamentals)",
   writing: "Writing Test",
   coding: "Coding",

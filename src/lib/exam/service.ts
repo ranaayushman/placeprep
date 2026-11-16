@@ -515,7 +515,7 @@ export async function wrongRefs(userId: string, limit = 20) {
     .select({ ref: attemptQuestions.ref, topic: attemptQuestions.topic })
     .from(attemptQuestions)
     .innerJoin(attempts, eq(attempts.id, attemptQuestions.attemptId))
-    .where(and(eq(attempts.userId, userId), eq(attempts.status, "SUBMITTED"), eq(attemptQuestions.isCorrect, false), inArray(attemptQuestions.section, ["reasoning", "math", "verbal", "pseudocode", "puzzle"])))
+    .where(and(eq(attempts.userId, userId), eq(attempts.status, "SUBMITTED"), eq(attemptQuestions.isCorrect, false), inArray(attemptQuestions.section, ["reasoning", "math", "verbal", "pseudocode", "puzzle", "game"])))
     .orderBy(asc(attemptQuestions.answeredAt));
   // Latest mistakes first, unique refs.
   return [...new Map(rows.reverse().map((r) => [r.ref, r])).values()].slice(0, limit);

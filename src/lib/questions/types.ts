@@ -1,4 +1,4 @@
-export type SectionId = "reasoning" | "math" | "verbal" | "pseudocode" | "puzzle" | "technical" | "writing" | "coding";
+export type SectionId = "reasoning" | "math" | "verbal" | "pseudocode" | "puzzle" | "game" | "technical" | "writing" | "coding";
 
 /** What the candidate sees. Safe to send to the browser. */
 export interface QuestionView {
