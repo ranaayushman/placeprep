@@ -6,6 +6,7 @@ import { SECTION_LABELS } from "@/lib/questions";
 import { LevelBadge } from "@/components/LevelBadge";
 import { inviteLink, REFERRALS_TO_UNLOCK, successfulReferrals } from "@/lib/referral";
 import { InviteCard } from "./InviteCard";
+import { LockIcon } from "@/components/LockIcon";
 
 export default async function MockPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
   const user = await requireUser();
@@ -28,7 +29,7 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
                 aria-current={e.id === exam.id ? "page" : undefined}
                 className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${e.id === exam.id ? "border-brand bg-brand-soft text-brand-dark" : "border-slate-200 bg-white text-slate-600 hover:border-brand"}`}
               >
-                {isLocked(e.id) && "🔒 "}
+                {isLocked(e.id) && <LockIcon className="mr-1 -mt-0.5" />}
                 {e.short}
               </Link>
             ))}

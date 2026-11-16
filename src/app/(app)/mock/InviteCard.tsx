@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LockIcon } from "@/components/LockIcon";
 
 /** Shown instead of "Continue" on an invite-to-unlock mock: the student's link, share buttons and progress. */
 export function InviteCard({ link, have, need }: { link: string; have: number; need: number }) {
@@ -18,7 +19,7 @@ export function InviteCard({ link, have, need }: { link: string; have: number; n
   return (
     <div className="card space-y-4 border-brand/30">
       <div>
-        <h2 className="font-semibold">🔒 Invite 2 friends to unlock this mock</h2>
+        <h2 className="flex items-center gap-2 font-semibold"><LockIcon size={16} className="text-brand-dark" />Invite {need} friends to unlock this mock</h2>
         <p className="mt-1 text-sm text-slate-600">
           Share your link. When a friend signs up with it and finishes their profile, it counts. {need} friends unlock both GenC Extreme mocks for good.
         </p>
