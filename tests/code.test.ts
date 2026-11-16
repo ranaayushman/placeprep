@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
-import { allTests, normalizeOutput, PROBLEM_BY_ID, PROBLEMS, verdict } from "@/lib/code/problems";
+import { allTests, languagesFor, normalizeOutput, PROBLEM_BY_ID, PROBLEMS, verdict } from "@/lib/code/problems";
 import { runCode } from "@/lib/code/runner";
 import { SOLUTIONS } from "./helpers/cpp-solutions";
 
@@ -38,8 +38,9 @@ describe.skipIf(!hasCompiler)("C++ runner", () => {
   it("has a reference solution for every problem, and each passes all of its tests", async () => {
     expect(Object.keys(SOLUTIONS).sort()).toEqual(PROBLEMS.map((p) => p.id).sort());
     for (const [id, code] of Object.entries(SOLUTIONS)) {
-      const tests = allTests(PROBLEM_BY_ID.get(id)!);
-      const results = await runCode("cpp", code, tests.map((t) => t.input));
+      const problem = PROBLEM_BY_ID.get(id)!;
+      const tests = allTests(problem);
+      const results = await runCode(languagesFor(problem)[0], code, tests.map((t) => t.input));
       results.forEach((r, i) => {
         expect(r.status, `${id} test ${i}: ${r.stderr}`).toBe("ok");
         expect(normalizeOutput(r.stdout), `${id} test ${i}`).toBe(normalizeOutput(tests[i].output));

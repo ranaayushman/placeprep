@@ -55,4 +55,11 @@ using namespace std;int main(){int n;cin>>n;vector<vector<long long>>a(n,vector<
 using namespace std;int main(){int n;cin>>n;vector<long long>a(n);for(auto&x:a)cin>>x;long long t,c=0;cin>>t;for(int i=0;i<n;i++)for(int j=i+1;j<n;j++)if(a[i]+a[j]==t)c++;cout<<c<<"\\n";}`,
   "matrix-row-col-max": `#include <bits/stdc++.h>
 using namespace std;int main(){int n,m;cin>>n>>m;vector<long long>r(n,0),c(m,0);for(int i=0;i<n;i++)for(int j=0;j<m;j++){long long x;cin>>x;r[i]+=x;c[j]+=x;}cout<<*max_element(r.begin(),r.end())+*max_element(c.begin(),c.end())<<"\\n";}`,
+  // SQL (reference queries)
+  "sql-dept-headcount": "SELECT d.name, COUNT(e.id) FROM departments d LEFT JOIN employees e ON e.dept_id = d.id GROUP BY d.id ORDER BY d.name;",
+  "sql-above-dept-avg": "SELECT e.name, d.name, e.salary FROM employees e JOIN departments d ON d.id = e.dept_id WHERE e.salary > (SELECT AVG(salary) FROM employees WHERE dept_id = e.dept_id) ORDER BY e.salary DESC, e.name;",
+  "sql-customers-no-orders": "SELECT c.name FROM customers c LEFT JOIN orders o ON o.customer_id = c.id WHERE o.id IS NULL ORDER BY c.name;",
+  "sql-top-products": "SELECT p.name, SUM(oi.quantity) AS total FROM products p JOIN order_items oi ON oi.product_id = p.id GROUP BY p.id ORDER BY total DESC, p.name LIMIT 3;",
+  "sql-manager-name": "SELECT e.name, COALESCE(m.name, 'NONE') FROM employees e LEFT JOIN employees m ON m.id = e.manager_id ORDER BY e.name;",
+  "sql-second-highest": "SELECT DISTINCT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 1;",
 };

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { LANGUAGES, RUN_MS, STARTER_CODE, verdict, type Language, type Problem } from "@/lib/code/problems";
+import { LANGUAGES, languagesFor, RUN_MS, STARTER_CODE, verdict, type Language, type Problem } from "@/lib/code/problems";
 import type { RunResult } from "@/lib/code/runner";
 import { runAction, submitAction, type SubmitResult } from "../actions";
 
@@ -12,7 +12,7 @@ type Case = { input: string; expected?: string };
 type Submission = { at: number; lang: Language; label: string; passed: number; total: number };
 type Outcome = { kind: "run"; cases: Case[]; results: RunResult[] } | { kind: "submit"; result: SubmitResult };
 
-const FILE: Record<Language, string> = { cpp: "main.cpp", java: "Main.java" };
+const FILE: Record<Language, string> = { cpp: "main.cpp", java: "Main.java", sql: "query.sql" };
 const MAX_CASES = 10; // same cap as runAction
 const tone = (label: string) => (label === "Accepted" ? "text-emerald-700" : "text-red-700");
 const tab = (on: boolean) => `border-b-2 px-3 py-2 text-sm font-medium ${on ? "border-brand text-deep" : "border-transparent text-muted hover:text-deep"}`;
@@ -26,9 +26,10 @@ export type ProblemLink = Pick<Problem, "id" | "title" | "difficulty">;
 
 export function Workspace({ problem: p, index, problems, prev, next }: { problem: PublicProblem; index: number; problems: ProblemLink[]; prev?: string; next?: string }) {
   const total = problems.length;
-  const [lang, setLang] = useState<Language>("cpp");
+  const langs = languagesFor(p);
+  const [lang, setLang] = useState<Language>(langs[0]);
   const key = `code:${p.id}:${lang}`;
-  const [code, setCode] = useState<string>(STARTER_CODE.cpp);
+  const [code, setCode] = useState<string>(STARTER_CODE[langs[0]]);
   const [cursor, setCursor] = useState({ ln: 1, col: 1 });
   const [cases, setCases] = useState<Case[]>(p.samples.map(({ input, output }) => ({ input, expected: output })));
   const [caseIdx, setCaseIdx] = useState(0);
@@ -64,7 +65,7 @@ export function Workspace({ problem: p, index, problems, prev, next }: { problem
 
   useEffect(() => {
     const savedLang = localStorage.getItem("code:lang");
-    if (savedLang && savedLang in LANGUAGES) setLang(savedLang as Language);
+    if (savedLang && langs.includes(savedLang as Language)) setLang(savedLang as Language);
     setSubs(JSON.parse(localStorage.getItem(`code:subs:${p.id}`) ?? "[]"));
     setCases(p.samples.map(({ input, output }) => ({ input, expected: output }))); // the component is reused across problems
     setCaseIdx(0);
@@ -195,7 +196,7 @@ export function Workspace({ problem: p, index, problems, prev, next }: { problem
               <span className="font-semibold text-deep">{"</>"} Code</span>
               <span className="font-mono">· {FILE[lang]}</span>
               <select value={lang} onChange={(e) => switchLang(e.target.value as Language)} aria-label="Language" className="ml-auto rounded-md border border-slate-300 bg-white px-2 py-0.5 text-slate-700 focus:border-brand focus:outline-none">
-                {Object.entries(LANGUAGES).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                {langs.map((id) => <option key={id} value={id}>{LANGUAGES[id]}</option>)}
               </select>
               <span>{RUN_MS[lang] / 1000} s limit</span>
               <button type="button" onClick={() => update(STARTER_CODE[lang])} disabled={pending} title="Reset to starter code" aria-label="Reset code" className="rounded p-1 hover:bg-brand-soft hover:text-deep">↺</button>

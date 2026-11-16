@@ -1,4 +1,4 @@
-import { PROBLEMS, type Problem } from "@/lib/code/problems";
+import { languagesFor, PROBLEMS, type Problem } from "@/lib/code/problems";
 import type { Question, Topic } from "./types";
 
 /**
@@ -15,7 +15,7 @@ const GENC_EXTRA = new Set(["reverse-words", "second-largest", "palindrome", "kt
 const toQuestion = (p: Problem): Question => ({
   kind: "code",
   prompt: p.statement,
-  problem: { id: p.id, difficulty: p.difficulty, input: p.input, output: p.output, constraints: p.constraints, samples: p.samples },
+  problem: { id: p.id, difficulty: p.difficulty, input: p.input, output: p.output, constraints: p.constraints, samples: p.samples, languages: languagesFor(p) },
   options: [],
   answer: CODE_ACCEPTED,
   explanation: "Accepted when the program prints the expected output for every hidden test within the time limit.",
@@ -31,4 +31,5 @@ export const codingTopics: Topic[] = [
   topic("c-program", "Coding program (medium problem)", (p) => p.tier === "program", 900),
   // Cognizant GenC technical round: string and array basics (character frequency, string matching, …).
   topic("c-genc", "Coding (strings & arrays)", (p) => p.tier === "genc" || GENC_EXTRA.has(p.id), 1200),
+  topic("c-sql", "SQL query", (p) => p.tier === "sql", 600),
 ];

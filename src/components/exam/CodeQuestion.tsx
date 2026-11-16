@@ -20,9 +20,10 @@ type Props = {
 export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }: Props) {
   const p = view.problem!;
   const saved = parseCodeAnswer(textAnswer);
-  const [lang, setLang] = useState<Language>(saved?.language ?? "cpp");
+  const langs = p.languages as Language[];
+  const [lang, setLang] = useState<Language>(saved?.language ?? langs[0]);
   const key = `exam-code:${questionId}:${lang}`;
-  const [code, setCode] = useState(saved?.code ?? STARTER_CODE.cpp);
+  const [code, setCode] = useState(saved?.code ?? STARTER_CODE[langs[0]]);
   const [stdin, setStdin] = useState(p.samples[0]?.input ?? "");
   const [bottom, setBottom] = useState<"testcase" | "result">("testcase");
   const [busy, setBusy] = useState<"run" | "submit" | null>(null);
@@ -83,7 +84,7 @@ export function CodeQuestion({ questionId, view, textAnswer, mock, run, submit }
           <span className="font-semibold text-deep">{"</>"} Code</span>
           <span className="font-mono">· {lang === "cpp" ? "main.cpp" : "Main.java"}</span>
           <select value={lang} onChange={(e) => setLang(e.target.value as Language)} aria-label="Language" className="ml-auto rounded-md border border-slate-300 bg-white px-2 py-0.5 text-slate-700">
-            {Object.entries(LANGUAGES).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            {langs.map((id) => <option key={id} value={id}>{LANGUAGES[id]}</option>)}
           </select>
           <span>· {RUN_MS[lang] / 1000} s limit</span>
           <button type="button" onClick={() => update(STARTER_CODE[lang])} disabled={!!busy} title="Reset code" aria-label="Reset code" className="rounded p-1 hover:bg-brand-soft hover:text-deep">↺</button>

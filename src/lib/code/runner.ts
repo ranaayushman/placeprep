@@ -7,7 +7,8 @@ import { promisify } from "node:util";
 import { RUN_MS, type Language, type RunStatus } from "./problems";
 
 /**
- * Compiles and runs one C++17 (g++, or $CXX) or Java (javac/java, or $JAVA_HOME) program in a throwaway
+ * Compiles and runs one C++17 (g++, or $CXX) or Java (javac/java, or $JAVA_HOME) program, or runs an SQL query
+ * against each input script in `sqlite3 -safe` (no .shell/ATTACH, in-memory database), in a throwaway
  * directory, with a wall-clock limit and an output cap. The caller (actions.ts) gates who may use it.
  *
  * shortcut: no sandbox beyond timeouts and output caps; the program runs as the server user. Fine
@@ -26,6 +27,7 @@ const JAVA_BIN = process.env.JAVA_HOME ? `${process.env.JAVA_HOME}/bin/` : "";
 const LANG = {
   cpp: { file: "main.cpp", compile: (dir: string) => [CXX, ["-O2", "-std=c++17", "-I", dir, "main.cpp", "-o", "main"]] as const, run: (dir: string) => [path.join(dir, "main"), []] as const },
   java: { file: "Main.java", compile: () => [`${JAVA_BIN}javac`, ["-d", ".", "Main.java"]] as const, run: (dir: string) => [`${JAVA_BIN}java`, ["-Xmx256m", "-Xss64m", "-cp", dir, "Main"]] as const },
+  sql: { file: "query.sql", compile: null, run: () => ["sqlite3", ["-safe", "-bail", "-batch", ":memory:"]] as const },
 };
 
 /** Apple clang has no <bits/stdc++.h>; this shim is put on the include path for every compile. */
@@ -70,7 +72,9 @@ async function compile(lang: Language, dir: string, code: string): Promise<{ err
     await writeFile(path.join(dir, "bits", "stdc++.h"), BITS_STDCPP);
   }
   await writeFile(path.join(dir, LANG[lang].file), code);
-  const [cmd, args] = LANG[lang].compile(dir);
+  const c = LANG[lang].compile;
+  if (!c) return null;
+  const [cmd, args] = c(dir);
   try {
     await execFileP(cmd, args, { cwd: dir, timeout: COMPILE_MS, maxBuffer: OUTPUT_LIMIT * 4 });
     return null;
@@ -140,7 +144,8 @@ export async function runCode(lang: Language, code: string, inputs: string[]): P
     const failed = await compile(lang, dir, code);
     if (failed) return inputs.map(() => ({ status: "compile_error", stdout: "", stderr: failed.error, timeMs: 0 }));
     const out: RunResult[] = [];
-    for (const input of inputs) out.push(await execute(lang, dir, input));
+    // SQL: the dataset script runs first, then the query, on the same in-memory database.
+    for (const input of inputs) out.push(await execute(lang, dir, lang === "sql" ? `${input}\n${code}` : input));
     return out;
   } finally {
     await rm(dir, { recursive: true, force: true });

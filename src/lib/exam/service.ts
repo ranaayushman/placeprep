@@ -10,7 +10,7 @@ import { fingerprint, hardSlots, pickFresh, planTopics, scopedTopics, shuffle, t
 import { logEvent } from "@/lib/events";
 import { COMMUNITY_PREFIX, freshCommunityIds, isCommunityRef, loadPublished } from "@/lib/community/serve";
 import { judge } from "@/lib/code/judge";
-import { PROBLEM_BY_ID, type Language } from "@/lib/code/problems";
+import { languagesFor, PROBLEM_BY_ID, type Language } from "@/lib/code/problems";
 import { runCode } from "@/lib/code/runner";
 import { CODE_ACCEPTED } from "@/lib/questions/code-problems";
 import type { QuestionView } from "@/lib/questions/types";
@@ -404,9 +404,15 @@ async function loadCodeQuestion(attemptId: string, userId: string, questionId: s
   return { attempt, q, problem };
 }
 
+async function loadCodeQuestionFor(attemptId: string, userId: string, questionId: string, language: Language) {
+  const loaded = await loadCodeQuestion(attemptId, userId, questionId);
+  if (!languagesFor(loaded.problem).includes(language)) throw new ExamError("Language not allowed for this problem");
+  return loaded;
+}
+
 /** Runs the student's code on one custom input. Nothing is judged or saved. */
 export async function runCodeAnswer(attemptId: string, userId: string, input: { questionId: string; language: Language; code: string; stdin: string }) {
-  await loadCodeQuestion(attemptId, userId, input.questionId);
+  await loadCodeQuestionFor(attemptId, userId, input.questionId, input.language);
   const [result] = await runCode(input.language, input.code, [input.stdin]);
   return result;
 }
@@ -417,7 +423,7 @@ export async function runCodeAnswer(attemptId: string, userId: string, input: { 
  * counts. Hidden test details are revealed in practice only.
  */
 export async function submitCodeAnswer(attemptId: string, userId: string, input: { questionId: string; language: Language; code: string }) {
-  const { attempt, q, problem } = await loadCodeQuestion(attemptId, userId, input.questionId);
+  const { attempt, q, problem } = await loadCodeQuestionFor(attemptId, userId, input.questionId, input.language);
   const result = await judge(problem, input.language, input.code, { reveal: attempt.mode === "PRACTICE" });
   const accepted = result.passed === result.total;
   await db

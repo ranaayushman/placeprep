@@ -75,17 +75,21 @@ describe.skipIf(!hasCompiler)("Deloitte NLA mock: coding section", () => {
 });
 
 describe("Cognizant GenC mock", () => {
-  it("builds a mixed technical round: 2 coding problems first, then 30 MCQs", async () => {
+  it("builds a mixed technical round: 2 coding + 2 SQL problems first, then 30 MCQs", async () => {
     const id = await createMock(userId, { exam: "cognizant-genc", includeWriting: false });
     for (let i = 0; i < 3; i++) await submitSection(id, userId, i);
     const s = await getExamState(id, userId);
     if (s.status !== "IN_PROGRESS") throw new Error("expected in progress");
     expect(s.current.section).toBe("technical");
-    expect(s.current.questions).toHaveLength(32);
+    expect(s.current.questions).toHaveLength(34);
     const kinds = s.current.questions.map((q) => q.view.kind);
-    expect(kinds.slice(0, 2)).toEqual(["code", "code"]);
-    expect(kinds.slice(2).every((k) => k === "mcq")).toBe(true);
+    expect(kinds.slice(0, 4)).toEqual(["code", "code", "code", "code"]);
+    expect(kinds.slice(4).every((k) => k === "mcq")).toBe(true);
+    const sqlQ = s.current.questions.find((q) => q.view.problem?.languages[0] === "sql")!;
+    await expect(runCodeAnswer(id, userId, { questionId: sqlQ.id, language: "cpp", code: "int main(){}", stdin: "" })).rejects.toThrow("Language not allowed");
+    const right = await submitCodeAnswer(id, userId, { questionId: sqlQ.id, language: "sql", code: SOLUTIONS[sqlQ.view.problem!.id] });
+    expect(right.accepted).toBe(true);
     const ids = new Set(s.current.questions.map((q) => q.id));
-    expect(ids.size).toBe(32);
+    expect(ids.size).toBe(34);
   });
 });

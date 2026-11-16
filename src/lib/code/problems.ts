@@ -6,17 +6,17 @@
  * class monitor, string alternation); the program pool follows the medium ones they list (K set bits,
  * odd-sum subarrays, longest palindromic substring, Kth largest, inversions). Every sample is also a hidden test.
  */
-export type Language = "cpp" | "java";
-export const LANGUAGES: Record<Language, string> = { cpp: "C++17", java: "Java" };
+export type Language = "cpp" | "java" | "sql";
+export const LANGUAGES: Record<Language, string> = { cpp: "C++17", java: "Java", sql: "SQL (SQLite)" };
 /** Wall-clock limit per run; the JVM needs start-up time. */
-export const RUN_MS: Record<Language, number> = { cpp: 2_000, java: 4_000 };
+export const RUN_MS: Record<Language, number> = { cpp: 2_000, java: 4_000, sql: 2_000 };
 
 export type Problem = {
   id: string;
   title: string;
   difficulty: "Easy" | "Medium";
   /** Deloitte NLA serves one "coding nugget" (short, function-level) and one fuller "program" per paper. */
-  tier: "nugget" | "program" | "genc";
+  tier: "nugget" | "program" | "genc" | "sql";
   tags: string[];
   statement: string;
   input: string;
@@ -50,7 +50,13 @@ public class Main {
     }
 }
 `,
+  sql: `-- The tables are already created and filled. Write your query:
+SELECT
+`,
 };
+
+/** SQL problems take only SQL; the rest take the compiled languages. */
+export const languagesFor = (p: Pick<Problem, "tier">): Language[] => (p.tier === "sql" ? ["sql"] : ["cpp", "java"]);
 
 /** Trailing spaces on each line and trailing blank lines do not matter; everything else does. */
 export const normalizeOutput = (s: string) =>
@@ -565,6 +571,109 @@ export const PROBLEMS: Problem[] = [
       { input: "2 3\n1 1 1\n2 2 2\n", output: "9\n" },
       { input: "3 1\n1\n2\n3\n", output: "9\n" },
       { input: "2 2\n-1 -2\n-3 -4\n", output: "-7\n" },
+    ],
+  },
+  // ── SQL (Cognizant GenC technical round: two query questions on a given schema). Each test is a dataset script. ──
+  {
+    id: "sql-dept-headcount",
+    title: "Employees per department",
+    difficulty: "Easy",
+    tier: "sql",
+    tags: ["sql", "left join", "group by"],
+    statement: "Tables: departments(id, name) and employees(id, name, dept_id, salary). For every department print its name and the number of employees in it, including departments with no employees (count 0). Order by department name.",
+    input: "A SQLite script that creates and fills the tables runs first (the sample shows one). Write only the query.",
+    output: "One row per department: name|count. Columns are separated by | and rows by newlines, as sqlite3 prints them.",
+    constraints: "At most 1000 rows per table.",
+    samples: [{ input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'HR'), (2, 'IT'), (3, 'Sales');\nINSERT INTO employees VALUES (1, 'Asha', 1, 50000), (2, 'Ravi', 2, 70000), (3, 'Meena', 2, 60000), (4, 'Karan', 2, 80000);\n", output: "HR|1\nIT|3\nSales|0\n" }],
+    tests: [
+      { input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'Ops');\n", output: "Ops|0\n" },
+      { input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'B'), (2, 'A');\nINSERT INTO employees VALUES (1, 'x', 2, 1), (2, 'y', 2, 2), (3, 'z', 2, 3);\n", output: "A|3\nB|0\n" },
+      { input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'HR'), (2, 'IT'), (3, 'Sales');\nINSERT INTO employees VALUES (1, 'Asha', 3, 10), (2, 'Ravi', 1, 20);\n", output: "HR|1\nIT|0\nSales|1\n" },
+    ],
+  },
+  {
+    id: "sql-above-dept-avg",
+    title: "Paid above the department average",
+    difficulty: "Medium",
+    tier: "sql",
+    tags: ["sql", "join", "subquery"],
+    statement: "Tables: departments(id, name) and employees(id, name, dept_id, salary). Print the employees whose salary is strictly greater than the average salary of their own department: name, department name and salary. Order by salary descending, then by employee name.",
+    input: "A SQLite script that creates and fills the tables runs first (the sample shows one). Write only the query.",
+    output: "One row per employee: name|department|salary. Columns are separated by | and rows by newlines, as sqlite3 prints them.",
+    constraints: "At most 1000 rows per table.",
+    samples: [{ input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'HR'), (2, 'IT'), (3, 'Sales');\nINSERT INTO employees VALUES (1, 'Asha', 1, 50000), (2, 'Ravi', 2, 70000), (3, 'Meena', 2, 60000), (4, 'Karan', 2, 80000);\n", output: "Karan|IT|80000\n" }],
+    tests: [
+      { input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'HR'), (2, 'IT'), (3, 'Sales');\nINSERT INTO employees VALUES (1, 'A', 1, 100), (2, 'B', 1, 100);\n", output: "\n" },
+      { input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'HR'), (2, 'IT'), (3, 'Sales');\nINSERT INTO employees VALUES (1, 'Zed', 1, 10), (2, 'Amy', 1, 30), (3, 'Bob', 2, 30), (4, 'Cal', 2, 10), (5, 'Dan', 3, 5);\n", output: "Amy|HR|30\nBob|IT|30\n" },
+      { input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'HR'), (2, 'IT'), (3, 'Sales');\nINSERT INTO employees VALUES (1, 'Solo', 2, 1);\n", output: "\n" },
+    ],
+  },
+  {
+    id: "sql-customers-no-orders",
+    title: "Customers without orders",
+    difficulty: "Easy",
+    tier: "sql",
+    tags: ["sql", "left join", "not exists"],
+    statement: "Tables: customers(id, name) and orders(id, customer_id, amount). Print the names of customers who have never placed an order, in alphabetical order.",
+    input: "A SQLite script that creates and fills the tables runs first (the sample shows one). Write only the query.",
+    output: "One name per row. Columns are separated by | and rows by newlines, as sqlite3 prints them.",
+    constraints: "At most 1000 rows per table.",
+    samples: [{ input: "CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, amount INTEGER);\nINSERT INTO customers VALUES (1, 'Priya'), (2, 'Rahul'), (3, 'Neha');\nINSERT INTO orders VALUES (1, 1, 500), (2, 1, 250);\n", output: "Neha\nRahul\n" }],
+    tests: [
+      { input: "CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, amount INTEGER);\nINSERT INTO customers VALUES (1, 'A'), (2, 'B');\n", output: "A\nB\n" },
+      { input: "CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, amount INTEGER);\nINSERT INTO customers VALUES (1, 'A'), (2, 'B');\nINSERT INTO orders VALUES (1, 1, 1), (2, 2, 1);\n", output: "\n" },
+      { input: "CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, amount INTEGER);\nINSERT INTO customers VALUES (1, 'Zara'), (2, 'Mia'), (3, 'Ivy'), (4, 'Bea');\nINSERT INTO orders VALUES (1, 2, 9), (2, 2, 9), (3, 4, 1);\n", output: "Ivy\nZara\n" },
+    ],
+  },
+  {
+    id: "sql-top-products",
+    title: "Top three products by quantity sold",
+    difficulty: "Medium",
+    tier: "sql",
+    tags: ["sql", "join", "group by", "limit"],
+    statement: "Tables: products(id, name) and order_items(id, product_id, quantity). Print the three products with the largest total quantity sold: name and total. Order by total descending, then by name; print fewer rows if fewer products were sold.",
+    input: "A SQLite script that creates and fills the tables runs first (the sample shows one). Write only the query.",
+    output: "At most three rows: name|total. Columns are separated by | and rows by newlines, as sqlite3 prints them.",
+    constraints: "At most 1000 rows per table.",
+    samples: [{ input: "CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE order_items (id INTEGER PRIMARY KEY, product_id INTEGER, quantity INTEGER);\nINSERT INTO products VALUES (1, 'Pen'), (2, 'Book'), (3, 'Bag'), (4, 'Ink');\nINSERT INTO order_items VALUES (1, 1, 10), (2, 2, 5), (3, 1, 7), (4, 3, 12), (5, 4, 17), (6, 2, 1);\n", output: "Ink|17\nPen|17\nBag|12\n" }],
+    tests: [
+      { input: "CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE order_items (id INTEGER PRIMARY KEY, product_id INTEGER, quantity INTEGER);\nINSERT INTO products VALUES (1, 'Only');\nINSERT INTO order_items VALUES (1, 1, 3);\n", output: "Only|3\n" },
+      { input: "CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE order_items (id INTEGER PRIMARY KEY, product_id INTEGER, quantity INTEGER);\nINSERT INTO products VALUES (1, 'A'), (2, 'B'), (3, 'C');\nINSERT INTO order_items VALUES (1, 1, 5), (2, 2, 5), (3, 3, 5);\n", output: "A|5\nB|5\nC|5\n" },
+      { input: "CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE order_items (id INTEGER PRIMARY KEY, product_id INTEGER, quantity INTEGER);\nINSERT INTO products VALUES (1, 'Unsold'), (2, 'Sold');\nINSERT INTO order_items VALUES (1, 2, 2);\n", output: "Sold|2\n" },
+    ],
+  },
+  {
+    id: "sql-manager-name",
+    title: "Employee with manager",
+    difficulty: "Medium",
+    tier: "sql",
+    tags: ["sql", "self join"],
+    statement: "Table: employees(id, name, manager_id), where manager_id refers to another employee's id and is NULL for the top manager. Print each employee's name with their manager's name; print NONE when there is no manager. Order by employee name.",
+    input: "A SQLite script that creates and fills the tables runs first (the sample shows one). Write only the query.",
+    output: "One row per employee: employee|manager. Columns are separated by | and rows by newlines, as sqlite3 prints them.",
+    constraints: "At most 1000 rows per table.",
+    samples: [{ input: "CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, manager_id INTEGER);\nINSERT INTO employees VALUES (1, 'Sita', NULL), (2, 'Arjun', 1), (3, 'Bala', 1), (4, 'Chitra', 2);\n", output: "Arjun|Sita\nBala|Sita\nChitra|Arjun\nSita|NONE\n" }],
+    tests: [
+      { input: "CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, manager_id INTEGER);\nINSERT INTO employees VALUES (1, 'Boss', NULL);\n", output: "Boss|NONE\n" },
+      { input: "CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, manager_id INTEGER);\nINSERT INTO employees VALUES (1, 'A', 2), (2, 'B', 3), (3, 'C', NULL);\n", output: "A|B\nB|C\nC|NONE\n" },
+      { input: "CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, manager_id INTEGER);\nINSERT INTO employees VALUES (5, 'Zed', 9), (9, 'Yan', NULL), (7, 'Xia', 9);\n", output: "Xia|Yan\nYan|NONE\nZed|Yan\n" },
+    ],
+  },
+  {
+    id: "sql-second-highest",
+    title: "Second highest salary",
+    difficulty: "Easy",
+    tier: "sql",
+    tags: ["sql", "distinct", "limit"],
+    statement: "Tables: departments(id, name) and employees(id, name, dept_id, salary). Print the second highest distinct salary among all employees. If there is no such salary, print nothing.",
+    input: "A SQLite script that creates and fills the tables runs first (the sample shows one). Write only the query.",
+    output: "One row with the salary, or no rows. Columns are separated by | and rows by newlines, as sqlite3 prints them.",
+    constraints: "At most 1000 rows per table.",
+    samples: [{ input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'HR'), (2, 'IT'), (3, 'Sales');\nINSERT INTO employees VALUES (1, 'Asha', 1, 50000), (2, 'Ravi', 2, 70000), (3, 'Meena', 2, 60000), (4, 'Karan', 2, 80000);\n", output: "70000\n" }],
+    tests: [
+      { input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'HR'), (2, 'IT'), (3, 'Sales');\nINSERT INTO employees VALUES (1, 'A', 1, 100), (2, 'B', 1, 100);\n", output: "\n" },
+      { input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'HR'), (2, 'IT'), (3, 'Sales');\nINSERT INTO employees VALUES (1, 'A', 1, 100), (2, 'B', 1, 100), (3, 'C', 2, 90), (4, 'D', 2, 90);\n", output: "90\n" },
+      { input: "CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, dept_id INTEGER, salary INTEGER);\nINSERT INTO departments VALUES (1, 'HR'), (2, 'IT'), (3, 'Sales');\n", output: "\n" },
     ],
   },
 ];

@@ -30,6 +30,8 @@ export interface ProblemSpec {
   output: string;
   constraints: string;
   samples: { input: string; output: string; note?: string }[];
+  /** Languages the editor offers for this problem (SQL problems take SQL only). */
+  languages: string[];
 }
 
 /** Bar and line: one value per label for each series. Pie: one series of percentages (summing to 100). */

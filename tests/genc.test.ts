@@ -12,7 +12,7 @@ describe("Cognizant GenC pattern", () => {
       ["math", 25, 30],
       ["reasoning", 30, 35],
       ["verbal", 15, 15],
-      ["technical", 32, 120],
+      ["technical", 34, 120],
     ]);
     expect(EXAMS.find((e) => e.id === "cognizant-genc")).toBeTruthy();
   });
@@ -25,11 +25,13 @@ describe("Cognizant GenC pattern", () => {
     }
   });
 
-  it("technical round is 2 coding + 20 debugging + 10 MCQ with big enough pools", () => {
+  it("technical round is 2 coding + 2 SQL + 20 debugging + 10 MCQ with big enough pools", () => {
     const tech = COGNIZANT_GENC_PATTERN[3].topics!;
-    expect(tech).toEqual({ "c-genc": 2, "t-debug": 20, "t-java": 6, "t-dbms": 4 });
+    expect(tech).toEqual({ "c-genc": 2, "c-sql": 2, "t-debug": 20, "t-java": 6, "t-dbms": 4 });
     for (const [id, n] of Object.entries(tech)) expect(topic(id).poolSize!, id).toBeGreaterThanOrEqual(n);
     expect(topic("c-genc").section).toBe("coding");
+    expect(topic("c-sql").section).toBe("coding");
+    for (let seed = 0; seed < 6; seed++) expect(toView(generate(`c-sql:${seed}`)).problem!.languages).toEqual(["sql"]);
     expect(topic("t-debug").section).toBe("technical");
   });
 
