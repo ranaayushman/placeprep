@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PROBLEMS } from "@/lib/code/problems";
-import { COGNIZANT_GENC_PATTERN, EXAMS } from "@/lib/exam/pattern";
+import { COGNIZANT_GENC_PATTERN, COGNIZANT_GENC_PYTHON_PATTERN, EXAMS } from "@/lib/exam/pattern";
+import { DEBUG, DEBUG_PY } from "@/lib/questions/genc";
 import { TOPIC_BY_ID, generate, toView } from "@/lib/questions";
 
 const topic = (id: string) => TOPIC_BY_ID.get(id)!;
@@ -18,7 +19,7 @@ describe("Cognizant GenC pattern", () => {
   });
 
   it("names topics that exist, with weights adding up to the section size", () => {
-    for (const s of COGNIZANT_GENC_PATTERN) {
+    for (const s of [...COGNIZANT_GENC_PATTERN, ...COGNIZANT_GENC_PYTHON_PATTERN]) {
       const ids = Object.keys(s.topics!);
       for (const id of ids) expect(topic(id), id).toBeTruthy();
       expect(Object.values(s.topics!).reduce((a, b) => a + b, 0)).toBe(s.questions);
@@ -33,6 +34,16 @@ describe("Cognizant GenC pattern", () => {
     expect(topic("c-sql").section).toBe("coding");
     for (let seed = 0; seed < 6; seed++) expect(toView(generate(`c-sql:${seed}`)).problem!.languages).toEqual(["sql"]);
     expect(topic("t-debug").section).toBe("technical");
+  });
+
+  it("Python cluster swaps the Java banks for Python ones and shares the rest", () => {
+    expect(COGNIZANT_GENC_PYTHON_PATTERN.slice(0, 3)).toEqual(COGNIZANT_GENC_PATTERN.slice(0, 3));
+    expect(COGNIZANT_GENC_PYTHON_PATTERN[3].topics).toEqual({ "c-genc": 2, "c-sql": 2, "t-debug-py": 20, "t-python": 6, "t-dbms": 2, "t-cloud": 2 });
+    expect(EXAMS.find((e) => e.id === "cognizant-genc-python")).toBeTruthy();
+    expect(DEBUG.some((q) => q.lang === "Python")).toBe(false);
+    expect(DEBUG_PY.some((q) => q.lang === "Java")).toBe(false);
+    for (const pool of [DEBUG, DEBUG_PY]) expect(pool.length).toBeGreaterThanOrEqual(60);
+    for (let seed = 0; seed < 6; seed++) expect(toView(generate(`c-genc:${seed}`)).problem!.languages).toEqual(["cpp", "java", "python"]);
   });
 
   it("every GenC coding problem has a reference solution and hidden tests", () => {

@@ -71,6 +71,28 @@ const JAVA_SOLUTIONS: Record<string, string> = {
   "balanced-brackets": `import java.util.*;public class Main{public static void main(String[] a){String s=new Scanner(System.in).next();Deque<Character> st=new ArrayDeque<>();Map<Character,Character> m=Map.of(')','(',']','[','}','{');for(char c:s.toCharArray()){if(m.containsKey(c)){if(st.isEmpty()||st.pop()!=m.get(c)){System.out.println("NO");return;}}else st.push(c);}System.out.println(st.isEmpty()?"YES":"NO");}}`,
 };
 
+const PY_SOLUTIONS: Record<string, string> = {
+  "move-zeros": "import sys\nd = sys.stdin.read().split()\nn = int(d[0]); a = [int(x) for x in d[1:1 + n]]\nnz = [x for x in a if x != 0]\nprint(*(nz + [0] * (n - len(nz))))\n",
+  "char-frequency": "s = input().strip()\nc = {}\nfor ch in s:\n    c[ch] = c.get(ch, 0) + 1\nfor ch, n in c.items():\n    print(ch, n)\n",
+};
+
+describe("Python runner", () => {
+  it("passes reference solutions and reports syntax errors as compile errors", async () => {
+    for (const [id, code] of Object.entries(PY_SOLUTIONS)) {
+      const tests = allTests(PROBLEM_BY_ID.get(id)!);
+      const results = await runCode("python", code, tests.map((t) => t.input));
+      results.forEach((r, i) => {
+        expect(r.status, `${id} test ${i}: ${r.stderr}`).toBe("ok");
+        expect(normalizeOutput(r.stdout), `${id} test ${i}`).toBe(normalizeOutput(tests[i].output));
+      });
+    }
+    const [ce] = await runCode("python", "print(1", [""]);
+    expect(ce.status).toBe("compile_error");
+    const [re] = await runCode("python", "print(1 / 0)", [""]);
+    expect(re.status).toBe("runtime_error");
+  }, 60_000);
+});
+
 describe.skipIf(!hasJava)("Java runner", () => {
   it("passes reference solutions and reports compile, runtime and time-limit errors", async () => {
     for (const [id, code] of Object.entries(JAVA_SOLUTIONS)) {

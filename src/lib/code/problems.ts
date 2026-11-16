@@ -6,10 +6,10 @@
  * class monitor, string alternation); the program pool follows the medium ones they list (K set bits,
  * odd-sum subarrays, longest palindromic substring, Kth largest, inversions). Every sample is also a hidden test.
  */
-export type Language = "cpp" | "java" | "sql";
-export const LANGUAGES: Record<Language, string> = { cpp: "C++17", java: "Java", sql: "SQL (SQLite)" };
+export type Language = "cpp" | "java" | "python" | "sql";
+export const LANGUAGES: Record<Language, string> = { cpp: "C++17", java: "Java", python: "Python 3", sql: "SQL (SQLite)" };
 /** Wall-clock limit per run; the JVM needs start-up time. */
-export const RUN_MS: Record<Language, number> = { cpp: 2_000, java: 4_000, sql: 2_000 };
+export const RUN_MS: Record<Language, number> = { cpp: 2_000, java: 4_000, python: 4_000, sql: 2_000 };
 
 export type Problem = {
   id: string;
@@ -50,13 +50,21 @@ public class Main {
     }
 }
 `,
+  python: `import sys
+
+def main():
+    data = sys.stdin.read().split()
+    
+
+main()
+`,
   sql: `-- The tables are already created and filled. Write your query:
 SELECT
 `,
 };
 
 /** SQL problems take only SQL; the rest take the compiled languages. */
-export const languagesFor = (p: Pick<Problem, "tier">): Language[] => (p.tier === "sql" ? ["sql"] : ["cpp", "java"]);
+export const languagesFor = (p: Pick<Problem, "tier">): Language[] => (p.tier === "sql" ? ["sql"] : ["cpp", "java", "python"]);
 
 /** Trailing spaces on each line and trailing blank lines do not matter; everything else does. */
 export const normalizeOutput = (s: string) =>

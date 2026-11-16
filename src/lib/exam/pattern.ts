@@ -82,12 +82,13 @@ export const DELOITTE_NLA_PATTERN: SectionSpec[] = [
  * Nov–Dec 2025 drive (GeeksforGeeks, PrepInsta) and PlacementPreparation (Nov 2026):
  *
  *   Aptitude ~80 min: Quant 25 / 30 min, Logical 30 / 35 min, Verbal 15 / 15 min
- *   Technical 120 min, one timer, Java cluster: 2 coding + 2 SQL queries + 20 code-debugging MCQs + 10 tech MCQs
+ *   Technical 120 min, one timer: 2 coding + 2 SQL queries + 20 code-debugging MCQs + 10 tech MCQs.
+ *   Clusters (chosen at the pre-placement talk): Java + SQL + web, or Python + SQL + cloud. One mock entry each.
  *
  * Not simulated yet: the 60-min AI communication round (speaking) and the game-based puzzles inside aptitude.
  * No negative marking.
  */
-export const COGNIZANT_GENC_PATTERN: SectionSpec[] = [
+const GENC_APTITUDE: SectionSpec[] = [
   {
     section: "math",
     questions: 25,
@@ -101,7 +102,16 @@ export const COGNIZANT_GENC_PATTERN: SectionSpec[] = [
     topics: { "r-series": 4, "r-coding": 4, "r-blood": 3, "r-direction": 3, "r-seating": 3, "r-syllogism": 3, "r-ds": 2, "r-odd": 2, "r-ranking": 2, "r-alpha": 2, "r-statement": 2 },
   },
   { section: "verbal", questions: 15, minutes: 15, topics: { "v-correction": 4, "v-fill": 4, "v-vocab": 3, "v-error": 2, "v-jumble": 2 } },
+];
+
+export const COGNIZANT_GENC_PATTERN: SectionSpec[] = [
+  ...GENC_APTITUDE,
   { section: "technical", questions: 34, minutes: 120, topics: { "c-genc": 2, "c-sql": 2, "t-debug": 20, "t-java": 6, "t-dbms": 4 } },
+];
+
+export const COGNIZANT_GENC_PYTHON_PATTERN: SectionSpec[] = [
+  ...GENC_APTITUDE,
+  { section: "technical", questions: 34, minutes: 120, topics: { "c-genc": 2, "c-sql": 2, "t-debug-py": 20, "t-python": 6, "t-dbms": 2, "t-cloud": 2 } },
 ];
 
 /**
@@ -137,11 +147,20 @@ export const EXAMS = [
   {
     id: "cognizant-genc",
     company: "Cognizant",
-    name: "GenC · GenC Pro · GenC Next (common assessment)",
-    short: "Cognizant GenC",
+    name: "GenC · GenC Pro · GenC Next — Java cluster",
+    short: "Cognizant GenC (Java)",
     pattern: COGNIZANT_GENC_PATTERN,
     level: "realistic" as ExamLevel,
-    note: "Reported 2025–26 pattern. Aptitude first, then one 120-minute technical round (Java cluster): 2 coding problems and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs and 10 Java/SQL MCQs. The AI communication round and the game-based puzzles are not simulated yet.",
+    note: "Reported 2025–26 pattern. Aptitude first, then one 120-minute technical round for the Java + SQL cluster: 2 coding problems and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs (Java, C, JavaScript, SQL) and 10 Java/SQL MCQs. The AI communication round and the game-based puzzles are not simulated yet.",
+  },
+  {
+    id: "cognizant-genc-python",
+    company: "Cognizant",
+    name: "GenC · GenC Pro · GenC Next — Python cluster",
+    short: "Cognizant GenC (Python)",
+    pattern: COGNIZANT_GENC_PYTHON_PATTERN,
+    level: "realistic" as ExamLevel,
+    note: "Same aptitude round, then the technical round for the Python + SQL + cloud cluster: 2 coding problems (solve them in Python) and 2 SQL queries judged on hidden tests, 20 code-debugging MCQs (Python, C, JavaScript, SQL) and 10 Python/SQL/cloud MCQs.",
   },
 ] as const;
 export type ExamId = (typeof EXAMS)[number]["id"];

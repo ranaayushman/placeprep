@@ -12,7 +12,7 @@ type Case = { input: string; expected?: string };
 type Submission = { at: number; lang: Language; label: string; passed: number; total: number };
 type Outcome = { kind: "run"; cases: Case[]; results: RunResult[] } | { kind: "submit"; result: SubmitResult };
 
-const FILE: Record<Language, string> = { cpp: "main.cpp", java: "Main.java", sql: "query.sql" };
+const FILE: Record<Language, string> = { cpp: "main.cpp", java: "Main.java", python: "main.py", sql: "query.sql" };
 const MAX_CASES = 10; // same cap as runAction
 const tone = (label: string) => (label === "Accepted" ? "text-emerald-700" : "text-red-700");
 const tab = (on: boolean) => `border-b-2 px-3 py-2 text-sm font-medium ${on ? "border-brand text-deep" : "border-transparent text-muted hover:text-deep"}`;

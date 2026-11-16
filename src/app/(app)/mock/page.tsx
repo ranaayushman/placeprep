@@ -27,11 +27,6 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
                 {e.short}
               </Link>
             ))}
-            {!EXAMS.some((e) => e.company.toLowerCase() === "cognizant") && (
-              <span className="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-400" title="A Cognizant GenC mock is coming soon">
-                Cognizant · soon
-              </span>
-            )}
           </nav>
         )}
         <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold">

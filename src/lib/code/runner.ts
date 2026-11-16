@@ -27,6 +27,7 @@ const JAVA_BIN = process.env.JAVA_HOME ? `${process.env.JAVA_HOME}/bin/` : "";
 const LANG = {
   cpp: { file: "main.cpp", compile: (dir: string) => [CXX, ["-O2", "-std=c++17", "-I", dir, "main.cpp", "-o", "main"]] as const, run: (dir: string) => [path.join(dir, "main"), []] as const },
   java: { file: "Main.java", compile: () => [`${JAVA_BIN}javac`, ["-d", ".", "Main.java"]] as const, run: (dir: string) => [`${JAVA_BIN}java`, ["-Xmx256m", "-Xss64m", "-cp", dir, "Main"]] as const },
+  python: { file: "main.py", compile: () => ["python3", ["-m", "py_compile", "main.py"]] as const, run: () => ["python3", ["main.py"]] as const },
   sql: { file: "query.sql", compile: null, run: () => ["sqlite3", ["-safe", "-bail", "-batch", ":memory:"]] as const },
 };
 
