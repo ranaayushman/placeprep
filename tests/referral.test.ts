@@ -42,6 +42,12 @@ describe("referrals", () => {
     await mk({ referredBy: a.id, onboardedAt: new Date() });
     expect(await referralLock(a.id, "cognizant-genc-hard")).toBeNull();
     expect(await referralLock(a.id, "cognizant-genc-python-hard")).toBeNull();
+    // An admin unlock opens them with no referrals; admins never see the lock.
+    const c = await mk();
+    expect(await referralLock(c.id, "cognizant-genc-hard")).not.toBeNull();
+    await db.update(users).set({ inviteUnlockedAt: new Date() }).where(eq(users.id, c.id));
+    expect(await referralLock(c.id, "cognizant-genc-hard")).toBeNull();
+    expect(await referralLock((await mk({ role: "ADMIN" })).id, "cognizant-genc-python-hard")).toBeNull();
     // Deleting the referrer keeps the referred account (FK sets null).
     await db.delete(users).where(eq(users.id, a.id));
     expect((await db.select().from(users).where(eq(users.id, good.id)))[0].referredBy).toBeNull();

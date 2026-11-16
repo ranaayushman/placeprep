@@ -7,7 +7,10 @@ import { describeEvent, userDetail } from "@/lib/admin";
 import { getTopicStats, sectionStats } from "@/lib/analytics";
 import { ProgressBar, pct } from "@/components/charts";
 import { ago, fmtDate, fmtDateTime, isOnline } from "@/components/admin/when";
-import { blockUser, deleteUser, revokeSessions, setRole, unblockUser } from "../../actions";
+import { blockUser, deleteUser, revokeSessions, setCodeAccess, setInviteUnlock, setRole, unblockUser } from "../../actions";
+import { referralStatus, REFERRALS_TO_UNLOCK } from "@/lib/referral";
+import { db, users } from "@/db";
+import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +33,9 @@ export default async function AdminUserDetail({ params, searchParams }: { params
   const isSelf = user.id === admin.id;
   const violationEvents = events.filter((e) => e.type === "violation");
   const deletionRequest = await myDeletionRequest(id);
+  const referrals = await referralStatus(id);
+  const [{ inviteUnlockedAt, codeAccessAt }] = await db.select({ inviteUnlockedAt: users.inviteUnlockedAt, codeAccessAt: users.codeAccessAt }).from(users).where(eq(users.id, id));
+  const needed = Math.max(...Object.values(REFERRALS_TO_UNLOCK));
 
   return (
     <div className="space-y-6">
@@ -105,6 +111,46 @@ export default async function AdminUserDetail({ params, searchParams }: { params
             )}
           </div>
           <p className="mt-2 text-xs text-slate-500">Blocking signs the user out immediately and stops them logging in. Every action is recorded in the audit log below.</p>
+        </section>
+      )}
+
+      {user.role !== "ADMIN" && (
+        <section className="card">
+          <h2 className="font-semibold">Invite-only mocks (GenC Extreme)</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            {referrals.have} of {needed} referrals joined ·{" "}
+            {inviteUnlockedAt ? (
+              <span className="font-medium text-emerald-700">Unlocked by an admin on {fmtDate(inviteUnlockedAt)}</span>
+            ) : referrals.have >= needed ? (
+              <span className="font-medium text-emerald-700">Unlocked by referrals</span>
+            ) : (
+              <span className="font-medium text-amber-700">Locked</span>
+            )}
+          </p>
+          <form action={setInviteUnlock} className="mt-3">
+            <input type="hidden" name="userId" value={user.id} />
+            <input type="hidden" name="unlock" value={inviteUnlockedAt ? "0" : "1"} />
+            <SubmitButton className={inviteUnlockedAt ? "btn-secondary" : "btn-primary"}>{inviteUnlockedAt ? "Remove admin unlock" : "Unlock without referrals"}</SubmitButton>
+          </form>
+          {inviteUnlockedAt && referrals.have >= needed && <p className="mt-2 text-xs text-slate-500">They also have enough referrals, so removing the admin unlock won&apos;t lock them.</p>}
+        </section>
+      )}
+
+      {user.role !== "ADMIN" && (
+        <section className="card">
+          <h2 className="font-semibold">Code practice &amp; DSA track</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            {codeAccessAt ? (
+              <span className="font-medium text-emerald-700">Access given on {fmtDate(codeAccessAt)}</span>
+            ) : (
+              <span className="font-medium text-amber-700">Hidden: these pages are admin-only unless you give access</span>
+            )}
+          </p>
+          <form action={setCodeAccess} className="mt-3">
+            <input type="hidden" name="userId" value={user.id} />
+            <input type="hidden" name="grant" value={codeAccessAt ? "0" : "1"} />
+            <SubmitButton className={codeAccessAt ? "btn-secondary" : "btn-primary"}>{codeAccessAt ? "Remove access" : "Give access"}</SubmitButton>
+          </form>
         </section>
       )}
 

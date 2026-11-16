@@ -1,11 +1,11 @@
-import { requireUser } from "@/lib/auth";
+import { requireCodeAccess } from "@/lib/auth";
 import { DSA_PROBLEMS } from "@/lib/code/dsa";
 import { DsaTrack, type TrackTopic } from "./DsaTrack";
 
 export const metadata = { title: "DSA track" };
 
 export default async function DsaPage() {
-  await requireUser();
+  await requireCodeAccess();
   const topics: TrackTopic[] = [...new Set(DSA_PROBLEMS.map((p) => p.topic))].map((name) => ({
     name,
     problems: DSA_PROBLEMS.filter((p) => p.topic === name).map(({ id, title, difficulty, tags }) => ({ id, title, difficulty, tags })),

@@ -4,7 +4,7 @@ import { listExamsFor } from "@/lib/exam/exams";
 import { requireUser } from "@/lib/auth";
 import { SECTION_LABELS } from "@/lib/questions";
 import { LevelBadge } from "@/components/LevelBadge";
-import { inviteLink, REFERRALS_TO_UNLOCK, successfulReferrals } from "@/lib/referral";
+import { inviteLink, isInviteLocked, REFERRALS_TO_UNLOCK, referralStatus } from "@/lib/referral";
 import { InviteCard } from "./InviteCard";
 import { LockIcon } from "@/components/LockIcon";
 
@@ -13,8 +13,8 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
   const EXAMS = await listExamsFor(user.email);
   const wanted = (await searchParams).exam;
   const exam = EXAMS.find((e) => e.id === wanted) ?? EXAMS[0];
-  const referrals = await successfulReferrals(user.id);
-  const isLocked = (id: string) => (REFERRALS_TO_UNLOCK[id] ?? 0) > referrals;
+  const referrals = await referralStatus(user.id);
+  const isLocked = (id: string) => isInviteLocked(id, referrals);
   const hasWriting = exam.pattern.some((s) => s.section === "writing");
   const mcqMinutes = exam.pattern.filter((s) => s.section !== "writing").reduce((a, s) => a + s.minutes, 0);
   return (
@@ -73,7 +73,7 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
       </div>
 
       {isLocked(exam.id) ? (
-        <InviteCard link={inviteLink(user.id)} have={referrals} need={REFERRALS_TO_UNLOCK[exam.id]} />
+        <InviteCard link={inviteLink(user.id)} have={referrals.have} need={REFERRALS_TO_UNLOCK[exam.id]} />
       ) : (
       <div className="card flex flex-wrap items-center justify-between gap-4">
         <span className="text-sm text-slate-500">Ready? Complete the system check before starting.</span>

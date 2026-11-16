@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireCodeAccess } from "@/lib/auth";
 import { PROBLEMS } from "@/lib/code/problems";
 import { Workspace, type ProblemLink, type PublicProblem } from "./Workspace";
 
 export default async function ProblemPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requireCodeAccess();
   const { id } = await params;
   const found = PROBLEMS.find((p) => p.id === id);
   if (!found) notFound();

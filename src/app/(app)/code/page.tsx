@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireCodeAccess } from "@/lib/auth";
 import { PROBLEMS, type Problem } from "@/lib/code/problems";
 import { DSA_PROBLEMS } from "@/lib/code/dsa";
 import { SolvedMark } from "./SolvedMark";
@@ -7,7 +7,7 @@ import { SolvedMark } from "./SolvedMark";
 export const metadata = { title: "Code practice" };
 
 export default async function CodePage() {
-  await requireUser();
+  await requireCodeAccess();
   return (
     <div className="space-y-6">
       <div>

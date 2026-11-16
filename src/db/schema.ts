@@ -47,6 +47,10 @@ export const users = pgTable(
     marketingOptInAt: ms("marketing_opt_in_at"),
     /** Who shared the invite link this student signed up through (see lib/referral.ts). */
     referredBy: text("referred_by").references((): AnyPgColumn => users.id, { onDelete: "set null" }),
+    /** Set by an admin: invite-only mocks are open without referrals. Who did it is in admin_actions. */
+    inviteUnlockedAt: ms("invite_unlocked_at"),
+    /** Set by an admin: may see Code practice and the DSA track (admins always can). */
+    codeAccessAt: ms("code_access_at"),
     createdAt: now("created_at"),
   },
   (t) => [index("users_last_seen_idx").on(t.lastSeenAt), index("users_blocked_idx").on(t.blockedAt), index("users_referred_by_idx").on(t.referredBy)],

@@ -72,6 +72,24 @@ export async function setRole(form: FormData) {
   done(target.id, role === "STUDENT" ? `${target.name} is a student again.` : `${target.name} is now ${role === "ADMIN" ? "an admin" : "a moderator"}.`);
 }
 
+/** Opens (or closes again) the invite-only mocks (GenC Extreme) for a user without referrals. */
+export async function setInviteUnlock(form: FormData) {
+  const { admin, target } = await loadTarget(form);
+  const unlock = form.get("unlock") === "1";
+  await db.update(users).set({ inviteUnlockedAt: unlock ? new Date() : null }).where(eq(users.id, target.id));
+  await db.insert(adminActions).values({ adminId: admin.id, targetUserId: target.id, action: unlock ? "invite_unlock" : "invite_relock" });
+  done(target.id, unlock ? `${target.name} can now take the invite-only mocks.` : `${target.name} needs referrals again for the invite-only mocks.`);
+}
+
+/** Shows (or hides again) Code practice and the DSA track for a user. Admins always see them. */
+export async function setCodeAccess(form: FormData) {
+  const { admin, target } = await loadTarget(form);
+  const grant = form.get("grant") === "1";
+  await db.update(users).set({ codeAccessAt: grant ? new Date() : null }).where(eq(users.id, target.id));
+  await db.insert(adminActions).values({ adminId: admin.id, targetUserId: target.id, action: grant ? "code_access_grant" : "code_access_revoke" });
+  done(target.id, grant ? `${target.name} can now use Code practice and the DSA track.` : `${target.name} no longer sees Code practice and the DSA track.`);
+}
+
 /** Permanent. Every linked row (attempts, events, sessions, submissions…) goes with the user via ON DELETE CASCADE. */
 export async function deleteUser(form: FormData) {
   const { admin, target } = await loadTarget(form);

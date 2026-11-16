@@ -141,6 +141,20 @@
       "when": 1794840179456,
       "tag": "0019_referrals",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794840844004,
+      "tag": "0020_invite_unlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794840948150,
+      "tag": "0021_code_access",
+      "breakpoints": true
     }
   ]
 }

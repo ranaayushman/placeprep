@@ -62,7 +62,10 @@ export async function revokeAllSessions(userId: string) {
   await db.delete(sessions).where(eq(sessions.userId, userId));
 }
 
-export type SafeUser = Pick<User, "id" | "email" | "name" | "role" | "onboardedAt" | "emailVerifiedAt">;
+export type SafeUser = Pick<User, "id" | "email" | "name" | "role" | "onboardedAt" | "emailVerifiedAt" | "codeAccessAt">;
+
+/** Code practice and the DSA track are admin-only unless an admin grants a user access. */
+export const hasCodeAccess = (user: Pick<SafeUser, "role" | "codeAccessAt">) => user.role === "ADMIN" || !!user.codeAccessAt;
 
 /**
  * Returns the logged-in user or null. Validates the session (and that the user is not blocked)
@@ -73,7 +76,7 @@ export const getCurrentUser = cache(async (): Promise<SafeUser | null> => {
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const rows = await db
-    .select({ id: users.id, email: users.email, name: users.name, role: users.role, onboardedAt: users.onboardedAt, emailVerifiedAt: users.emailVerifiedAt, lastSeenAt: users.lastSeenAt })
+    .select({ id: users.id, email: users.email, name: users.name, role: users.role, onboardedAt: users.onboardedAt, emailVerifiedAt: users.emailVerifiedAt, codeAccessAt: users.codeAccessAt, lastSeenAt: users.lastSeenAt })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(and(eq(sessions.tokenHash, hashToken(token)), gt(sessions.expiresAt, new Date()), isNull(users.blockedAt)))
@@ -89,7 +92,7 @@ export const getCurrentUser = cache(async (): Promise<SafeUser | null> => {
       .set({ lastSeenAt: new Date() })
       .where(and(eq(users.id, row.id), or(isNull(users.lastSeenAt), lt(users.lastSeenAt, cutoff))));
   }
-  return { id: row.id, email: row.email, name: row.name, role: row.role, onboardedAt: row.onboardedAt, emailVerifiedAt: row.emailVerifiedAt };
+  return { id: row.id, email: row.email, name: row.name, role: row.role, onboardedAt: row.onboardedAt, emailVerifiedAt: row.emailVerifiedAt, codeAccessAt: row.codeAccessAt };
 });
 
 /** For pages and actions: redirects to /login when not signed in, and to /verify-email until the email is verified. */
@@ -105,6 +108,13 @@ export const homeFor = (u: Pick<User, "role" | "onboardedAt" | "emailVerifiedAt"
   !u.emailVerifiedAt ? "/verify-email" : u.role === "ADMIN" ? "/admin" : u.onboardedAt ? "/dashboard" : "/onboarding";
 
 /** For admin pages and actions. Non-admins get a 404 so the panel's existence isn't revealed. */
+/** Pages and actions of Code practice and the DSA track: a 404 for users without access, so they can't tell it exists. */
+export async function requireCodeAccess(): Promise<SafeUser> {
+  const user = await requireUser();
+  if (!hasCodeAccess(user)) notFound();
+  return user;
+}
+
 export async function requireAdmin(): Promise<SafeUser> {
   const user = await requireUser();
   if (user.role !== "ADMIN") notFound();

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { CookieSettingsButton } from "./CookieConsent";
-import type { SafeUser } from "@/lib/auth";
+import { hasCodeAccess, type SafeUser } from "@/lib/auth";
 import type { Announcement } from "@/lib/announcements";
 import { NotificationBell } from "./NotificationBell";
 import { ProfileMenu } from "./ProfileMenu";
@@ -17,14 +17,17 @@ const NAV = [
   { href: "/community", label: "Community" },
 ];
 
+const CODE_PAGES = ["/code", "/dsa"];
+
 export function AppShell({ user, updates, children }: { user: SafeUser; updates: Announcement[]; children: React.ReactNode }) {
+  const nav = hasCodeAccess(user) ? NAV : NAV.filter((n) => !CODE_PAGES.includes(n.href));
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
       <header className="sticky top-0 z-10 border-b border-deep/10 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Logo />
           <nav className="flex gap-1 overflow-x-auto text-sm">
-            {(user.role === "ADMIN" ? [...NAV, { href: "/admin", label: "Admin" }] : user.role === "MODERATOR" ? [...NAV, { href: "/admin", label: "Moderate" }] : NAV).map((n) => (
+            {(user.role === "ADMIN" ? [...NAV, { href: "/admin", label: "Admin" }] : user.role === "MODERATOR" ? [...nav, { href: "/admin", label: "Moderate" }] : nav).map((n) => (
               <Link key={n.href} href={n.href} className="whitespace-nowrap rounded-md px-3 py-1.5 font-medium text-muted hover:bg-brand-soft hover:text-deep">
                 {n.label}
               </Link>

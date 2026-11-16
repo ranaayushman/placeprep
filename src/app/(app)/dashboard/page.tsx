@@ -2,7 +2,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { attempts, db, users } from "@/db";
-import { requireUser } from "@/lib/auth";
+import { hasCodeAccess, requireUser } from "@/lib/auth";
 import { getTopicStats, mockHistory, recommend, sectionStats, type TopicStat } from "@/lib/analytics";
 import { closeLeftAttempts, wrongRefs } from "@/lib/exam/service";
 import { MAX_VIOLATIONS } from "@/lib/exam/pattern";
@@ -116,8 +116,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           { href: "#section-quizzes", title: "Section quizzes", sub: "10 Q · instant answers" },
           { href: "#topic-quizzes", title: "Topic quizzes", sub: `${stats.length} topics` },
           { href: "/practice", title: "Custom quiz", sub: "pick topics & count" },
-          { href: "/code", title: "Code practice", sub: "C++ · Java · SQL" },
-          { href: "/dsa", title: "DSA track", sub: "topic by topic" },
+          ...(hasCodeAccess(user)
+            ? [
+                { href: "/code", title: "Code practice", sub: "C++ · Java · SQL" },
+                { href: "/dsa", title: "DSA track", sub: "topic by topic" },
+              ]
+            : []),
         ].map((t) => (
           <Link key={t.href} href={t.href} className="rounded-xl border border-deep/10 bg-surface px-4 py-3 transition hover:border-brand/40 hover:bg-brand-soft">
             <span className="block text-sm font-semibold">{t.title}</span>
