@@ -106,6 +106,9 @@ export default function PrivacyPolicyPage() {
                 <p className="mt-1 text-sm text-slate-600 leading-relaxed">
                   If you contribute original practice questions via our Community module, we store the question text, options, answer key, explanation, and an author identifier to manage moderation and report queues. Other students only see your first name and last initial.
                 </p>
+                <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                  If you sign up through a friend&apos;s invite link, we record which account invited you, so that friend can unlock invite-only mocks. They see only how many invited friends have joined, never who.
+                </p>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-white p-5">

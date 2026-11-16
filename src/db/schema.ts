@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, customType, index, integer, jsonb, pgTable, primaryKey, real, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { type AnyPgColumn, boolean, customType, index, integer, jsonb, pgTable, primaryKey, real, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 /**
  * Timestamps are epoch milliseconds in a bigint column, read as Date. Raw SQL in lib/admin.ts and
@@ -45,9 +45,11 @@ export const users = pgTable(
     emailVerifiedAt: ms("email_verified_at").default(sql`(extract(epoch from now()) * 1000)::bigint`),
     /** When the student ticked "send me emails" (proof of consent). Null = never opted in. */
     marketingOptInAt: ms("marketing_opt_in_at"),
+    /** Who shared the invite link this student signed up through (see lib/referral.ts). */
+    referredBy: text("referred_by").references((): AnyPgColumn => users.id, { onDelete: "set null" }),
     createdAt: now("created_at"),
   },
-  (t) => [index("users_last_seen_idx").on(t.lastSeenAt), index("users_blocked_idx").on(t.blockedAt)],
+  (t) => [index("users_last_seen_idx").on(t.lastSeenAt), index("users_blocked_idx").on(t.blockedAt), index("users_referred_by_idx").on(t.referredBy)],
 );
 
 /**

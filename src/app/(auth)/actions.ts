@@ -12,6 +12,7 @@ import { requestInfo } from "@/lib/request-info";
 import { after } from "next/server";
 import { addToBrevo } from "@/lib/brevo";
 import { sendOtp, verifyOtp } from "@/lib/otp";
+import { referrerFromCookie } from "@/lib/referral";
 
 export type AuthState = { error?: string } | undefined;
 
@@ -49,7 +50,7 @@ export async function register(_: AuthState, form: FormData): Promise<AuthState>
 
   const [user] = await db
     .insert(users)
-    .values({ name, email, passwordHash: await hashPassword(password), ...(otpEnabled() ? { emailVerifiedAt: null } : {}) })
+    .values({ name, email, passwordHash: await hashPassword(password), referredBy: await referrerFromCookie(), ...(otpEnabled() ? { emailVerifiedAt: null } : {}) })
     .returning({ id: users.id });
   await createSession(user.id);
   await logEvent("register", { userId: user.id });

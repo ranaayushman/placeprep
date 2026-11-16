@@ -19,6 +19,13 @@ const COOKIE_INVENTORY = [
     expiry: "30 days (or until logout)",
   },
   {
+    name: "pp_ref",
+    provider: "PlacePrep",
+    category: "Strictly Necessary",
+    purpose: "Set only when you open a friend's invite link. Remembers who invited you so your sign-up counts for them.",
+    expiry: "30 days",
+  },
+  {
     name: "g_oauth",
     provider: "PlacePrep",
     category: "Strictly Necessary",

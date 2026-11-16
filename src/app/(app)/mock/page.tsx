@@ -4,12 +4,16 @@ import { listExamsFor } from "@/lib/exam/exams";
 import { requireUser } from "@/lib/auth";
 import { SECTION_LABELS } from "@/lib/questions";
 import { LevelBadge } from "@/components/LevelBadge";
+import { inviteLink, REFERRALS_TO_UNLOCK, successfulReferrals } from "@/lib/referral";
+import { InviteCard } from "./InviteCard";
 
 export default async function MockPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
   const user = await requireUser();
   const EXAMS = await listExamsFor(user.email);
   const wanted = (await searchParams).exam;
   const exam = EXAMS.find((e) => e.id === wanted) ?? EXAMS[0];
+  const referrals = await successfulReferrals(user.id);
+  const isLocked = (id: string) => (REFERRALS_TO_UNLOCK[id] ?? 0) > referrals;
   const hasWriting = exam.pattern.some((s) => s.section === "writing");
   const mcqMinutes = exam.pattern.filter((s) => s.section !== "writing").reduce((a, s) => a + s.minutes, 0);
   return (
@@ -24,6 +28,7 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
                 aria-current={e.id === exam.id ? "page" : undefined}
                 className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${e.id === exam.id ? "border-brand bg-brand-soft text-brand-dark" : "border-slate-200 bg-white text-slate-600 hover:border-brand"}`}
               >
+                {isLocked(e.id) && "🔒 "}
                 {e.short}
               </Link>
             ))}
@@ -66,12 +71,16 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
         </ul>
       </div>
 
+      {isLocked(exam.id) ? (
+        <InviteCard link={inviteLink(user.id)} have={referrals} need={REFERRALS_TO_UNLOCK[exam.id]} />
+      ) : (
       <div className="card flex flex-wrap items-center justify-between gap-4">
         <span className="text-sm text-slate-500">Ready? Complete the system check before starting.</span>
         <Link href={`/mock/system-check?exam=${exam.id}`} className="btn-primary px-6 py-3">
           Continue to system check
         </Link>
       </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { createSession, homeFor, isConfiguredAdmin, revokeAllSessions } from "@/
 import { logEvent } from "@/lib/events";
 import { finishGoogleAuth, googleEnabled, OAUTH_COOKIE } from "@/lib/google";
 import { LIMITS, rateLimit } from "@/lib/rate-limit";
+import { referrerFromCookie } from "@/lib/referral";
 import { requestInfo } from "@/lib/request-info";
 
 export async function GET(req: Request) {
@@ -54,7 +55,7 @@ export async function GET(req: Request) {
   }
   [user] = await db
     .insert(users)
-    .values({ name: profile.name, email: profile.email, googleId: profile.sub, role: isConfiguredAdmin(profile.email) ? "ADMIN" : "STUDENT" })
+    .values({ name: profile.name, email: profile.email, googleId: profile.sub, referredBy: await referrerFromCookie(), role: isConfiguredAdmin(profile.email) ? "ADMIN" : "STUDENT" })
     .returning();
   await createSession(user.id);
   await logEvent("register", { userId: user.id, meta: { provider: "google" } });

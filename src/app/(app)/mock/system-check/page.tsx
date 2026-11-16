@@ -2,10 +2,13 @@ import Link from "next/link";
 import { canTakeExam, listExamsFor } from "@/lib/exam/exams";
 import { requireUser } from "@/lib/auth";
 import { StartMockForm } from "../StartMockForm";
+import { redirect } from "next/navigation";
+import { referralLock } from "@/lib/referral";
 
 export default async function SystemCheckPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
   const user = await requireUser();
   const exam = (await canTakeExam(user.email, (await searchParams).exam ?? "")) ?? (await listExamsFor(user.email))[0];
+  if (await referralLock(user.id, exam.id)) redirect(`/mock?exam=${exam.id}`);
   const hasWriting = exam.pattern.some((s) => s.section === "writing");
   const mcqMinutes = exam.pattern.filter((s) => s.section !== "writing").reduce((total, section) => total + section.minutes, 0);
 
