@@ -90,6 +90,15 @@ export async function setCodeAccess(form: FormData) {
   done(target.id, grant ? `${target.name} can now use Code practice and the DSA track.` : `${target.name} no longer sees Code practice and the DSA track.`);
 }
 
+/** Shows (or hides again) the Google SDE path (/google) for a user. Admins always see it. */
+export async function setGooglePath(form: FormData) {
+  const { admin, target } = await loadTarget(form);
+  const grant = form.get("grant") === "1";
+  await db.update(users).set({ googlePathAt: grant ? new Date() : null }).where(eq(users.id, target.id));
+  await db.insert(adminActions).values({ adminId: admin.id, targetUserId: target.id, action: grant ? "google_path_grant" : "google_path_revoke" });
+  done(target.id, grant ? `${target.name} can now see the Google SDE path.` : `${target.name} no longer sees the Google SDE path.`);
+}
+
 /** Permanent. Every linked row (attempts, events, sessions, submissions…) goes with the user via ON DELETE CASCADE. */
 export async function deleteUser(form: FormData) {
   const { admin, target } = await loadTarget(form);

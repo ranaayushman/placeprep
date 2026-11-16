@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { LANGUAGES, languagesFor, RUN_MS, STARTER_CODE, verdict, isClean, SOURCE_FILE, type Language, type Problem } from "@/lib/code/problems";
 import type { RunResult } from "@/lib/code/runner";
+import { FN_SPECS } from "@/lib/code/fn-specs";
+import { starterFor } from "@/lib/code/harness";
 import { runAction, submitAction, type SubmitResult } from "../actions";
 
 /** Everything the browser may see: the hidden tests stay on the server. */
@@ -27,8 +29,11 @@ export function Workspace({ problem: p, index, problems, prev, next, back = { hr
   const total = problems.length;
   const langs = languagesFor(p);
   const [lang, setLang] = useState<Language>(langs[0]);
-  const key = `code:${p.id}:${lang}`;
-  const [code, setCode] = useState<string>(STARTER_CODE[langs[0]]);
+  // LeetCode style: problems with a spec start from `class Solution`; ":fn" keeps old full-program drafts apart.
+  const fn = FN_SPECS[p.id];
+  const starter = (l: Language) => (fn && l !== "sql" ? starterFor(fn, l) : STARTER_CODE[l]);
+  const key = `code:${p.id}:${lang}${fn ? ":fn" : ""}`;
+  const [code, setCode] = useState<string>(starter(langs[0]));
   const [cursor, setCursor] = useState({ ln: 1, col: 1 });
   const [cases, setCases] = useState<Case[]>(p.samples.map(({ input, output }) => ({ input, expected: output })));
   const [caseIdx, setCaseIdx] = useState(0);
@@ -70,7 +75,7 @@ export function Workspace({ problem: p, index, problems, prev, next, back = { hr
     setCaseIdx(0);
   }, [p]);
   useEffect(() => {
-    setCode(localStorage.getItem(key) ?? STARTER_CODE[lang]);
+    setCode(localStorage.getItem(key) ?? starter(lang));
     setOutcome(null); setError(null);
   }, [key, lang]);
 
@@ -85,7 +90,7 @@ export function Workspace({ problem: p, index, problems, prev, next, back = { hr
   const doRun = () =>
     start(async () => {
       const snapshot = cases;
-      const r = await runAction({ language: lang, code, stdins: snapshot.map((c) => c.input) });
+      const r = await runAction({ problemId: p.id, language: lang, code, stdins: snapshot.map((c) => c.input) });
       "error" in r ? show(null, r.error) : show({ kind: "run", cases: snapshot, results: r }, null);
     });
   const doSubmit = () =>
@@ -155,6 +160,7 @@ export function Workspace({ problem: p, index, problems, prev, next, back = { hr
                 {p.tags.map((t) => <span key={t} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-slate-600">{t}</span>)}
               </div>
               <p>{p.statement}</p>
+              {fn && <p className="rounded-md bg-brand-soft px-3 py-2 text-xs text-deep">Write only the <code className="font-mono">{fn.name}</code> method: the input below is read and passed to it, and what it returns is printed for you. Custom test cases use the same input format.</p>}
               <p><span className="font-semibold text-deep">Input:</span> {p.input}</p>
               <p><span className="font-semibold text-deep">Output:</span> {p.output}</p>
               {p.samples.map((s, i) => (
@@ -194,12 +200,12 @@ export function Workspace({ problem: p, index, problems, prev, next, back = { hr
           <section style={{ "--rows": `${split.rows}%` } as React.CSSProperties} className="flex flex-col rounded-2xl border border-deep/10 bg-surface shadow-sm lg:min-h-0 lg:shrink-0 lg:[height:var(--rows)]">
             <div className="flex shrink-0 items-center gap-2 border-b border-deep/10 px-3 py-1.5 text-xs text-muted">
               <span className="font-semibold text-deep">{"</>"} Code</span>
-              <span className="font-mono">· {SOURCE_FILE[lang]}</span>
+              <span className="font-mono">· {fn && lang === "java" ? "Solution.java" : SOURCE_FILE[lang]}</span>
               <select value={lang} onChange={(e) => switchLang(e.target.value as Language)} aria-label="Language" className="ml-auto rounded-md border border-slate-300 bg-white px-2 py-0.5 text-slate-700 focus:border-brand focus:outline-none">
                 {langs.map((id) => <option key={id} value={id}>{LANGUAGES[id]}</option>)}
               </select>
               <span>{RUN_MS[lang] / 1000} s limit</span>
-              <button type="button" onClick={() => update(STARTER_CODE[lang])} disabled={pending} title="Reset to starter code" aria-label="Reset code" className="rounded p-1 hover:bg-brand-soft hover:text-deep">↺</button>
+              <button type="button" onClick={() => update(starter(lang))} disabled={pending} title="Reset to starter code" aria-label="Reset code" className="rounded p-1 hover:bg-brand-soft hover:text-deep">↺</button>
             </div>
             <div className="flex h-80 lg:h-auto lg:min-h-0 lg:flex-1">
               <pre ref={gutter} aria-hidden className="select-none overflow-hidden bg-canvas-deep py-3 pl-3 pr-2 text-right font-mono text-sm leading-6 text-slate-400">{lineNumbers}</pre>

@@ -7,8 +7,11 @@ import { openCookiePreferences } from "./CookieConsent";
 
 const ITEM = "block w-full px-4 py-2.5 text-left text-sm text-deep hover:bg-brand-soft";
 
-/** `admin`: the admin header version (dark button, a "Student view" link, no deletion request). */
-export function ProfileMenu({ name, email, admin = false }: { name: string; email: string; admin?: boolean }) {
+/**
+ * `admin`: the admin header version (dark button, a "Student view" link, no deletion request).
+ * `googlePath`: show the link to the invite-only Google SDE path (see hasGooglePath).
+ */
+export function ProfileMenu({ name, email, admin = false, googlePath = false }: { name: string; email: string; admin?: boolean; googlePath?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -51,6 +54,11 @@ export function ProfileMenu({ name, email, admin = false }: { name: string; emai
           {admin && (
             <Link href="/dashboard" className={ITEM} onClick={() => setOpen(false)}>
               Student view
+            </Link>
+          )}
+          {googlePath && (
+            <Link href="/google" className={ITEM} onClick={() => setOpen(false)}>
+              Google SDE path
             </Link>
           )}
           <Link href="/history" className={ITEM} onClick={() => setOpen(false)}>

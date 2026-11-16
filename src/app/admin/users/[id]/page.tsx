@@ -7,7 +7,7 @@ import { describeEvent, userDetail } from "@/lib/admin";
 import { getTopicStats, sectionStats } from "@/lib/analytics";
 import { ProgressBar, pct } from "@/components/charts";
 import { ago, fmtDate, fmtDateTime, isOnline } from "@/components/admin/when";
-import { blockUser, deleteUser, revokeSessions, setCodeAccess, setInviteUnlock, setRole, unblockUser } from "../../actions";
+import { blockUser, deleteUser, revokeSessions, setCodeAccess, setGooglePath, setInviteUnlock, setRole, unblockUser } from "../../actions";
 import { referralStatus, REFERRALS_TO_UNLOCK } from "@/lib/referral";
 import { db, users } from "@/db";
 import { eq } from "drizzle-orm";
@@ -34,7 +34,7 @@ export default async function AdminUserDetail({ params, searchParams }: { params
   const violationEvents = events.filter((e) => e.type === "violation");
   const deletionRequest = await myDeletionRequest(id);
   const referrals = await referralStatus(id);
-  const [{ inviteUnlockedAt, codeAccessAt }] = await db.select({ inviteUnlockedAt: users.inviteUnlockedAt, codeAccessAt: users.codeAccessAt }).from(users).where(eq(users.id, id));
+  const [{ inviteUnlockedAt, codeAccessAt, googlePathAt }] = await db.select({ inviteUnlockedAt: users.inviteUnlockedAt, codeAccessAt: users.codeAccessAt, googlePathAt: users.googlePathAt }).from(users).where(eq(users.id, id));
   const needed = Math.max(...Object.values(REFERRALS_TO_UNLOCK));
 
   return (
@@ -150,6 +150,24 @@ export default async function AdminUserDetail({ params, searchParams }: { params
             <input type="hidden" name="userId" value={user.id} />
             <input type="hidden" name="grant" value={codeAccessAt ? "0" : "1"} />
             <SubmitButton className={codeAccessAt ? "btn-secondary" : "btn-primary"}>{codeAccessAt ? "Remove access" : "Give access"}</SubmitButton>
+          </form>
+        </section>
+      )}
+
+      {user.role !== "ADMIN" && (
+        <section className="card">
+          <h2 className="font-semibold">Google SDE path</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            {googlePathAt ? (
+              <span className="font-medium text-emerald-700">Access given on {fmtDate(googlePathAt)}</span>
+            ) : (
+              <span className="font-medium text-amber-700">Hidden: /google is admin-only unless you give access</span>
+            )}
+          </p>
+          <form action={setGooglePath} className="mt-3">
+            <input type="hidden" name="userId" value={user.id} />
+            <input type="hidden" name="grant" value={googlePathAt ? "0" : "1"} />
+            <SubmitButton className={googlePathAt ? "btn-secondary" : "btn-primary"}>{googlePathAt ? "Remove access" : "Give access"}</SubmitButton>
           </form>
         </section>
       )}

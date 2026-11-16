@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "google_path_at" bigint;

@@ -162,6 +162,13 @@
       "when": 1794841123184,
       "tag": "0022_referral_code",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794845243343,
+      "tag": "0023_google_path",
+      "breakpoints": true
     }
   ]
 }

@@ -62,10 +62,12 @@ export async function revokeAllSessions(userId: string) {
   await db.delete(sessions).where(eq(sessions.userId, userId));
 }
 
-export type SafeUser = Pick<User, "id" | "email" | "name" | "role" | "onboardedAt" | "emailVerifiedAt" | "codeAccessAt">;
+export type SafeUser = Pick<User, "id" | "email" | "name" | "role" | "onboardedAt" | "emailVerifiedAt" | "codeAccessAt" | "googlePathAt">;
 
 /** Code practice and the DSA track are admin-only unless an admin grants a user access. */
 export const hasCodeAccess = (user: Pick<SafeUser, "role" | "codeAccessAt">) => user.role === "ADMIN" || !!user.codeAccessAt;
+/** The Google SDE path is admin-only unless an admin grants a user access. */
+export const hasGooglePath = (user: Pick<SafeUser, "role" | "googlePathAt">) => user.role === "ADMIN" || !!user.googlePathAt;
 
 /**
  * Returns the logged-in user or null. Validates the session (and that the user is not blocked)
@@ -76,7 +78,7 @@ export const getCurrentUser = cache(async (): Promise<SafeUser | null> => {
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const rows = await db
-    .select({ id: users.id, email: users.email, name: users.name, role: users.role, onboardedAt: users.onboardedAt, emailVerifiedAt: users.emailVerifiedAt, codeAccessAt: users.codeAccessAt, lastSeenAt: users.lastSeenAt })
+    .select({ id: users.id, email: users.email, name: users.name, role: users.role, onboardedAt: users.onboardedAt, emailVerifiedAt: users.emailVerifiedAt, codeAccessAt: users.codeAccessAt, googlePathAt: users.googlePathAt, lastSeenAt: users.lastSeenAt })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(and(eq(sessions.tokenHash, hashToken(token)), gt(sessions.expiresAt, new Date()), isNull(users.blockedAt)))
@@ -92,7 +94,7 @@ export const getCurrentUser = cache(async (): Promise<SafeUser | null> => {
       .set({ lastSeenAt: new Date() })
       .where(and(eq(users.id, row.id), or(isNull(users.lastSeenAt), lt(users.lastSeenAt, cutoff))));
   }
-  return { id: row.id, email: row.email, name: row.name, role: row.role, onboardedAt: row.onboardedAt, emailVerifiedAt: row.emailVerifiedAt, codeAccessAt: row.codeAccessAt };
+  return { id: row.id, email: row.email, name: row.name, role: row.role, onboardedAt: row.onboardedAt, emailVerifiedAt: row.emailVerifiedAt, codeAccessAt: row.codeAccessAt, googlePathAt: row.googlePathAt };
 });
 
 /** For pages and actions: redirects to /login when not signed in, and to /verify-email until the email is verified. */
@@ -112,6 +114,13 @@ export const homeFor = (u: Pick<User, "role" | "onboardedAt" | "emailVerifiedAt"
 export async function requireCodeAccess(): Promise<SafeUser> {
   const user = await requireUser();
   if (!hasCodeAccess(user)) notFound();
+  return user;
+}
+
+/** The Google SDE path: a 404 for users without access. */
+export async function requireGooglePath(): Promise<SafeUser> {
+  const user = await requireUser();
+  if (!hasGooglePath(user)) notFound();
   return user;
 }
 

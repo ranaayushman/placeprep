@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { CookieSettingsButton } from "./CookieConsent";
-import { hasCodeAccess, type SafeUser } from "@/lib/auth";
+import { hasCodeAccess, hasGooglePath, type SafeUser } from "@/lib/auth";
 import type { Announcement } from "@/lib/announcements";
 import { NotificationBell } from "./NotificationBell";
 import { ProfileMenu } from "./ProfileMenu";
@@ -27,7 +27,7 @@ export function AppShell({ user, updates, children }: { user: SafeUser; updates:
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Logo />
           <nav className="flex gap-1 overflow-x-auto text-sm">
-            {(user.role === "ADMIN" ? [...NAV, { href: "/admin", label: "Admin" }] : user.role === "MODERATOR" ? [...nav, { href: "/admin", label: "Moderate" }] : nav).map((n) => (
+            {(user.role === "ADMIN" ? [...nav, { href: "/admin", label: "Admin" }] : user.role === "MODERATOR" ? [...nav, { href: "/admin", label: "Moderate" }] : nav).map((n) => (
               <Link key={n.href} href={n.href} className="whitespace-nowrap rounded-md px-3 py-1.5 font-medium text-muted hover:bg-brand-soft hover:text-deep">
                 {n.label}
               </Link>
@@ -35,7 +35,7 @@ export function AppShell({ user, updates, children }: { user: SafeUser; updates:
           </nav>
           <div className="flex items-center gap-3">
             <NotificationBell items={updates} />
-            <ProfileMenu name={user.name} email={user.email} />
+            <ProfileMenu name={user.name} email={user.email} googlePath={hasGooglePath(user)} />
           </div>
         </div>
       </header>

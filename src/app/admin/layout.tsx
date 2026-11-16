@@ -1,25 +1,62 @@
-import Link from "next/link";
 import { requireStaff } from "@/lib/auth";
 import { pendingDeletionCount } from "@/lib/deletion-requests";
 import { Logo } from "@/components/Logo";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { AdminSidebar, type NavGroup } from "@/components/admin/AdminSidebar";
 
 export const metadata = { title: "Admin", robots: { index: false } };
 
-const NAV = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/leaderboard", label: "Leaderboard" },
-  { href: "/admin/growth", label: "Growth" },
-  { href: "/admin/activity", label: "Activity" },
-  { href: "/admin/errors", label: "Errors" },
-  { href: "/admin/blocked", label: "Block list" },
-  { href: "/admin/community", label: "Community" },
-  { href: "/admin/mocks", label: "Mocks" },
-  { href: "/admin/reports", label: "Reports" },
-  { href: "/admin/feedback", label: "Feedback" },
-  { href: "/admin/campaigns", label: "Campaigns" },
-  { href: "/admin/announcements", label: "Updates" },
+const groups = (deletions: number): NavGroup[] => [
+  { title: "Overview", items: [{ href: "/admin", label: "Overview" }] },
+  {
+    title: "People",
+    items: [
+      { href: "/admin/users", label: "Users" },
+      { href: "/admin/leaderboard", label: "Leaderboard" },
+      { href: "/admin/blocked", label: "Block list" },
+      { href: "/admin/deletions", label: "Deletions", badge: deletions },
+    ],
+  },
+  {
+    title: "Content",
+    items: [
+      { href: "/admin/mocks", label: "Mocks" },
+      { href: "/admin/community", label: "Community" },
+      { href: "/admin/reports", label: "Reports" },
+      { href: "/admin/feedback", label: "Feedback" },
+    ],
+  },
+  {
+    title: "Growth",
+    items: [
+      { href: "/admin/growth", label: "Growth" },
+      { href: "/admin/campaigns", label: "Campaigns" },
+      { href: "/admin/announcements", label: "Updates" },
+    ],
+  },
+  { title: "System", items: [{ href: "/admin/activity", label: "Activity" }, { href: "/admin/errors", label: "Errors" }] },
+  // Admin-only student pages (others need a grant on their user page).
+  {
+    title: "Your tools",
+    items: [
+      { href: "/google", label: "Google SDE path" },
+      { href: "/dsa", label: "DSA track" },
+      { href: "/code", label: "Code practice" },
+    ],
+  },
+];
+
+const MOD_GROUPS: NavGroup[] = [
+  {
+    title: "Moderation",
+    items: [
+      { href: "/admin", label: "Overview" },
+      { href: "/admin/community", label: "Review questions" },
+      { href: "/community/submit", label: "Add a question" },
+      { href: "/admin/mocks", label: "Mock exams" },
+      { href: "/admin/reports", label: "Question reports" },
+    ],
+  },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -28,8 +65,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Moderators see only the question tools; each admin-only page also checks requireAdmin itself.
   // The deletion count sits in the nav so a legal deadline is never out of sight.
   const deletions = isMod ? 0 : await pendingDeletionCount();
-  const adminNav = deletions ? [...NAV, { href: "/admin/deletions", label: `Deletions (${deletions})` }] : [...NAV, { href: "/admin/deletions", label: "Deletions" }];
-  const nav = isMod ? [{ href: "/admin", label: "Overview" }, { href: "/admin/community", label: "Review questions" }, { href: "/community/submit", label: "Add a question" }, { href: "/admin/mocks", label: "Mock exams" }, { href: "/admin/reports", label: "Question reports" }] : adminNav;
+  const nav = isMod ? MOD_GROUPS : groups(deletions);
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-900 text-white">
@@ -39,19 +75,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Logo href="/admin" onDark />
               <span className="rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-900">{isMod ? "Moderator" : "Admin"}</span>
             </div>
-            <ProfileMenu name={admin.name} email={admin.email} admin />
+            <ProfileMenu name={admin.name} email={admin.email} admin googlePath={!isMod} />
           </div>
-          {/* Own row, so the tabs never squeeze against the logo and menu; scrolls sideways on phones. */}
-          <nav className="-mx-1 flex gap-1 overflow-x-auto pb-2 text-sm">
-            {nav.map((n) => (
-              <Link key={n.href} href={n.href} className="whitespace-nowrap rounded-md px-3 py-1.5 font-medium text-slate-300 hover:bg-slate-800 hover:text-white">
-                {n.label}
-              </Link>
-            ))}
-          </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 lg:flex-row lg:gap-8 lg:py-8">
+        <AdminSidebar groups={nav} />
+        <main className="min-w-0 flex-1">{children}</main>
+      </div>
     </div>
   );
 }

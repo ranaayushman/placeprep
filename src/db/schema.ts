@@ -53,6 +53,8 @@ export const users = pgTable(
     inviteUnlockedAt: ms("invite_unlocked_at"),
     /** Set by an admin: may see Code practice and the DSA track (admins always can). */
     codeAccessAt: ms("code_access_at"),
+    /** Set by an admin: may see the Google SDE path (/google). Admins always can. */
+    googlePathAt: ms("google_path_at"),
     createdAt: now("created_at"),
   },
   (t) => [index("users_last_seen_idx").on(t.lastSeenAt), index("users_blocked_idx").on(t.blockedAt), index("users_referred_by_idx").on(t.referredBy)],

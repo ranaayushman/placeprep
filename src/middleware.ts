@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Cheap first gate: no session cookie → send to /login. The real check (is the session valid
 // and unexpired?) happens on the server in requireUser()/getCurrentUser().
-const PROTECTED = ["/dashboard", "/practice", "/mock", "/attempt", "/results", "/analytics", "/history", "/admin", "/onboarding", "/community", "/verify-email", "/account", "/code", "/dsa"];
+const PROTECTED = ["/dashboard", "/practice", "/mock", "/attempt", "/results", "/analytics", "/history", "/admin", "/onboarding", "/community", "/verify-email", "/account", "/code", "/dsa", "/google"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
