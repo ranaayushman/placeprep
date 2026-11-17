@@ -383,6 +383,14 @@ export const featuredExams = pgTable("featured_exams", {
   createdAt: now("created_at"),
 });
 
+/** Site-wide switches set from the admin panel. Key "maintenance": value "on" closes the site to everyone but admins. */
+export const siteSettings = pgTable("site_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedBy: text("updated_by").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: now("updated_at"),
+});
+
 /** Reports on built-in bank questions (community questions use question_reports). `ref` is "topic:seed". */
 export const bankReports = pgTable(
   "bank_reports",

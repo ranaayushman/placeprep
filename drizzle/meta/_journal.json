@@ -169,6 +169,13 @@
       "when": 1794845243343,
       "tag": "0023_google_path",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794917056909,
+      "tag": "0024_site_settings",
+      "breakpoints": true
     }
   ]
 }

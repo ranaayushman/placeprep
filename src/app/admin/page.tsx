@@ -4,13 +4,17 @@ import Link from "next/link";
 import { adminOverview, FLAG_VIOLATIONS_7D } from "@/lib/admin";
 import { statusCounts } from "@/lib/community/service";
 import { ago } from "@/components/admin/when";
+import { maintenanceStatus } from "@/lib/maintenance";
+import { setMaintenanceAction } from "./actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverview() {
   const me = await requireStaff();
   if (me.role !== "ADMIN") return <ModeratorOverview userId={me.id} name={me.name} />; // question numbers only
-  const [{ counts, live, flagged, signupSeries }, community] = await Promise.all([adminOverview(), statusCounts()]);
+  const [{ counts, live, flagged, signupSeries }, community, maint] = await Promise.all([adminOverview(), statusCounts(), maintenanceStatus()]);
+  const down = maint?.value === "on";
   const toReview = (community.FLAGGED_DUPLICATE ?? 0) + (community.PENDING_REVIEW ?? 0) + (community.NEEDS_REVIEW ?? 0);
   const maxSignup = Math.max(1, ...signupSeries.map((d) => d.c));
   const tiles = [
@@ -31,6 +35,20 @@ export default async function AdminOverview() {
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Overview</h1>
+
+      <section className={`card flex flex-wrap items-center justify-between gap-4 ${down ? "border-red-300 bg-red-50" : ""}`}>
+        <div>
+          <h2 className="font-semibold">Maintenance mode {down ? <span className="text-red-700">is ON</span> : <span className="text-slate-500">is off</span>}</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {down ? "Students see a maintenance notice and can't sign in or save answers. Admins can still use the whole site." : "Turning it on closes the site to everyone except admins: every page shows a maintenance notice and saving answers stops."}
+            {maint && ` Last changed ${ago(maint.updatedAt)}${maint.by ? ` by ${maint.by}` : ""}.`}
+          </p>
+        </div>
+        <form action={setMaintenanceAction}>
+          <input type="hidden" name="on" value={down ? "0" : "1"} />
+          <SubmitButton className={down ? "btn-primary" : "rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"}>{down ? "Turn off, reopen the site" : "Turn on maintenance mode"}</SubmitButton>
+        </form>
+      </section>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {tiles.map((t) => {

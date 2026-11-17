@@ -1,4 +1,6 @@
 import { requireStaff } from "@/lib/auth";
+import { maintenanceOn } from "@/lib/maintenance";
+import Link from "next/link";
 import { pendingDeletionCount } from "@/lib/deletion-requests";
 import { Logo } from "@/components/Logo";
 import { ProfileMenu } from "@/components/ProfileMenu";
@@ -66,6 +68,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // The deletion count sits in the nav so a legal deadline is never out of sight.
   const deletions = isMod ? 0 : await pendingDeletionCount();
   const nav = isMod ? MOD_GROUPS : groups(deletions);
+  const down = await maintenanceOn();
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-900 text-white">
@@ -79,6 +82,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
         </div>
       </header>
+      {down && (
+        <p role="status" className="bg-red-600 px-4 py-2 text-center text-sm font-semibold text-white">
+          Maintenance mode is on: the site is closed to everyone except admins.{" "}
+          {!isMod && <Link href="/admin" className="underline">Turn it off on the Overview page</Link>}
+        </p>
+      )}
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 lg:flex-row lg:gap-8 lg:py-8">
         <AdminSidebar groups={nav} />
         <main className="min-w-0 flex-1">{children}</main>

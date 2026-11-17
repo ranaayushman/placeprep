@@ -10,6 +10,7 @@ import { isConfiguredAdmin, requireAdmin, revokeAllSessions } from "@/lib/auth";
 import { closeOpenAttempts } from "@/lib/exam/service";
 import { sendCampaign } from "@/lib/brevo";
 import { ANNOUNCEMENTS_TAG } from "@/lib/announcements";
+import { setMaintenance } from "@/lib/maintenance";
 
 const idSchema = z.string().uuid();
 
@@ -165,4 +166,11 @@ export async function deleteAnnouncement(form: FormData) {
   await db.delete(announcements).where(eq(announcements.id, idSchema.parse(form.get("id"))));
   revalidateTag(ANNOUNCEMENTS_TAG);
   redirect("/admin/announcements?msg=Deleted.");
+}
+
+/** Admin only. Closes or reopens the site for everyone but admins (see lib/maintenance.ts). */
+export async function setMaintenanceAction(form: FormData) {
+  const admin = await requireAdmin();
+  await setMaintenance(form.get("on") === "1", admin.id);
+  revalidatePath("/admin", "layout");
 }

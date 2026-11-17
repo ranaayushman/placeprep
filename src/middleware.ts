@@ -1,13 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isAdminSession, maintenanceOn } from "@/lib/maintenance";
 
 // Cheap first gate: no session cookie → send to /login. The real check (is the session valid
 // and unexpired?) happens on the server in requireUser()/getCurrentUser().
 const PROTECTED = ["/dashboard", "/practice", "/mock", "/attempt", "/results", "/analytics", "/history", "/admin", "/onboarding", "/community", "/verify-email", "/account", "/code", "/dsa", "/google"];
 
-export function middleware(req: NextRequest) {
+// Reachable during maintenance, so an admin can still sign in (password or Google) and switch it off.
+const OPEN_IN_MAINTENANCE = ["/maintenance", "/login", "/api/auth/", "/api/health"];
+
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  // MAINTENANCE_MODE=1 closes the whole site (admins too); files with an extension (logo, robots.txt) and the health check stay up.
-  if (process.env.MAINTENANCE_MODE === "1" && pathname !== "/api/health" && pathname !== "/maintenance" && !pathname.includes(".")) {
+  // Maintenance (admin panel switch, or MAINTENANCE_MODE=1 for everyone, admins too): files with an extension stay up.
+  if (
+    !pathname.includes(".") &&
+    !OPEN_IN_MAINTENANCE.some((p) => pathname === p || pathname.startsWith(p)) &&
+    (await maintenanceOn()) &&
+    (process.env.MAINTENANCE_MODE === "1" || !(await isAdminSession(req.cookies.get("sid")?.value)))
+  ) {
     const headers = { "Retry-After": "900", "Cache-Control": "no-store" };
     if (pathname.startsWith("/api")) return NextResponse.json({ error: "PlacePrep is down for maintenance. Please try again shortly." }, { status: 503, headers });
     return NextResponse.rewrite(new URL("/maintenance", req.url), { status: 503, headers });
@@ -24,4 +33,5 @@ export function middleware(req: NextRequest) {
   return res;
 }
 
-export const config = { matcher: ["/((?!_next|favicon.ico).*)"] };
+// Node runtime: the maintenance switch lives in Postgres (postgres.js does not run on the edge).
+export const config = { runtime: "nodejs", matcher: ["/((?!_next|favicon.ico).*)"] };
