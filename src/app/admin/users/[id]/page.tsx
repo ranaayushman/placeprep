@@ -223,14 +223,14 @@ export default async function AdminUserDetail({ params, searchParams }: { params
         </section>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <section className="card lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <section className="card min-w-0 lg:col-span-2">
           <h2 className="font-semibold">Behaviour log</h2>
           <p className="text-sm text-slate-500">Last 100 events · {violationEvents.length} proctoring warning(s)</p>
           <ul className="mt-3 max-h-[28rem] divide-y divide-slate-100 overflow-y-auto text-sm">
             {events.map((e) => (
               <li key={e.id} className="flex items-start justify-between gap-3 py-2">
-                <div>
+                <div className="min-w-0">
                   <span className={`mr-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${EVENT_TONE[e.type] ?? "bg-slate-100 text-slate-600"}`}>{e.type.replace("_", " ")}</span>
                   {describeEvent(e.type, e.meta)}
                   {e.user_agent && <div className="mt-0.5 truncate text-xs text-slate-400" title={e.user_agent}>{e.user_agent}</div>}

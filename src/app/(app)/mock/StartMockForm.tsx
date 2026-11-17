@@ -4,6 +4,8 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { useState } from "react";
 import { startMock } from "../start-actions";
 import { SystemCheck } from "./SystemCheck";
+import { DesktopOnlyNotice } from "@/components/exam/DesktopOnlyNotice";
+import { useDesktopOnly } from "@/lib/useDesktopOnly";
 
 export function StartMockForm({
   examId,
@@ -18,6 +20,8 @@ export function StartMockForm({
 }) {
   const [ready, setReady] = useState(false);
   const [camera, setCamera] = useState(true);
+  const desktopOnly = useDesktopOnly();
+  if (desktopOnly) return <DesktopOnlyNotice />;
 
   return (
     <>

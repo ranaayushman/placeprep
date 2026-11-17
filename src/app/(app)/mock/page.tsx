@@ -7,6 +7,7 @@ import { LevelBadge } from "@/components/LevelBadge";
 import { inviteLink, isInviteLocked, REFERRALS_TO_UNLOCK, referralStatus } from "@/lib/referral";
 import { InviteCard } from "./InviteCard";
 import { LockIcon } from "@/components/LockIcon";
+import { DesktopOnlyNotice } from "@/components/exam/DesktopOnlyNotice";
 
 export default async function MockPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
   const user = await requireUser();
@@ -75,12 +76,16 @@ export default async function MockPage({ searchParams }: { searchParams: Promise
       {isLocked(exam.id) ? (
         <InviteCard link={await inviteLink(user.id)} have={referrals.have} need={REFERRALS_TO_UNLOCK[exam.id]} />
       ) : (
-      <div className="card flex flex-wrap items-center justify-between gap-4">
-        <span className="text-sm text-slate-500">Ready? Complete the system check before starting.</span>
-        <Link href={`/mock/system-check?exam=${exam.id}`} className="btn-primary px-6 py-3">
-          Continue to system check
-        </Link>
-      </div>
+      <>
+        {/* Phones and small tablets: same condition as useDesktopOnly(), in CSS so there is no flash */}
+        <div className="hidden [@media(pointer:coarse)_and_(max-width:1023px)]:block"><DesktopOnlyNotice /></div>
+        <div className="card flex flex-wrap items-center justify-between gap-4 [@media(pointer:coarse)_and_(max-width:1023px)]:hidden">
+          <span className="text-sm text-slate-500">Ready? Complete the system check before starting.</span>
+          <Link href={`/mock/system-check?exam=${exam.id}`} className="btn-primary px-6 py-3">
+            Continue to system check
+          </Link>
+        </div>
+      </>
       )}
     </div>
   );

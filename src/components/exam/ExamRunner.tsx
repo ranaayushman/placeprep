@@ -1,5 +1,7 @@
 "use client";
 
+import { DesktopOnlyNotice } from "./DesktopOnlyNotice";
+import { useDesktopOnly } from "@/lib/useDesktopOnly";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ExamState, ViolationType } from "@/lib/exam/service";
@@ -36,7 +38,14 @@ const fmtClock = (ms: number) => {
 
 const wordCount = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0);
 
-export function ExamRunner({ attemptId }: { attemptId: string }) {
+/** Mock tests are desktop-only: on a phone the runner never mounts, so no heartbeat or proctoring can fire. */
+export function ExamRunner({ attemptId, mode }: { attemptId: string; mode: string }) {
+  const desktopOnly = useDesktopOnly();
+  if (mode === "MOCK" && desktopOnly) return <div className="p-4"><DesktopOnlyNotice inProgress /></div>;
+  return <Runner attemptId={attemptId} />;
+}
+
+function Runner({ attemptId }: { attemptId: string }) {
   const router = useRouter();
   const [state, setState] = useState<InProgress | null>(null);
   const [questions, setQuestions] = useState<Q[]>([]);
@@ -48,6 +57,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false); // phone-only question palette
   /** Practice question whose answer is being checked by the server (options locked, "Checking…" shown). */
   const [checking, setChecking] = useState<string | null>(null);
   const shownAt = useRef(Date.now());
@@ -273,7 +283,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   if (error && !state) return <div className="mx-auto max-w-lg p-10 text-center text-red-600">{error}</div>;
   if (!state || !current)
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-3 bg-slate-100 text-slate-600" aria-busy="true">
+      <div className="flex h-dvh flex-col items-center justify-center gap-3 bg-slate-100 text-slate-600" aria-busy="true">
         <span className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-indigo-600" aria-hidden />
         <p className="text-sm">Loading your test…</p>
       </div>
@@ -284,8 +294,31 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   const passage = current.view.passage;
   const isCode = current.view.kind === "code";
 
+  /** Question-number buttons, shared by the desktop sidebar and the phone sheet (which closes after a jump). */
+  const paletteButtons = (closeSheet: boolean) =>
+    questions.map((q, i) => {
+              const answered = q.chosenIndex != null || !!(q.textAnswer ?? "").trim();
+              const cls = q.marked
+                ? "bg-purple-600 text-white"
+                : answered
+                  ? "bg-emerald-600 text-white"
+                  : visited.has(q.id)
+                    ? "bg-red-500 text-white"
+                    : "bg-slate-100 text-slate-600";
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => { go(i); if (closeSheet) setSheetOpen(false); }}
+                  className={`relative h-11 rounded-md text-sm font-semibold md:h-10 ${cls} ${i === idx ? "ring-2 ring-slate-900 ring-offset-1" : ""}`}
+                >
+                  {i + 1}
+                  {q.marked && answered && <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />}
+                </button>
+              );
+            });
+
   return (
-    <div className={`flex h-screen flex-col bg-slate-100 ${isMock ? "select-none" : ""}`}>
+    <div className={`flex h-dvh flex-col bg-slate-100 ${isMock ? "select-none" : ""}`}>
       {!online && (
         <div role="status" className="bg-amber-100 px-4 py-2 text-center text-sm font-medium text-amber-900">
           You&apos;re offline. Keep this page open: your test stays open and your saved answers are safe. The timer keeps running.
@@ -295,7 +328,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
       <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-2.5">
         <div className="min-w-0">
           <p className="truncate text-xs font-medium uppercase tracking-wide text-slate-500" title={`Closing this page for more than ${LEFT_AFTER_MS / 60_000} minutes submits the test. A network drop doesn't.`}>
-            {state.title} <span className="normal-case tracking-normal">· close it for {LEFT_AFTER_MS / 60_000}+ min and it&apos;s submitted</span>
+            {state.title} <span className="hidden normal-case tracking-normal sm:inline">· close it for {LEFT_AFTER_MS / 60_000}+ min and it&apos;s submitted</span>
           </p>
           <p className="truncate text-base font-semibold text-slate-900">
             {isMock ? state.current.label : "Practice set"}
@@ -376,7 +409,10 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
                   <span className="font-semibold text-slate-700">
                     Question {idx + 1} of {questions.length}
                   </span>
-                  {!isMock && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs text-slate-600">{current.topic}</span>}
+                  {!isMock && <span className="hidden rounded bg-slate-200 px-2 py-0.5 text-xs text-slate-600 sm:inline">{current.topic}</span>}
+                  <button type="button" onClick={() => setSheetOpen(true)} className="btn-secondary !px-3 !py-1.5 md:hidden">
+                    Questions · {counts.answered}/{counts.total}
+                  </button>
                 </div>
                 {passage && (
                   <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4 text-[15px] leading-relaxed text-slate-700 lg:hidden">{passage}</div>
@@ -465,7 +501,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
           </div>
 
           {/* Footer actions */}
-          <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-white px-4 py-3">
+          <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <div className="flex gap-2">
               <button onClick={toggleMark} className="btn-secondary">
                 {current.marked ? "Unmark" : "Mark for review"}
@@ -504,28 +540,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
             {paletteOpen ? "Hide" : "›"}
           </button>
           {paletteOpen && <p className="mb-3 text-sm font-semibold text-slate-700">Question palette</p>}
-          {paletteOpen && <div className="grid grid-cols-5 gap-2">
-            {questions.map((q, i) => {
-              const answered = q.chosenIndex != null || !!(q.textAnswer ?? "").trim();
-              const cls = q.marked
-                ? "bg-purple-600 text-white"
-                : answered
-                  ? "bg-emerald-600 text-white"
-                  : visited.has(q.id)
-                    ? "bg-red-500 text-white"
-                    : "bg-slate-100 text-slate-600";
-              return (
-                <button
-                  key={q.id}
-                  onClick={() => go(i)}
-                  className={`relative h-10 rounded-md text-sm font-semibold ${cls} ${i === idx ? "ring-2 ring-slate-900 ring-offset-1" : ""}`}
-                >
-                  {i + 1}
-                  {q.marked && answered && <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />}
-                </button>
-              );
-            })}
-          </div>}
+          {paletteOpen && <div className="grid grid-cols-5 gap-2">{paletteButtons(false)}</div>}
           {paletteOpen && <ul className="mt-5 space-y-1.5 text-xs text-slate-600">
             <li><span className="mr-2 inline-block h-3 w-3 rounded bg-emerald-600 align-middle" />Answered ({counts.answered})</li>
             <li><span className="mr-2 inline-block h-3 w-3 rounded bg-red-500 align-middle" />Visited, not answered</li>
@@ -540,6 +555,28 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
           </div>}
         </aside>
       </div>
+
+      {/* Question palette for phones (the sidebar is desktop-only) */}
+      {sheetOpen && (
+        <div className="fixed inset-0 z-40 flex items-end bg-slate-900/50 md:hidden" onClick={() => setSheetOpen(false)}>
+          <div className="max-h-[75dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Question palette">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-700">Question palette</p>
+              <button type="button" onClick={() => setSheetOpen(false)} className="btn-secondary !px-3 !py-1.5">Close</button>
+            </div>
+            <div className="grid grid-cols-6 gap-2">{paletteButtons(true)}</div>
+            <ul className="mt-4 grid grid-cols-2 gap-1.5 text-xs text-slate-600">
+              <li><span className="mr-2 inline-block h-3 w-3 rounded bg-emerald-600 align-middle" />Answered ({counts.answered})</li>
+              <li><span className="mr-2 inline-block h-3 w-3 rounded bg-red-500 align-middle" />Visited, not answered</li>
+              <li><span className="mr-2 inline-block h-3 w-3 rounded bg-slate-200 align-middle" />Not visited</li>
+              <li><span className="mr-2 inline-block h-3 w-3 rounded bg-purple-600 align-middle" />Marked ({counts.marked})</li>
+            </ul>
+            <button onClick={() => { setSheetOpen(false); setConfirming(true); }} className="btn-danger mt-4 w-full">
+              {isLastSection ? "Submit test" : "Submit section"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Confirm submit */}
       {confirming && (

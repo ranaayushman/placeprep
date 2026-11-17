@@ -22,13 +22,13 @@ const CODE_PAGES = ["/code", "/dsa"];
 export function AppShell({ user, updates, children }: { user: SafeUser; updates: Announcement[]; children: React.ReactNode }) {
   const nav = hasCodeAccess(user) ? NAV : NAV.filter((n) => !CODE_PAGES.includes(n.href));
   return (
-    <div className="flex min-h-screen flex-col bg-canvas">
+    <div className="flex min-h-dvh flex-col bg-canvas">
       <header className="sticky top-0 z-10 border-b border-deep/10 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2 lg:py-3">
           <Logo />
-          <nav className="flex gap-1 overflow-x-auto text-sm">
+          <nav className="order-last -mx-1 flex w-full gap-1 overflow-x-auto pb-1 text-sm max-lg:[mask-image:linear-gradient(to_right,#000_90%,transparent)] max-lg:pr-8 lg:order-none lg:mx-0 lg:w-auto lg:pb-0">
             {(user.role === "ADMIN" ? [...nav, { href: "/admin", label: "Admin" }] : user.role === "MODERATOR" ? [...nav, { href: "/admin", label: "Moderate" }] : nav).map((n) => (
-              <Link key={n.href} href={n.href} className="whitespace-nowrap rounded-md px-3 py-1.5 font-medium text-muted hover:bg-brand-soft hover:text-deep">
+              <Link key={n.href} href={n.href} className="whitespace-nowrap rounded-md px-3 py-2 font-medium text-muted lg:py-1.5 hover:bg-brand-soft hover:text-deep">
                 {n.label}
               </Link>
             ))}

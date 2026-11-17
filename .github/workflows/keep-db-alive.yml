@@ -1,35 +1,26 @@
-name: Keep DB Alive
+name: Uptime check
 
-# Hits /api/health every night at 1:55 AM IST (20:25 UTC)
-# so the Supabase free-tier DB never pauses due to inactivity.
+# Checks /api/health every 10 minutes (GitHub may start scheduled runs a few minutes late).
+# A failed run means the site or its database is down: GitHub emails the repo owner about it.
+# It also keeps the Supabase free-tier DB from pausing. /api/health stays up in maintenance mode.
 on:
   schedule:
-    - cron: "25 20 * * *"   # 20:25 UTC = 1:55 AM IST
-  workflow_dispatch:         # allow a manual trigger from the GitHub UI
+    - cron: "*/10 * * * *"
+  workflow_dispatch: # manual run from the Actions tab
 
 jobs:
   ping:
-    name: Ping DB via health endpoint
+    name: GET /api/health
     runs-on: ubuntu-latest
-    timeout-minutes: 2
-
+    timeout-minutes: 3
     steps:
-      - name: Hit /api/health
+      - name: Check health
         run: |
-          echo "Pinging https://placeprep.me/api/health …"
-          RESPONSE=$(curl --silent --show-error --max-time 30 \
-            --write-out "\nHTTP_STATUS:%{http_code}" \
-            https://placeprep.me/api/health)
-
-          BODY=$(echo "$RESPONSE" | sed '/HTTP_STATUS:/d')
-          STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
-
-          echo "Status : $STATUS"
-          echo "Body   : $BODY"
-
+          # The apex domain redirects to www; -L follows it. Retries ride out a cold start or a single blip.
+          STATUS=$(curl --silent --show-error --location --max-time 30 --retry 2 --retry-delay 20 --retry-all-errors \
+            --output body.json --write-out "%{http_code}" https://www.placeprep.me/api/health || echo 000)
+          echo "HTTP $STATUS: $(cat body.json 2>/dev/null)"
           if [ "$STATUS" != "200" ]; then
-            echo "❌ Health check failed with HTTP $STATUS"
+            echo "::error::PlacePrep health check failed with HTTP $STATUS"
             exit 1
           fi
-
-          echo "✅ DB is alive"

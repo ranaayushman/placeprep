@@ -157,9 +157,9 @@ export default function Home() {
       <main>
         {/* Hero */}
         <section className="bg-deep text-white">
-        <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 pt-14 pb-24 lg:grid-cols-[1.1fr_1fr] lg:pt-20">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 px-4 pt-14 pb-24 lg:grid-cols-[1.1fr_1fr] lg:pt-20">
           <div>
-            <h1 className="text-5xl leading-[1.02] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
+            <h1 className="text-4xl leading-[1.05] font-semibold tracking-tight text-balance min-[400px]:text-5xl sm:text-6xl lg:text-7xl">
               Practise like it&apos;s{" "}
               <span className="text-sun">drive day.</span>
             </h1>

@@ -142,9 +142,9 @@ export function CookieConsent() {
           ref={bannerRef}
           role="region"
           aria-label="Cookie preferences"
-          className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-2xl border border-deep/15 bg-white p-5 shadow-2xl shadow-deep/20 sm:p-6"
+          className="fixed bottom-2 left-2 right-2 z-50 mx-auto max-w-4xl rounded-2xl border border-deep/15 bg-white p-4 shadow-2xl shadow-deep/20 sm:bottom-4 sm:left-4 sm:right-4 sm:p-6"
         >
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-5">
             <div className="space-y-2 text-sm text-slate-700">
               <div className="flex items-center gap-2">
                 <span className="text-xl" aria-hidden>
@@ -152,7 +152,11 @@ export function CookieConsent() {
                 </span>
                 <h3 className="font-semibold text-deep">We respect your privacy</h3>
               </div>
-              <p className="leading-relaxed">
+              <p className="text-xs leading-snug sm:hidden">
+                PlacePrep is free. We use necessary cookies to keep you signed in; with your permission, also preference, analytics and ad cookies.{" "}
+                <Link href="/cookies" className="font-medium text-brand underline underline-offset-2">Cookie Policy</Link>
+              </p>
+              <p className="hidden leading-relaxed sm:block">
                 PlacePrep is 100% free. We use strictly necessary cookies to keep you signed in and secure. With your
                 permission, we also use optional preference, analytics and advertising cookies; ads help keep PlacePrep
                 free. You can change this at any time. Read our{" "}
@@ -167,25 +171,25 @@ export function CookieConsent() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 sm:shrink-0">
+            <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5 sm:shrink-0">
               <button
                 type="button"
                 onClick={() => setShowModal(true)}
-                className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-xs font-semibold text-slate-700 sm:px-3.5 sm:py-2 transition hover:bg-slate-50"
               >
                 Customise
               </button>
               <button
                 type="button"
                 onClick={rejectOptional}
-                className="rounded-xl border border-deep/20 bg-canvas-deep px-3.5 py-2 text-xs font-semibold text-deep transition hover:bg-slate-200"
+                className="rounded-xl border border-deep/20 bg-canvas-deep px-2 py-2.5 text-xs font-semibold text-deep sm:px-3.5 sm:py-2 transition hover:bg-slate-200"
               >
                 Necessary only
               </button>
               <button
                 type="button"
                 onClick={acceptAll}
-                className="rounded-xl bg-brand-dark px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-deep"
+                className="rounded-xl bg-brand-dark px-2 py-2.5 text-xs font-semibold text-white shadow-sm sm:px-4 sm:py-2 transition hover:bg-deep"
               >
                 Accept all
               </button>
@@ -202,7 +206,7 @@ export function CookieConsent() {
           aria-labelledby="cookie-modal-title"
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs"
         >
-          <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col rounded-2xl bg-white shadow-2xl">
+          <div className="relative flex max-h-[90dvh] w-full max-w-xl flex-col rounded-2xl bg-white shadow-2xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
               <div className="flex items-center gap-2">

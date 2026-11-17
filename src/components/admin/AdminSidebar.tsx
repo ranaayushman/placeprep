@@ -35,7 +35,7 @@ export function AdminSidebar({ groups }: { groups: NavGroup[] }) {
   );
   return (
     <>
-      <nav aria-label="Admin" className="-mx-4 flex gap-1 overflow-x-auto border-b border-slate-200 px-4 pb-2 lg:hidden">
+      <nav aria-label="Admin" className="-mx-4 flex gap-1 overflow-x-auto border-b border-slate-200 pl-4 pr-10 pb-2 [mask-image:linear-gradient(to_right,#000_90%,transparent)] lg:hidden">
         {groups.flatMap((g) => g.items).map(link)}
       </nav>
       {!open && (

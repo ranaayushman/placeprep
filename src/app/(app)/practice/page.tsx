@@ -14,7 +14,7 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
   const [stats, community] = await Promise.all([getTopicStats(user.id), publishedCountsByTopic()]);
 
   return (
-    <form action={startPractice} className="space-y-6">
+    <form action={startPractice} className="space-y-6 pb-28 sm:pb-0">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Practice</h1>
@@ -23,10 +23,10 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
             You get the answer and explanation right after each question.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 max-sm:fixed max-sm:inset-x-3 max-sm:bottom-3 max-sm:z-20 max-sm:justify-between max-sm:shadow-xl">
           <label className="text-sm">
             Questions{" "}
-            <select name="count" defaultValue="10" className="ml-1 rounded-md border border-slate-300 px-2 py-1">
+            <select name="count" defaultValue="10" className="ml-1 rounded-md border border-slate-300 px-2 py-2 sm:py-1">
               {[5, 10, 15, 20, 30].map((n) => <option key={n}>{n}</option>)}
             </select>
           </label>
@@ -49,9 +49,9 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
                 .sort((a, b) => b.weight - a.weight)
                 .map((t) => (
                   <li key={t.id}>
-                    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-50">
+                    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2.5 hover:bg-slate-50 sm:py-1.5">
                       <span className="flex items-center gap-2 text-sm">
-                        <input type="checkbox" name="topic" value={t.id} className="h-4 w-4" />
+                        <input type="checkbox" name="topic" value={t.id} className="h-5 w-5 sm:h-4 sm:w-4" />
                         {t.label}
                         {t.weight >= 3 && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">FREQUENT</span>}
                       </span>

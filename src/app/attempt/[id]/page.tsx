@@ -8,10 +8,10 @@ export default async function AttemptPage({ params }: { params: Promise<{ id: st
   const user = await requireUser();
   const { id } = await params;
   const [attempt] = await db
-    .select({ status: attempts.status })
+    .select({ status: attempts.status, mode: attempts.mode })
     .from(attempts)
     .where(and(eq(attempts.id, id), eq(attempts.userId, user.id)));
   if (!attempt) notFound();
   if (attempt.status === "SUBMITTED") redirect(`/results/${id}`);
-  return <ExamRunner attemptId={id} />;
+  return <ExamRunner attemptId={id} mode={attempt.mode} />;
 }

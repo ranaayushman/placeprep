@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { CookieConsent } from "@/components/CookieConsent";
 import { ErrorReporter } from "@/components/ErrorReporter";
@@ -35,6 +35,9 @@ export const metadata: Metadata = {
     images: ["/placeprep-logo.png"],
   },
 };
+
+// viewport-fit=cover lets the exam footer sit above the iPhone home indicator (env(safe-area-inset-bottom)). Pinch-zoom stays on.
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#153d3b" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
