@@ -408,3 +408,24 @@ export async function submittedMocks({ window = "all", exam, page = 1 }: { windo
     })),
   };
 }
+
+/**
+ * Students per Indian state, from the IP of their first register (or, for older accounts, login) event.
+ * IP location is a guess: mobile networks often show up in the carrier's hub state.
+ */
+export async function signupsByState(sinceMs = 0) {
+  const { indianStateOf } = await import("@/lib/geo/india");
+  const rows = await db.execute<{ ip: string | null }>(sql`
+    SELECT DISTINCT ON (u.id) e.ip
+    FROM users u LEFT JOIN events e ON e.user_id = u.id AND e.type IN ('register', 'login') AND e.ip IS NOT NULL
+    WHERE u.role = 'STUDENT' AND u.created_at >= ${sinceMs}
+    ORDER BY u.id, e.created_at`);
+  const counts = new Map<string, number>();
+  let unknown = 0;
+  for (const r of rows) {
+    const state = await indianStateOf(r.ip);
+    if (state) counts.set(state, (counts.get(state) ?? 0) + 1);
+    else unknown++;
+  }
+  return { counts, unknown, total: rows.length };
+}

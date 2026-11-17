@@ -1,7 +1,8 @@
 import { requireAdmin } from "@/lib/auth";
-import { dailyGrowth, retentionCohorts, signupFunnel } from "@/lib/admin";
+import { dailyGrowth, retentionCohorts, signupFunnel, signupsByState } from "@/lib/admin";
 import { fmtDate } from "@/components/admin/when";
 import { DailyBars } from "@/components/admin/DailyBars";
+import { IndiaHeatMap } from "@/components/admin/IndiaHeatMap";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,8 @@ const pctOf = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "
 
 export default async function GrowthPage() {
   await requireAdmin();
-  const [recent, allTime, cohorts, daily] = await Promise.all([signupFunnel(Date.now() - 30 * 86_400_000), signupFunnel(0), retentionCohorts(), dailyGrowth(30)]);
+  const [recent, allTime, cohorts, daily, geo] = await Promise.all([signupFunnel(Date.now() - 30 * 86_400_000), signupFunnel(0), retentionCohorts(), dailyGrowth(30), signupsByState()]);
+  const topStates = [...geo.counts].sort((a, b) => b[1] - a[1]);
   const total = (k: "signups" | "active") => daily.reduce((a, d) => a + d[k], 0);
   return (
     <div className="space-y-8">
@@ -30,6 +32,29 @@ export default async function GrowthPage() {
           <div className="mt-3"><DailyBars data={daily.map((d) => ({ day: d.day, n: d.active }))} label="Active students per day, last 30 days" unit="active students" /></div>
         </section>
       </div>
+
+      <section className="card">
+        <h2 className="font-semibold">Where students sign up from</h2>
+        <p className="mt-1 text-xs text-slate-500">All time, by Indian state, guessed from the IP they signed up with. Mobile networks often show up in the carrier&apos;s hub state, so treat it as rough. Hover a tile for its number.</p>
+        <div className="mt-4 grid gap-6 md:grid-cols-[auto_1fr]">
+          <IndiaHeatMap counts={geo.counts} />
+          <table className="w-full self-start text-sm">
+            <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr><th className="py-2">State</th><th className="py-2 text-right">Students</th><th className="py-2 text-right">Share</th></tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {topStates.slice(0, 10).map(([state, n]) => (
+                <tr key={state}><td className="py-1.5">{state}</td><td className="py-1.5 text-right font-semibold tabular-nums">{n}</td><td className="py-1.5 text-right tabular-nums text-slate-500">{pctOf(n, geo.total)}</td></tr>
+              ))}
+              {topStates.length === 0 && <tr><td colSpan={3} className="py-2 text-slate-500">No sign-ups with a known Indian location yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-xs text-slate-400">
+          {geo.unknown} of {geo.total} students have no Indian location (outside India, private network, or no IP logged)
+          {topStates.length > 10 && <>; {topStates.length - 10} more states not listed</>}. IP Geolocation by <a href="https://db-ip.com" className="underline">DB-IP</a>.
+        </p>
+      </section>
 
       <section className="card overflow-x-auto">
         <h2 className="font-semibold">Sign-up funnel</h2>

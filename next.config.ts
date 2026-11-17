@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Self-contained server bundle for the Docker image (node server.js).
   output: "standalone",
+  // IP -> state table read at runtime by src/lib/geo/india.ts.
+  outputFileTracingIncludes: { "/admin/growth": ["./src/lib/geo/india-ip.json"] },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

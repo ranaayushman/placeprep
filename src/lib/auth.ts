@@ -8,6 +8,8 @@ import bcrypt from "bcryptjs";
 import { db, sessions, users, type User } from "@/db";
 
 export const SESSION_COOKIE = "sid";
+/** Readable "1" next to the httpOnly sid, so static public pages can show "Dashboard" in the browser. Not a credential. */
+export const SIGNED_IN_COOKIE = "signed_in";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const LAST_SEEN_THROTTLE_MS = 60 * 1000;
 
@@ -49,6 +51,7 @@ export async function createSession(userId: string) {
     path: "/",
     expires: expiresAt,
   });
+  jar.set(SIGNED_IN_COOKIE, "1", { sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", expires: expiresAt });
 }
 
 export async function destroySession() {
@@ -56,6 +59,7 @@ export async function destroySession() {
   const token = jar.get(SESSION_COOKIE)?.value;
   if (token) await db.delete(sessions).where(eq(sessions.tokenHash, hashToken(token)));
   jar.delete(SESSION_COOKIE);
+  jar.delete(SIGNED_IN_COOKIE);
 }
 
 export async function revokeAllSessions(userId: string) {
