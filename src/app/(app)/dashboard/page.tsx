@@ -17,6 +17,9 @@ import { retryMistakes, startPractice } from "../start-actions";
 /** Recruiters students ask for most that have no mock yet (see EXAMS in lib/exam/pattern.ts). */
 const UPCOMING_COMPANIES = ["TCS", "Wipro", "Accenture", "Capgemini"]; // Cognizant has its own card below
 
+// Fail fast instead of hanging for the 300s platform default if the DB stalls.
+export const maxDuration = 30;
+
 const QUIZ_BTN =
   "inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-deep";
 

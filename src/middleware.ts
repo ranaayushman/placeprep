@@ -6,6 +6,13 @@ const PROTECTED = ["/dashboard", "/practice", "/mock", "/attempt", "/results", "
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  // MAINTENANCE_MODE=1 closes the whole site (admins too); files with an extension (logo, robots.txt) and the health check stay up.
+  if (process.env.MAINTENANCE_MODE === "1" && pathname !== "/api/health" && pathname !== "/maintenance" && !pathname.includes(".")) {
+    const headers = { "Retry-After": "900", "Cache-Control": "no-store" };
+    if (pathname.startsWith("/api")) return NextResponse.json({ error: "PlacePrep is down for maintenance. Please try again shortly." }, { status: 503, headers });
+    return NextResponse.rewrite(new URL("/maintenance", req.url), { status: 503, headers });
+  }
+  if (pathname.startsWith("/api")) return NextResponse.next();
   if (PROTECTED.some((p) => pathname.startsWith(p)) && !req.cookies.has("sid")) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
@@ -17,4 +24,4 @@ export function middleware(req: NextRequest) {
   return res;
 }
 
-export const config = { matcher: ["/((?!api|_next|favicon.ico).*)"] };
+export const config = { matcher: ["/((?!_next|favicon.ico).*)"] };
