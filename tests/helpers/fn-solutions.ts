@@ -832,4 +832,227 @@ public:
         k %= len(nums)
         return nums[-k:] + nums[:-k] if k else nums`,
   },
+  "genc-festival-switch": {
+    cpp: s`class Solution {
+public:
+    long long festivalMode(int b, long long value) {
+        for (int i = 2; i <= b; i += 2) value ^= 1LL << (i - 1);
+        return value;
+    }
+};`,
+    java: s`class Solution {
+    public long festivalMode(int b, long value) {
+        for (int i = 2; i <= b; i += 2) value ^= 1L << (i - 1);
+        return value;
+    }
+}`,
+    python: s`class Solution:
+    def festivalMode(self, b: int, value: int) -> int:
+        for i in range(2, b + 1, 2):
+            value ^= 1 << (i - 1)
+        return value`,
+  },
+  "genc-locker-splits": {
+    cpp: s`class Solution {
+public:
+    long long countSplits(string code, int k) {
+        const long long M = 1000000007;
+        long long a = 1, b = 0; // ways for the prefix ending one and two digits back
+        for (size_t i = 0; i < code.size(); i++) {
+            int d = code[i] - '0';
+            long long cur = (d >= 1 && d <= k) ? a : 0;
+            if (i > 0 && code[i - 1] != '0' && (code[i - 1] - '0') * 10 + d <= k) cur = (cur + b) % M;
+            b = a; a = cur;
+        }
+        return a;
+    }
+};`,
+    java: s`class Solution {
+    public long countSplits(String code, int k) {
+        final long M = 1_000_000_007L;
+        long a = 1, b = 0;
+        for (int i = 0; i < code.length(); i++) {
+            int d = code.charAt(i) - '0';
+            long cur = (d >= 1 && d <= k) ? a : 0;
+            if (i > 0 && code.charAt(i - 1) != '0' && (code.charAt(i - 1) - '0') * 10 + d <= k) cur = (cur + b) % M;
+            b = a; a = cur;
+        }
+        return a;
+    }
+}`,
+    python: s`class Solution:
+    def countSplits(self, code: str, k: int) -> int:
+        a, b = 1, 0
+        for i, ch in enumerate(code):
+            cur = a if 1 <= int(ch) <= k else 0
+            if i > 0 and code[i - 1] != "0" and int(code[i - 1:i + 1]) <= k:
+                cur += b
+            a, b = cur % 1000000007, a
+        return a`,
+  },
+  "genc-heavy-left": {
+    cpp: s`class Solution {
+public:
+    int heavyLeftCuts(vector<long long>& nums) {
+        long long total = 0, left = 0;
+        for (long long x : nums) total += x;
+        int c = 0;
+        for (size_t i = 0; i + 1 < nums.size(); i++) { left += nums[i]; if (left > total - left) c++; }
+        return c;
+    }
+};`,
+    java: s`class Solution {
+    public int heavyLeftCuts(long[] nums) {
+        long total = 0, left = 0;
+        for (long x : nums) total += x;
+        int c = 0;
+        for (int i = 0; i + 1 < nums.length; i++) { left += nums[i]; if (left > total - left) c++; }
+        return c;
+    }
+}`,
+    python: s`class Solution:
+    def heavyLeftCuts(self, nums: List[int]) -> int:
+        total, left, c = sum(nums), 0, 0
+        for x in nums[:-1]:
+            left += x
+            c += left > total - left
+        return c`,
+  },
+  "genc-vowel-gap": {
+    cpp: s`class Solution {
+public:
+    int vowelGap(string s) {
+        int c[26] = {0};
+        for (char ch : s) c[ch - 'a']++;
+        int hv = INT_MIN, lc = INT_MAX;
+        for (int i = 0; i < 26; i++) {
+            if (!c[i]) continue;
+            char ch = 'a' + i;
+            if (ch == 'a' || ch == 'e' || ch == 'i' || ch == 'o' || ch == 'u') hv = max(hv, c[i]); else lc = min(lc, c[i]);
+        }
+        return hv - lc;
+    }
+};`,
+    java: s`class Solution {
+    public int vowelGap(String s) {
+        int[] c = new int[26];
+        for (char ch : s.toCharArray()) c[ch - 'a']++;
+        int hv = Integer.MIN_VALUE, lc = Integer.MAX_VALUE;
+        for (int i = 0; i < 26; i++) {
+            if (c[i] == 0) continue;
+            if ("aeiou".indexOf('a' + i) >= 0) hv = Math.max(hv, c[i]); else lc = Math.min(lc, c[i]);
+        }
+        return hv - lc;
+    }
+}`,
+    python: s`class Solution:
+    def vowelGap(self, s: str) -> int:
+        c = {ch: s.count(ch) for ch in set(s)}
+        return max(n for ch, n in c.items() if ch in "aeiou") - min(n for ch, n in c.items() if ch not in "aeiou")`,
+  },
+  "genc-running-echo": {
+    cpp: s`class Solution {
+public:
+    string runningEcho(string s) {
+        int c[26] = {0};
+        string r;
+        for (size_t i = 0; i < s.size(); i++) { if (i) r += '+'; r += string(++c[s[i] - 'a'], s[i]); }
+        return r;
+    }
+};`,
+    java: s`class Solution {
+    public String runningEcho(String s) {
+        int[] c = new int[26];
+        StringBuilder r = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            if (i > 0) r.append('+');
+            r.append(String.valueOf(ch).repeat(++c[ch - 'a']));
+        }
+        return r.toString();
+    }
+}`,
+    python: s`class Solution:
+    def runningEcho(self, s: str) -> str:
+        seen, out = {}, []
+        for ch in s:
+            seen[ch] = seen.get(ch, 0) + 1
+            out.append(ch * seen[ch])
+        return "+".join(out)`,
+  },
+  "genc-ascii-gap": {
+    cpp: s`class Solution {
+public:
+    string gapPair(string s, int k) {
+        for (size_t i = 0; i < s.size(); i++)
+            for (size_t j = i + 1; j < s.size(); j++)
+                if (abs(s[i] - s[j]) == k) return string{s[i], s[j]};
+        return "-1";
+    }
+};`,
+    java: s`class Solution {
+    public String gapPair(String s, int k) {
+        for (int i = 0; i < s.length(); i++)
+            for (int j = i + 1; j < s.length(); j++)
+                if (Math.abs(s.charAt(i) - s.charAt(j)) == k) return "" + s.charAt(i) + s.charAt(j);
+        return "-1";
+    }
+}`,
+    python: s`class Solution:
+    def gapPair(self, s: str, k: int) -> str:
+        for i in range(len(s)):
+            for j in range(i + 1, len(s)):
+                if abs(ord(s[i]) - ord(s[j])) == k:
+                    return s[i] + s[j]
+        return "-1"`,
+  },
+  "genc-unique-min-grid": {
+    cpp: s`class Solution {
+public:
+    int smallestOneOff(vector<vector<int>>& grid) {
+        map<int, int> c;
+        for (auto& r : grid) for (int x : r) c[x]++;
+        for (auto& [x, k] : c) if (x > 0 && k == 1) return x;
+        return -1;
+    }
+};`,
+    java: s`class Solution {
+    public int smallestOneOff(int[][] grid) {
+        TreeMap<Integer, Integer> c = new TreeMap<>();
+        for (int[] r : grid) for (int x : r) c.merge(x, 1, Integer::sum);
+        for (Map.Entry<Integer, Integer> e : c.entrySet()) if (e.getKey() > 0 && e.getValue() == 1) return e.getKey();
+        return -1;
+    }
+}`,
+    python: s`class Solution:
+    def smallestOneOff(self, grid: List[List[int]]) -> int:
+        flat = [x for r in grid for x in r]
+        once = [x for x in set(flat) if x > 0 and flat.count(x) == 1]
+        return min(once) if once else -1`,
+  },
+  "genc-step-sequence": {
+    cpp: s`class Solution {
+public:
+    vector<long long> stepSequence(int n, vector<long long>& first) {
+        vector<long long> t = first;
+        while ((int)t.size() < n) t.push_back(t.back() + t[t.size() - 3]);
+        t.resize(n);
+        return t;
+    }
+};`,
+    java: s`class Solution {
+    public long[] stepSequence(int n, long[] first) {
+        long[] t = new long[Math.max(n, 4)];
+        for (int i = 0; i < 4; i++) t[i] = first[i];
+        for (int i = 4; i < n; i++) t[i] = t[i - 1] + t[i - 3];
+        return Arrays.copyOf(t, n);
+    }
+}`,
+    python: s`class Solution:
+    def stepSequence(self, n: int, first: List[int]) -> List[int]:
+        t = list(first)
+        while len(t) < n:
+            t.append(t[-1] + t[-3])
+        return t[:n]`,
+  },
 };

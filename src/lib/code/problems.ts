@@ -7,6 +7,7 @@
  * odd-sum subarrays, longest palindromic substring, Kth largest, inversions). Every sample is also a hidden test.
  */
 import { DSA_PROBLEMS } from "./dsa";
+import { GENC_METTL_PROBLEMS } from "./genc-mettl";
 
 export type Language = "cpp" | "java" | "python" | "sql";
 export const LANGUAGES: Record<Language, string> = { cpp: "C++17", java: "Java", python: "Python 3", sql: "SQL (SQLite)" };
@@ -689,7 +690,7 @@ const PLACEMENT_PROBLEMS: Problem[] = [
 ];
 
 /** Placement-style problems first, then the personal DSA track (lib/code/dsa.ts). */
-export const PROBLEMS: Problem[] = [...PLACEMENT_PROBLEMS, ...DSA_PROBLEMS];
+export const PROBLEMS: Problem[] = [...PLACEMENT_PROBLEMS, ...GENC_METTL_PROBLEMS, ...DSA_PROBLEMS];
 
 export type RunStatus = "ok" | "compile_error" | "runtime_error" | "timeout" | "output_limit";
 const STATUS: Record<RunStatus, string> = { ok: "Accepted", compile_error: "Compile Error", runtime_error: "Runtime Error", timeout: "Time Limit Exceeded", output_limit: "Output Limit Exceeded" };

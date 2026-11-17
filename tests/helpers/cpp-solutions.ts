@@ -62,4 +62,27 @@ using namespace std;int main(){int n,m;cin>>n>>m;vector<long long>r(n,0),c(m,0);
   "sql-top-products": "SELECT p.name, SUM(oi.quantity) AS total FROM products p JOIN order_items oi ON oi.product_id = p.id GROUP BY p.id ORDER BY total DESC, p.name LIMIT 3;",
   "sql-manager-name": "SELECT e.name, COALESCE(m.name, 'NONE') FROM employees e LEFT JOIN employees m ON m.id = e.manager_id ORDER BY e.name;",
   "sql-second-highest": "SELECT DISTINCT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 1;",
+  // Cognizant GenC Mettl-style (src/lib/code/genc-mettl.ts)
+  "genc-festival-switch": `#include <bits/stdc++.h>
+using namespace std;int main(){long long b,v;cin>>b>>v;for(int i=2;i<=b;i+=2)v^=1LL<<(i-1);cout<<v<<"\\n";}`,
+  "genc-locker-splits": `#include <bits/stdc++.h>
+using namespace std;int main(){string s;int k;cin>>s>>k;const long long M=1e9+7;int n=s.size();vector<long long>d(n+1,0);d[0]=1;for(int i=1;i<=n;i++){int a=s[i-1]-'0';if(a>=1&&a<=k)d[i]=d[i-1];if(i>=2&&s[i-2]!='0'){int b=(s[i-2]-'0')*10+a;if(b<=k)d[i]=(d[i]+d[i-2])%M;}}cout<<d[n]<<"\\n";}`,
+  "genc-heavy-left": `#include <bits/stdc++.h>
+using namespace std;int main(){int n;cin>>n;vector<long long>a(n);long long t=0;for(auto&x:a){cin>>x;t+=x;}long long l=0;int c=0;for(int i=0;i+1<n;i++){l+=a[i];if(l>t-l)c++;}cout<<c<<"\\n";}`,
+  "genc-vowel-gap": `#include <bits/stdc++.h>
+using namespace std;int main(){string s;cin>>s;int c[26]={0};for(char ch:s)c[ch-'a']++;int hv=INT_MIN,lc=INT_MAX;string v="aeiou";for(int i=0;i<26;i++)if(c[i]){if(v.find('a'+i)!=string::npos)hv=max(hv,c[i]);else lc=min(lc,c[i]);}cout<<hv-lc<<"\\n";}`,
+  "genc-running-echo": `#include <bits/stdc++.h>
+using namespace std;int main(){string s;cin>>s;int c[26]={0};string r;for(size_t i=0;i<s.size();i++){c[s[i]-'a']++;if(i)r+='+';r+=string(c[s[i]-'a'],s[i]);}cout<<r<<"\\n";}`,
+  "genc-ascii-gap": `#include <bits/stdc++.h>
+using namespace std;int main(){string s;int k;cin>>s>>k;for(size_t i=0;i<s.size();i++)for(size_t j=i+1;j<s.size();j++)if(abs(s[i]-s[j])==k){cout<<s[i]<<s[j]<<"\\n";return 0;}cout<<-1<<"\\n";}`,
+  "genc-unique-min-grid": `#include <bits/stdc++.h>
+using namespace std;int main(){int n;cin>>n;map<int,int>c;for(int i=0;i<n*n;i++){int x;cin>>x;c[x]++;}for(auto&[x,k]:c)if(x>0&&k==1){cout<<x<<"\\n";return 0;}cout<<-1<<"\\n";}`,
+  "genc-step-sequence": `#include <bits/stdc++.h>
+using namespace std;int main(){int n;cin>>n;vector<long long>t(4);for(auto&x:t)cin>>x;while((int)t.size()<n)t.push_back(t.back()+t[t.size()-3]);for(int i=0;i<n;i++)cout<<(i?" ":"")<<t[i];cout<<"\\n";}`,
+  "sql-clinic-pending": "SELECT p.doctor_id, p.first_name || ' ' || p.last_name AS full_name, SUM(i.amount) AS total FROM patients p JOIN invoices i ON i.patient_id = p.id WHERE i.status = 'Pending' GROUP BY p.id ORDER BY total DESC, full_name;",
+  "sql-cab-plates": "SELECT d.first_name || ' ' || d.last_name, d.license_no, c.plate_no FROM cabs c JOIN drivers d ON d.id = c.driver_id WHERE c.status = 'On Trip' AND c.plate_no LIKE '%7' ORDER BY c.plate_no;",
+  "sql-trip-names": "SELECT r.first_name || ' ' || r.last_name, d.first_name || ' ' || d.last_name, t.pickup, t.dropoff FROM trips t JOIN riders r ON r.id = t.rider_id JOIN drivers d ON d.id = t.driver_id WHERE t.id % 4 = 0 ORDER BY t.id;",
+  "sql-manager-contacts": "SELECT DISTINCT m.first_name || ' ' || m.last_name AS full_name FROM members m JOIN contacts c ON c.member_id = m.id WHERE LOWER(c.job_title) LIKE '%manager%' ORDER BY full_name;",
+  "sql-repeat-names": "SELECT name, COUNT(*) AS c FROM viewers GROUP BY name HAVING COUNT(*) > 1 ORDER BY c DESC, name;",
+  "sql-top-rated-trips": "SELECT d.license_no, d.id, d.rating, t.id FROM trips t JOIN drivers d ON d.id = t.driver_id WHERE d.rating >= 4.2 AND t.status <> 'Cancelled' ORDER BY t.id;",
 };
