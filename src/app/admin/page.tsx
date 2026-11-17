@@ -40,7 +40,7 @@ export default async function AdminOverview() {
         <div>
           <h2 className="font-semibold">Maintenance mode {down ? <span className="text-red-700">is ON</span> : <span className="text-slate-500">is off</span>}</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {down ? "Students see a maintenance notice and can't sign in or save answers. Admins can still use the whole site." : "Turning it on closes the site to everyone except admins: every page shows a maintenance notice and saving answers stops."}
+            {down ? "Students see a maintenance notice on every page and nothing they do is saved. Admins can still use the whole site." : "Turning it on closes the site to everyone except admins: every page shows a maintenance notice and saving answers stops."}
             {maint && ` Last changed ${ago(maint.updatedAt)}${maint.by ? ` by ${maint.by}` : ""}.`}
           </p>
         </div>
