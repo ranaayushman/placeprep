@@ -12,7 +12,7 @@ export function AuthLinks() {
   // "Dashboard", which then sends the student to /login.
   const [signedIn, setSignedIn] = useState(false);
   useEffect(() => setSignedIn(/(?:^|; )signed_in=1/.test(document.cookie)), []);
-  const button = "rounded-lg bg-brand-dark px-4 py-2 font-semibold text-white hover:bg-deep";
+  const button = "whitespace-nowrap rounded-lg bg-brand-dark px-4 py-2 font-semibold text-white hover:bg-deep";
   if (signedIn)
     return (
       <Link href="/dashboard" className={button}>
@@ -21,7 +21,7 @@ export function AuthLinks() {
     );
   return (
     <>
-      <Link href="/login" className="px-3 py-2 text-muted hover:text-deep">
+      <Link href="/login" className="whitespace-nowrap px-3 py-2 text-muted hover:text-deep">
         Log in
       </Link>
       <Link href="/register" className={button}>

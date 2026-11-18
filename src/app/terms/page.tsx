@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { AuthLinks } from "@/components/AuthLinks";
-import { CookieSettingsButton } from "@/components/CookieConsent";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Terms and Conditions",
@@ -18,7 +18,7 @@ export default function TermsPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5">
           <Logo />
           <nav className="flex items-center gap-4 text-sm font-medium">
-            <Link href="/" className="text-muted hover:text-deep">
+            <Link href="/" className="hidden text-muted hover:text-deep sm:inline">
               Home
             </Link>
             <AuthLinks />
@@ -198,23 +198,7 @@ export default function TermsPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-deep/10 bg-surface">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 py-8 text-xs text-muted sm:flex-row">
-          <p>© {new Date().getFullYear()} PlacePrep. Free aptitude preparation for all students.</p>
-          <div className="flex flex-wrap items-center gap-4">
-            <Link href="/privacy" className="hover:text-deep">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="font-semibold text-deep">
-              Terms of Service
-            </Link>
-            <Link href="/cookies" className="hover:text-deep">
-              Cookie Policy
-            </Link>
-            <CookieSettingsButton />
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
