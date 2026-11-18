@@ -4,7 +4,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { attemptQuestions, attempts, attemptSections, db, type Attempt, type AttemptSection } from "@/db";
 import { generate, SECTION_LABELS, TOPIC_BY_ID, TOPICS, toView, topicsFor, type SectionId, type Topic } from "@/lib/questions";
 import { RC_GROUP, RC_PASSAGES } from "@/lib/questions/verbal";
-import { HARD_SHARE_BY_LEVEL, LEFT_AFTER_MS, MAX_VIOLATIONS, SUBMIT_GRACE_MS } from "./pattern";
+import { HARD_SHARE_BY_LEVEL, LEFT_AFTER_MS, MAX_VIOLATIONS, SUBMIT_GRACE_MS, type ExamLevel } from "./pattern";
 import { getExam } from "./exams";
 import { fingerprint, hardSlots, pickFresh, planTopics, scopedTopics, shuffle, type History, type MocksAgo } from "./plan";
 import { logEvent } from "@/lib/events";
@@ -68,6 +68,7 @@ async function insertAttempt(
   exam: string | null,
   sections: { section: SectionId; durationSec: number; refs: string[] }[],
   cameraOff = false,
+  runId: string | null = null,
 ) {
   const attemptId = crypto.randomUUID();
   // Community refs come from the DB (generate() is synchronous); unpublished ones are dropped.
@@ -106,7 +107,8 @@ async function insertAttempt(
           eq(attempts.mode, mode),
           eq(attempts.status, "IN_PROGRESS"),
           mode === "MOCK"
-            ? eq(attempts.exam, exam!)
+            // Same drive only: a paper open in one GenC drive must not be handed back for another drive (or difficulty).
+            ? and(eq(attempts.exam, exam!), runId ? eq(attempts.runId, runId) : isNull(attempts.runId))
             : and(
                 eq(attempts.title, title),
                 sql`NOT EXISTS (SELECT 1 FROM attempt_questions q WHERE q.attempt_id = ${attempts.id} AND q.chosen_index IS NOT NULL)`,
@@ -115,7 +117,7 @@ async function insertAttempt(
       )
       .limit(1);
     if (open) return open.id;
-    await tx.insert(attempts).values({ id: attemptId, userId, mode, title, exam, cameraOff });
+    await tx.insert(attempts).values({ id: attemptId, userId, mode, title, exam, cameraOff, runId });
     await tx.insert(attemptSections).values(sections.map((s, order) => ({ attemptId, section: s.section, order, durationSec: s.durationSec })));
     await tx.insert(attemptQuestions).values(qRows);
     return null;
@@ -125,12 +127,13 @@ async function insertAttempt(
   return attemptId;
 }
 
-export async function createMock(userId: string, opts: { includeWriting: boolean; exam?: string; cameraOff?: boolean }) {
+export async function createMock(userId: string, opts: { includeWriting: boolean; exam?: string; cameraOff?: boolean; runId?: string; level?: ExamLevel }) {
   const exam = await getExam(opts.exam ?? "infosys-se");
   if (!exam) throw new ExamError("Unknown exam");
   const history = await loadHistory(userId);
   const seen = history.seen;
-  const [minHard, maxHard] = HARD_SHARE_BY_LEVEL[exam.level];
+  const level = opts.level ?? exam.level;
+  const [minHard, maxHard] = HARD_SHARE_BY_LEVEL[level];
   // A fresh share per section, so mocks vary instead of always landing on the same split.
   const hardShare = () => minHard + Math.random() * (maxHard - minHard);
   const taken = new Set<string>();
@@ -165,7 +168,7 @@ export async function createMock(userId: string, opts: { includeWriting: boolean
     return { section: spec.section, durationSec: spec.minutes * 60, refs };
   });
   const n = (await db.select({ id: attempts.id }).from(attempts).where(and(eq(attempts.userId, userId), eq(attempts.exam, exam.id)))).length;
-  return insertAttempt(userId, "MOCK", `${exam.short} Mock #${n + 1}`, exam.id, plan, opts.cameraOff);
+  return insertAttempt(userId, "MOCK", `${exam.short}${level === "max" && exam.level !== "max" ? " (Extreme)" : ""} Mock #${n + 1}`, exam.id, plan, opts.cameraOff, opts.runId ?? null);
 }
 
 export async function createPractice(

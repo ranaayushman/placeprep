@@ -1,13 +1,16 @@
 import Link from "next/link";
-import { canTakeExam, listExamsFor } from "@/lib/exam/exams";
+import { canTakeExam, isLegacyExam, isPaperExam, listExamsFor } from "@/lib/exam/exams";
 import { requireUser } from "@/lib/auth";
 import { StartMockForm } from "../StartMockForm";
 import { redirect } from "next/navigation";
 import { referralLock } from "@/lib/referral";
 
-export default async function SystemCheckPage({ searchParams }: { searchParams: Promise<{ exam?: string }> }) {
+export default async function SystemCheckPage({ searchParams }: { searchParams: Promise<{ exam?: string; run?: string }> }) {
   const user = await requireUser();
-  const exam = (await canTakeExam(user.email, (await searchParams).exam ?? "")) ?? (await listExamsFor(user.email))[0];
+  const { exam: wanted, run: runId } = await searchParams;
+  const exam = (await canTakeExam(user.email, wanted ?? "")) ?? (await listExamsFor(user.email))[0];
+  const back = `/mock?exam=${exam.id}${runId && isPaperExam(exam.id) ? `&run=${runId}` : ""}`;
+  if (isLegacyExam(exam.id)) redirect("/genc");
   if (await referralLock(user.id, exam.id)) redirect(`/mock?exam=${exam.id}`);
   const hasWriting = exam.pattern.some((s) => s.section === "writing");
   const mcqMinutes = exam.pattern.filter((s) => s.section !== "writing").reduce((total, section) => total + section.minutes, 0);
@@ -15,7 +18,7 @@ export default async function SystemCheckPage({ searchParams }: { searchParams: 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <Link href={`/mock?exam=${exam.id}`} className="text-sm text-slate-500 hover:text-slate-900">
+        <Link href={back} className="text-sm text-slate-500 hover:text-slate-900">
           ← Back to mock details
         </Link>
         <h1 className="mt-2 text-2xl font-bold">System check</h1>
@@ -35,6 +38,7 @@ export default async function SystemCheckPage({ searchParams }: { searchParams: 
 
       <StartMockForm
         examId={exam.id}
+        runId={isPaperExam(exam.id) ? runId : undefined}
         hasWriting={hasWriting}
         questionCount={exam.pattern.reduce((total, section) => total + section.questions, 0)}
         minutes={mcqMinutes}

@@ -4,12 +4,21 @@ import { z } from "zod";
 import { attempts, db, featuredExams, mockExamAccess, mockExams } from "@/db";
 import type { SectionId } from "@/lib/questions/types";
 import { RC_GROUP } from "@/lib/questions/verbal";
-import { EXAMS, type ExamLevel, type SectionSpec } from "./pattern";
+import { EXAMS, PAPER_EXAMS, type ExamLevel, type SectionSpec } from "./pattern";
 
 export type Exam = { id: string; company: string; name: string; short: string; pattern: readonly SectionSpec[]; note: string | null; level: ExamLevel; restricted: boolean; builtIn: boolean };
 export type MockExamRow = typeof mockExams.$inferSelect;
 
 const BUILT_IN: Exam[] = EXAMS.map((e) => ({ ...e, restricted: false, builtIn: true }));
+/** Single papers of multi-paper exams (GenC): takeable inside a run (lib/exam/runs.ts), never listed. */
+const PAPERS: Exam[] = PAPER_EXAMS.map((e) => ({ ...e, restricted: false, builtIn: true }));
+/**
+ * The one-sitting GenC mocks, replaced by the 3-paper GenC drive (lib/exam/runs.ts). They stay resolvable so
+ * old attempts, results and history keep working, but students are no longer offered or allowed to start them.
+ */
+const LEGACY_GENC = new Set(["cognizant-genc", "cognizant-genc-python", "cognizant-genc-hard", "cognizant-genc-python-hard"]);
+export const isLegacyExam = (id: string) => LEGACY_GENC.has(id);
+export const isPaperExam = (id: string) => PAPERS.some((e) => e.id === id);
 const fromRow = (r: MockExamRow): Exam => ({ id: r.id, company: r.company, name: r.name, short: r.short, note: r.note, pattern: r.pattern as SectionSpec[], level: r.level as ExamLevel, restricted: r.restricted, builtIn: false });
 
 /** Every exam students can take: the built-in ones, then published ones from the admin panel. */
@@ -20,7 +29,7 @@ export async function listExams(): Promise<Exam[]> {
 
 /** A takeable exam by id (built-in or published), or undefined. Drafts are never takeable. */
 export async function getExam(id: string): Promise<Exam | undefined> {
-  const builtIn = BUILT_IN.find((e) => e.id === id);
+  const builtIn = BUILT_IN.find((e) => e.id === id) ?? PAPERS.find((e) => e.id === id);
   if (builtIn) return builtIn;
   const [row] = await db.select().from(mockExams).where(and(eq(mockExams.id, id), eq(mockExams.status, "PUBLISHED")));
   return row ? fromRow(row) : undefined;
@@ -55,7 +64,7 @@ export async function listExamsFor(email: string | null): Promise<Exam[]> {
   }
   const allowedSet = new Set(allowed);
   const visible = rows.filter((r) => !r.restricted || allowedSet.has(r.id));
-  return [...BUILT_IN, ...visible.map(fromRow)];
+  return [...BUILT_IN.filter((e) => !isLegacyExam(e.id)), ...visible.map(fromRow)];
 }
 
 /**

@@ -9,11 +9,14 @@ import { useDesktopOnly } from "@/lib/useDesktopOnly";
 
 export function StartMockForm({
   examId,
+  runId,
   hasWriting,
   questionCount,
   minutes,
 }: {
   examId: string;
+  /** Set when this mock is one paper of a GenC drive. */
+  runId?: string;
   hasWriting: boolean;
   questionCount: number;
   minutes: number;
@@ -28,6 +31,7 @@ export function StartMockForm({
       <SystemCheck onReady={setReady} camera={camera} />
       <form action={startMock} className="card flex flex-wrap items-center justify-between gap-4">
         <input type="hidden" name="exam" value={examId} />
+        {runId && <input type="hidden" name="run" value={runId} />}
         <label className="flex w-full items-start gap-2 text-sm">
           <input type="checkbox" name="camera" checked={camera} onChange={(e) => setCamera(e.target.checked)} className="mt-0.5" />
           <span>

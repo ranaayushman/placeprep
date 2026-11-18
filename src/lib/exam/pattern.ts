@@ -186,6 +186,26 @@ export const EXAMS = [
     note: "Extreme mode: same pattern and timers as the Python mock, with every MCQ from the hard tier.",
   },
 ] as const;
+/**
+ * Cognizant GenC as three separate papers, taken whenever the student likes and combined afterwards
+ * (lib/exam/runs.ts). They reuse the sections of the one-sitting GenC mocks above:
+ *   Communication = the verbal round (15 Q) plus an optional essay
+ *   Aptitude      = quant, logical and the game rounds
+ *   Coding        = the 120-minute technical round (coding + SQL + debugging + tech MCQs), Java or Python cluster
+ * Not listed anywhere: students reach them through /genc.
+ */
+const GENC_COMMUNICATION: SectionSpec[] = [GENC_APTITUDE.find((s) => s.section === "verbal")!, { section: "writing", questions: 1, minutes: 20 }];
+const GENC_APTITUDE_PAPER: SectionSpec[] = GENC_APTITUDE.filter((s) => s.section !== "verbal");
+const gencCoding = (full: SectionSpec[]): SectionSpec[] => full.filter((s) => s.section === "technical");
+const GENC_PAPER_NOTE = "Pitched 1.5–2× harder than the real paper. Part of the Cognizant GenC drive: take the three papers whenever you like and your combined score appears once all three are done.";
+
+export const PAPER_EXAMS = [
+  { id: "genc-communication", company: "Cognizant", name: "GenC · Communication paper", short: "GenC Communication", pattern: GENC_COMMUNICATION, level: "hard" as ExamLevel, note: GENC_PAPER_NOTE },
+  { id: "genc-aptitude", company: "Cognizant", name: "GenC · Aptitude paper", short: "GenC Aptitude", pattern: GENC_APTITUDE_PAPER, level: "hard" as ExamLevel, note: GENC_PAPER_NOTE },
+  { id: "genc-coding-java", company: "Cognizant", name: "GenC · Coding paper (Java + SQL cluster)", short: "GenC Coding (Java)", pattern: gencCoding(COGNIZANT_GENC_PATTERN), level: "hard" as ExamLevel, note: GENC_PAPER_NOTE },
+  { id: "genc-coding-python", company: "Cognizant", name: "GenC · Coding paper (Python + SQL cluster)", short: "GenC Coding (Python)", pattern: gencCoding(COGNIZANT_GENC_PYTHON_PATTERN), level: "hard" as ExamLevel, note: GENC_PAPER_NOTE },
+] as const;
+
 export type ExamId = (typeof EXAMS)[number]["id"];
 export const EXAM_BY_ID = new Map<string, (typeof EXAMS)[number]>(EXAMS.map((e) => [e.id, e]));
 

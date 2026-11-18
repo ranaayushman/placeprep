@@ -19,9 +19,9 @@ export function InviteCard({ link, have, need }: { link: string; have: number; n
   return (
     <div className="card space-y-4 border-brand/30">
       <div>
-        <h2 className="flex items-center gap-2 font-semibold"><LockIcon size={16} className="text-brand-dark" />Invite {need} friends to unlock this mock</h2>
+        <h2 className="flex items-center gap-2 font-semibold"><LockIcon size={16} className="text-brand-dark" />Invite {need} friends to unlock Extreme</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Share your link. When a friend signs up with it and finishes their profile, it counts. {need} friends unlock both GenC Extreme mocks for good.
+          Share your link. When a friend signs up with it and finishes their profile, it counts. {need} friends unlock GenC Extreme for good.
         </p>
       </div>
       <div className="flex items-center gap-3" aria-label={`${have} of ${need} friends joined`}>

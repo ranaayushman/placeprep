@@ -15,6 +15,7 @@ export const REF_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
 
 /** Exam id → successful referrals needed to unlock it. */
 export const REFERRALS_TO_UNLOCK: Record<string, number> = {
+  "genc-extreme": 2, // Extreme difficulty of the GenC drive (lib/exam/runs.ts)
   "cognizant-genc-hard": 2,
   "cognizant-genc-python-hard": 2,
 };

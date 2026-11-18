@@ -54,6 +54,7 @@ export default async function ResultsPage({ params, searchParams }: { params: Pr
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
+          {attempt.runId && <Link href={`/genc/${attempt.runId}`} className="mb-1 inline-block text-sm text-brand-dark underline underline-offset-2">← Back to your GenC drive</Link>}
           <p className="text-sm text-slate-500">{attempt.mode === "MOCK" ? "Mock test result" : "Practice result"}</p>
           <h1 className="text-2xl font-bold">{attempt.title}</h1>
         </div>

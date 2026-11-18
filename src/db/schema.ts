@@ -133,6 +133,27 @@ export const sessions = pgTable(
   (t) => [index("sessions_user_idx").on(t.userId)],
 );
 
+/**
+ * One sitting of a multi-paper exam (Cognizant GenC = Communication + Aptitude + Coding). Each paper is an
+ * ordinary MOCK attempt with attempts.run_id pointing here, so a student can take them days apart and the
+ * combined score is computed once all of them are submitted (lib/exam/runs.ts).
+ */
+export const examRuns = pgTable(
+  "exam_runs",
+  {
+    id: id(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    /** Which multi-paper exam: "genc". */
+    series: text("series").notNull(),
+    /** Which cluster of that exam, e.g. "java" or "python". */
+    variant: text("variant").notNull(),
+    /** "standard" or "extreme" (extreme is invite-to-unlock, see lib/referral.ts). */
+    difficulty: text("difficulty").notNull().default("standard"),
+    createdAt: now("created_at"),
+  },
+  (t) => [index("exam_runs_user_idx").on(t.userId, t.series)],
+);
+
 /** One mock test or one practice set. */
 export const attempts = pgTable(
   "attempts",
@@ -144,6 +165,8 @@ export const attempts = pgTable(
     title: text("title").notNull(),
     /** Which company exam a MOCK follows (lib/exam/pattern.ts EXAMS); null for practice. */
     exam: text("exam"),
+    /** Set when this mock is one paper of a multi-paper exam (see examRuns). */
+    runId: text("run_id").references(() => examRuns.id, { onDelete: "set null" }),
     currentSection: integer("current_section").notNull().default(0),
     /** Counter only; the individual violations live in `events` (type = "violation"). */
     violations: integer("violations").notNull().default(0),
@@ -159,7 +182,12 @@ export const attempts = pgTable(
     lastActiveAt: ms("last_active_at"),
     submittedAt: ms("submitted_at"),
   },
-  (t) => [index("attempts_user_idx").on(t.userId, t.mode, t.status), index("attempts_status_idx").on(t.status, t.mode)],
+  (t) => [
+    index("attempts_user_idx").on(t.userId, t.mode, t.status),
+    index("attempts_status_idx").on(t.status, t.mode),
+    // A paper can be started once per run (NULL run_id, i.e. every normal attempt, never conflicts).
+    uniqueIndex("attempts_run_exam_uq").on(t.runId, t.exam),
+  ],
 );
 
 export const attemptSections = pgTable(

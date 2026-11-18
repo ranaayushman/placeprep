@@ -8,6 +8,8 @@ import { closeLeftAttempts, wrongRefs } from "@/lib/exam/service";
 import { MAX_VIOLATIONS } from "@/lib/exam/pattern";
 import { featuredExamIds, listExamsFor, type Exam } from "@/lib/exam/exams";
 import { ExamCarousel } from "@/components/ExamCarousel";
+import { GENC_VARIANTS, type GencVariant } from "@/lib/exam/runs";
+import { PAPER_EXAMS } from "@/lib/exam/pattern";
 import { AdSlot } from "@/components/AdSlot";
 import { ProgressBar, pct } from "@/components/charts";
 import { SECTION_LABELS } from "@/lib/questions";
@@ -22,6 +24,8 @@ export const maxDuration = 30;
 
 const QUIZ_BTN =
   "inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-dark px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-deep";
+
+const gencClusters = Object.keys(GENC_VARIANTS) as GencVariant[];
 
 /** One-tap practice set: a tiny form posting the topics to the existing startPractice action. */
 function QuizButton({ topics, count = 10, timed = false, children, className = QUIZ_BTN }: { topics: string[]; count?: number; timed?: boolean; children: React.ReactNode; className?: string }) {
@@ -46,7 +50,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const user = await requireUser();
   await closeLeftAttempts(user.id); // a test they walked away from shows as finished, not "in progress"
   const [EXAMS, featuredIds] = await Promise.all([listExamsFor(user.email), featuredExamIds()]);
-  const hasCognizant = EXAMS.some((e) => e.company.toLowerCase() === "cognizant");
+  const hasCognizant = true; // the GenC drives (carousel), not a listed exam
   const { error } = await searchParams;
   const [stats, history, wrong, recent, [profile]] = await Promise.all([
     getTopicStats(user.id),
@@ -63,7 +67,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const best = history.reduce((m, h) => Math.max(m, h.maxScore ? h.score / h.maxScore : 0), 0);
 
   const dream = profile?.dreamCompany?.trim();
-  const dreamIsAvailable = !!dream && EXAMS.some((e) => dream.toLowerCase().includes(e.company.toLowerCase()));
+  const dreamIsAvailable = !!dream && (dream.toLowerCase().includes("cognizant") || EXAMS.some((e) => dream.toLowerCase().includes(e.company.toLowerCase())));
   // Put the student's dream company first among the upcoming ones.
   const upcoming = dream && !dreamIsAvailable ? [dream, ...UPCOMING_COMPANIES.filter((c) => c.toLowerCase() !== dream.toLowerCase())].slice(0, 5) : UPCOMING_COMPANIES;
   const isDreamExam = (company: string) => !!dream && dream.toLowerCase().includes(company.toLowerCase());
@@ -115,7 +119,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       {/* Quick access: everything one tap away, however many mocks there are */}
       <nav aria-label="Quick access" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { href: "#exams", title: "Full mocks", sub: `${EXAMS.length} exams` },
+          { href: "#exams", title: "Full mocks", sub: `${EXAMS.length + gencClusters.length} exams` },
           { href: "#section-quizzes", title: "Section quizzes", sub: "10 Q · instant answers" },
           { href: "#topic-quizzes", title: "Topic quizzes", sub: `${stats.length} topics` },
           { href: "/practice", title: "Custom quiz", sub: "pick topics & count" },
@@ -137,21 +141,22 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <section id="exams" className="scroll-mt-20">
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-xl font-bold">Full mock exams</h2>
-          <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-semibold text-brand-dark">{EXAMS.length} available</span>
+          <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-semibold text-brand-dark">{EXAMS.length + gencClusters.length} available</span>
         </div>
         <p className="mt-1 text-sm text-muted">
           Each copies the company&apos;s pattern, sectional timers and proctoring (full-screen, no going back, auto-submit at {MAX_VIOLATIONS} warnings).{" "}
           <b className="text-deep">Every attempt is a fresh paper</b>: questions you&apos;ve already seen are skipped.
         </p>
-        {featured.length > 0 && (
-          <div className="mt-4">
-            <ExamCarousel
-              labels={featured.map((e) => `${e.company} ${e.name}`)}
-              slides={featured.map((exam) => <FeaturedExamCard key={exam.id} exam={exam} {...examStats(exam)} isDream={isDreamExam(exam.company)} />)}
-            />
-          </div>
-        )}
-        {featured.length > 0 && gridExams.length > 0 && <h3 className="mt-6 text-sm font-semibold tracking-wider text-muted uppercase">More mocks</h3>}
+        <div className="mt-4">
+          <ExamCarousel
+            labels={[...gencClusters.map((v) => `Cognizant GenC ${v} cluster`), ...featured.map((e) => `${e.company} ${e.name}`)]}
+            slides={[
+              ...gencClusters.map((v) => <GencSuiteCard key={`genc-${v}`} variant={v} isDream={isDreamExam("Cognizant")} />),
+              ...featured.map((exam) => <FeaturedExamCard key={exam.id} exam={exam} {...examStats(exam)} isDream={isDreamExam(exam.company)} />),
+            ]}
+          />
+        </div>
+        {gridExams.length > 0 && <h3 className="mt-6 text-sm font-semibold tracking-wider text-muted uppercase">More mocks</h3>}
         <div className={`${featured.length ? "mt-3" : "mt-4"} grid gap-4 md:grid-cols-2 xl:grid-cols-3`}>
           {gridExams.map((exam) => {
             const q = exam.pattern.reduce((a, p) => a + p.questions, 0);
@@ -342,6 +347,39 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </section>
       )}
     </div>
+  );
+}
+
+/** A Cognizant GenC cluster as a carousel card: leads to the suite page, where the student reads about it and picks a difficulty. */
+function GencSuiteCard({ variant, isDream }: { variant: GencVariant; isDream: boolean }) {
+  const v = GENC_VARIANTS[variant];
+  const cluster = variant === "java" ? "Java" : "Python";
+  const papers = v.papers.map((p) => {
+    const exam = PAPER_EXAMS.find((e) => e.id === p.examId)!;
+    const mcq = exam.pattern.filter((s) => s.section !== "writing");
+    return { title: p.title, q: mcq.reduce((a, s) => a + s.questions, 0), min: mcq.reduce((a, s) => a + s.minutes, 0) };
+  });
+  return (
+    <article className="flex h-full flex-col rounded-2xl bg-deep p-6 text-white">
+      <p className="text-xs font-semibold tracking-wider text-sun uppercase">Cognizant · 3 papers{isDream ? " · your dream company" : ""}</p>
+      <h3 className="mt-1 text-2xl font-bold">GenC · {cluster} cluster</h3>
+      <p className="mt-1 text-white/70">{v.label}. Take the three papers whenever you like and get a combined score at the end.</p>
+      <ol className="mt-5 grid gap-2 sm:grid-cols-3">
+        {papers.map((p, i) => (
+          <li key={p.title} className="rounded-xl bg-white/[0.07] px-3 py-2 text-sm">
+            <span className="text-white/50">{i + 1}. </span>
+            <span className="font-medium">{p.title}</span>
+            <span className="block text-xs text-white/60 tabular-nums">{p.q} Q · {p.min} min</span>
+          </li>
+        ))}
+      </ol>
+      <p className="mt-4 rounded-lg bg-sun/15 px-3 py-2 text-sm text-sun">Choose Standard or Extreme difficulty. <b>Extreme unlocks when 2 friends join through your invite link.</b></p>
+      <div className="mt-auto pt-5">
+        <Link href={`/genc/suite/${variant}`} className="inline-flex items-center gap-2 rounded-xl bg-sun px-5 py-2.5 font-semibold text-deep transition hover:bg-white">
+          See the {cluster} suite →
+        </Link>
+      </div>
+    </article>
   );
 }
 

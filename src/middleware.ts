@@ -3,7 +3,7 @@ import { isAdminSession, maintenanceOn } from "@/lib/maintenance";
 
 // Cheap first gate: no session cookie → send to /login. The real check (is the session valid
 // and unexpired?) happens on the server in requireUser()/getCurrentUser().
-const PROTECTED = ["/dashboard", "/practice", "/mock", "/attempt", "/results", "/analytics", "/history", "/admin", "/onboarding", "/community", "/verify-email", "/account", "/code", "/dsa", "/google"];
+const PROTECTED = ["/dashboard", "/practice", "/mock", "/attempt", "/results", "/analytics", "/history", "/admin", "/onboarding", "/community", "/verify-email", "/account", "/code", "/dsa", "/google", "/genc"];
 
 // Reachable during maintenance, so an admin can still sign in (password or Google) and switch it off.
 const OPEN_IN_MAINTENANCE = ["/maintenance", "/login", "/api/auth/", "/api/health"];
